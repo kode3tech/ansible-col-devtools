@@ -10,7 +10,75 @@ This is an **Ansible Collection** project following official Ansible best practi
 - **License**: MIT
 - **Supported Platforms**: Ubuntu 22.04+, Debian 11+, RHEL 9+
 
-## 🏗️ Project Structure Standards
+## � Organization Pattern: Separation by Scope
+
+**CRITICAL**: This project follows a **strict organization pattern** based on **scope and target audience**. This pattern MUST be followed when creating any new content.
+
+### Core Principle
+
+```
+"Everything in its place based on scope and target audience"
+```
+
+### Pattern Rules
+
+#### 1️⃣ Documentation Organization
+
+**By Target Audience:**
+- **`docs/`** → Public (end users) - distributed with collection
+- **`.tmp/analysis/`** → Internal (maintainers) - NOT distributed
+
+**By Scope (within `docs/`):**
+- **Multi-role documentation** → `docs/{category}/` (applies to 2+ roles)
+- **Single-role documentation** → `roles/{role}/README.md` or `roles/{role}/docs/`
+
+**By Category (within `docs/`):**
+- `getting-started/` → New users
+- `user-guides/` → Using the collection
+- `troubleshooting/` → Problem solving
+- `development/` → Contributors
+- `maintenance/` → Upgrades/versions
+
+#### 2️⃣ Playbook Organization
+
+**By Role Usage:**
+- **Single role examples** → `playbooks/{role}/`
+- **General index** → `playbooks/README.md`
+
+#### 3️⃣ Code Organization
+
+**By Scope:**
+- **Role-specific code** → `roles/{role}/tasks/`, `roles/{role}/templates/`, etc.
+- **Collection-wide plugins** → `plugins/`
+
+### Decision Tree for New Content
+
+```
+┌─ Creating Something New?
+│
+├─ Is it DOCUMENTATION?
+│  ├─ Internal planning/analysis? → .tmp/analysis/
+│  ├─ Applies to 2+ roles? → docs/{category}/
+│  └─ Specific to 1 role? → roles/{role}/README.md or roles/{role}/docs/
+│
+├─ Is it a PLAYBOOK EXAMPLE?
+│  ├─ Uses 1 role? → playbooks/{role}/
+│  └─ General index? → playbooks/README.md
+│
+└─ Is it CODE/FUNCTIONALITY?
+   ├─ Specific to 1 role? → roles/{role}/
+   └─ Collection-wide? → plugins/
+```
+
+### Navigation Pattern
+
+**Every directory MUST have a README.md with:**
+- 📝 Purpose description
+- 📚 List of contents with descriptions
+- 🔗 Links to documents (relative paths)
+- 🔙 Navigation back to parent (bidirectional)
+
+## �🏗️ Project Structure Standards
 
 ### Root Level Organization
 ```
@@ -541,24 +609,230 @@ chore(deps): update ansible to 2.16
 9. ❌ Missing error handling with `failed_when` or `ignore_errors`
 10. ❌ Not making tasks idempotent
 
-## 🎯 Quick Checklist for New Roles
+## 🎯 Complete Checklist for Creating New Roles
 
-- [ ] Role structure follows standard
+**CRITICAL**: When creating a new role, ALL items in this checklist MUST be completed. This ensures consistency, quality, and adherence to project patterns.
+
+### 📁 Phase 1: Role Structure Setup
+
+- [ ] **1.1** Create role directory: `roles/{role_name}/`
+- [ ] **1.2** Create all required directories:
+  - [ ] `defaults/` - Default variables
+  - [ ] `tasks/` - Task files
+  - [ ] `handlers/` - Event handlers
+  - [ ] `templates/` - Jinja2 templates (if needed)
+  - [ ] `files/` - Static files (if needed)
+  - [ ] `vars/` - Variables (OS-specific)
+  - [ ] `meta/` - Role metadata
+  - [ ] `molecule/default/` - Molecule tests
+  - [ ] `tests/` - Legacy test support
+- [ ] **1.3** Create `pytest.ini` for test configuration
+- [ ] **1.4** Create main `README.md` for role documentation
+
+### 📝 Phase 2: Core Files Implementation
+
+#### Variables & Defaults
+- [ ] **2.1** Create `defaults/main.yml` with ALL user-configurable variables
+- [ ] **2.2** Prefix ALL variables with role name: `{role}_variable_name`
+- [ ] **2.3** Document each variable with inline comments
+- [ ] **2.4** Set sensible default values
+
+#### OS-Specific Variables
+- [ ] **2.5** Create `vars/Debian.yml` for Debian/Ubuntu variables
+- [ ] **2.6** Create `vars/RedHat.yml` for RHEL/CentOS/Rocky variables
+- [ ] **2.7** Create `vars/main.yml` for common variables (if needed)
+
+#### Tasks
+- [ ] **2.8** Create `tasks/main.yml` as orchestration layer
+- [ ] **2.9** Create `tasks/setup-Debian.yml` for Debian/Ubuntu tasks
+- [ ] **2.10** Create `tasks/setup-RedHat.yml` for RHEL/CentOS/Rocky tasks
+- [ ] **2.11** Use **FQCN** (Fully Qualified Collection Names) for ALL modules
+- [ ] **2.12** Add **descriptive names** to ALL tasks (minimum 3 words)
+- [ ] **2.13** Add **appropriate tags** to ALL tasks
+- [ ] **2.14** Make ALL tasks **idempotent**
+- [ ] **2.15** Use `changed_when`, `failed_when` where appropriate
+
+#### Handlers
+- [ ] **2.16** Create `handlers/main.yml` with service restart/reload handlers
+- [ ] **2.17** Use FQCN in handlers
+- [ ] **2.18** Name handlers descriptively (e.g., `restart service_name`)
+
+#### Metadata
+- [ ] **2.19** Create `meta/main.yml` with complete galaxy_info:
+  - [ ] `namespace: kode3tech`
+  - [ ] `role_name: {role_name}`
+  - [ ] `author: Kode3Tech DevOps Team`
+  - [ ] `license: MIT`
+  - [ ] `min_ansible_version: "2.15"`
+  - [ ] Complete `platforms` list:
+    ```yaml
+    platforms:
+      - name: Ubuntu
+        versions: [jammy, noble, plucky]  # 22.04, 24.04, 25.04
+      - name: Debian
+        versions: [bullseye, bookworm, trixie]  # 11, 12, 13
+      - name: EL
+        versions: ["9", "10"]
+    ```
+  - [ ] Relevant `galaxy_tags`
+- [ ] **2.20** Set `dependencies: []` (or list if needed)
+
+### 🧪 Phase 3: Testing Setup
+
+#### Molecule Configuration
+- [ ] **3.1** Create `molecule/default/molecule.yml` with:
+  - [ ] Docker driver
+  - [ ] **3 platforms minimum**:
+    - [ ] Ubuntu 22.04 (geerlingguy/docker-ubuntu2204-ansible)
+    - [ ] Debian 12 (geerlingguy/docker-debian12-ansible)
+    - [ ] Rocky Linux 9 (geerlingguy/docker-rockylinux9-ansible)
+  - [ ] Privileged mode and cgroup configuration
+  - [ ] Ansible verifier configuration
+
+- [ ] **3.2** Create `molecule/default/converge.yml` - Apply role playbook
+- [ ] **3.3** Create `molecule/default/verify.yml` - Ansible-based verification
+- [ ] **3.4** Create `molecule/default/prepare.yml` (if pre-setup needed)
+
+#### Pytest Tests
+- [ ] **3.5** Create `molecule/default/test_default.py` with testinfra tests:
+  - [ ] Test package installation
+  - [ ] Test service running and enabled
+  - [ ] Test configuration files exist
+  - [ ] Test user/group permissions (if applicable)
+  - [ ] Test functionality (basic smoke tests)
+
+#### Legacy Tests
+- [ ] **3.6** Create `tests/inventory` - Test inventory file
+- [ ] **3.7** Create `tests/test.yml` - Basic test playbook
+
+### 📚 Phase 4: Documentation
+
+#### Role README.md
+- [ ] **4.1** Create comprehensive `roles/{role}/README.md` with:
+  - [ ] Role description and purpose
+  - [ ] Requirements section (Ansible version, target systems, collections)
+  - [ ] Supported Distributions list (Ubuntu, Debian, RHEL with versions)
+  - [ ] Role Variables section (ALL variables documented)
+  - [ ] Dependencies section
+  - [ ] Example Playbook section (multiple examples)
+  - [ ] Testing instructions
+  - [ ] License (MIT)
+  - [ ] Author Information (Kode3Tech DevOps Team)
+
+#### Role-Specific Documentation (if needed)
+- [ ] **4.2** Create `roles/{role}/docs/` for additional documentation (if role is complex)
+- [ ] **4.3** Create `roles/{role}/docs/README.md` with index of additional docs
+- [ ] **4.4** Add links from main README to additional docs
+
+#### Collection Documentation (for multi-role features)
+- [ ] **4.5** If feature applies to 2+ roles, create doc in `docs/{category}/`
+- [ ] **4.6** Update `docs/README.md` with link to new document
+
+### 🎮 Phase 5: Example Playbooks
+
+- [ ] **5.1** Create `playbooks/{role}/` directory
+- [ ] **5.2** Create `playbooks/{role}/README.md` with:
+  - [ ] Index of all example playbooks
+  - [ ] Description of each example
+  - [ ] Usage instructions
+  - [ ] Links to role README
+- [ ] **5.3** Create example playbooks (minimum 2):
+  - [ ] `install-{role}.yml` - Basic installation
+  - [ ] `setup-{feature}.yml` - Advanced feature example
+- [ ] **5.4** Ensure each playbook has:
+  - [ ] Clear comments
+  - [ ] Variable examples
+  - [ ] Proper tags
+  - [ ] Error handling
+- [ ] **5.5** Update `playbooks/README.md` with new role examples
+
+### 🔍 Phase 6: Quality Assurance
+
+#### Linting
+- [ ] **6.1** Run `ansible-lint` (production profile) - ZERO errors
+- [ ] **6.2** Run `yamllint` - ZERO errors
+- [ ] **6.3** Fix all linting issues
+
+#### Testing
+- [ ] **6.4** Run `molecule test` - ALL tests pass on ALL platforms
+- [ ] **6.5** Verify tests on:
+  - [ ] Ubuntu 22.04
+  - [ ] Debian 12
+  - [ ] Rocky Linux 9
+- [ ] **6.6** All pytest tests pass
+- [ ] **6.7** All Ansible verification tests pass
+
+#### Code Review
+- [ ] **6.8** Review all variable names (prefixed with role name)
+- [ ] **6.9** Review all task names (descriptive, 3+ words)
+- [ ] **6.10** Review all tags (appropriate and consistent)
+- [ ] **6.11** Review OS-specific logic (properly separated)
+- [ ] **6.12** Review idempotency (tasks can run multiple times safely)
+
+### 📦 Phase 7: Collection Integration
+
+#### Update Collection Files
+- [ ] **7.1** Update `README.md` - Add new role to "Included Roles" section
+- [ ] **7.2** Update `META.md` - Add role description and supported platforms
+- [ ] **7.3** Update `galaxy.yml` if needed
+- [ ] **7.4** Update `CHANGELOG.md` - Add entry for new role
+
+#### Update Documentation
+- [ ] **7.5** Update `docs/development/ROLE_STRUCTURE.md` if pattern changed
+- [ ] **7.6** Create user guide in `docs/user-guides/` if needed
+- [ ] **7.7** Create troubleshooting guide in `docs/troubleshooting/` if needed
+
+### 🚀 Phase 8: Final Verification
+
+- [ ] **8.1** Git status clean (no untracked files that should be committed)
+- [ ] **8.2** All documentation has bidirectional links
+- [ ] **8.3** All README.md files have navigation links
+- [ ] **8.4** Role follows ALL project patterns:
+  - [ ] Organization by scope
+  - [ ] Documentation in correct location
+  - [ ] Playbooks in `playbooks/{role}/`
+  - [ ] Variables prefixed correctly
+  - [ ] FQCN used everywhere
+  - [ ] Multi-platform support
+  - [ ] Complete testing
+- [ ] **8.5** Commit with conventional commit message:
+  ```
+  feat(roles): add {role_name} role
+  
+  - Implements {brief description}
+  - Supports Ubuntu 22.04+, Debian 11+, RHEL 9+
+  - Includes comprehensive tests (Molecule + Pytest)
+  - Adds example playbooks
+  - Complete documentation
+  
+  Closes #{issue_number}
+  ```
+
+---
+
+## 🎯 Quick Reference Checklist
+
+Use this abbreviated checklist for quick verification:
+
+- [ ] Role structure follows standard (all directories created)
 - [ ] All tasks use FQCN
 - [ ] All tasks have descriptive names
 - [ ] All tasks have appropriate tags
 - [ ] Variables prefixed with role name
 - [ ] OS-specific logic separated (Debian.yml, RedHat.yml)
 - [ ] Handlers defined for service changes
-- [ ] Meta/main.yml complete with platforms
-- [ ] README.md with examples
-- [ ] Molecule tests configured (3+ distros)
-- [ ] Pytest tests implemented
-- [ ] Passes ansible-lint (production profile)
-- [ ] Passes yamllint
+- [ ] Meta/main.yml complete with platforms (Ubuntu 22/24/25, Debian 11/12/13, RHEL 9/10)
+- [ ] README.md with complete documentation and examples
+- [ ] Molecule tests configured (3+ distros: Ubuntu, Debian, RHEL)
+- [ ] Pytest tests implemented with full coverage
+- [ ] Passes ansible-lint (production profile) - ZERO errors
+- [ ] Passes yamllint - ZERO errors
 - [ ] Default values in defaults/main.yml
-- [ ] Documentation complete
-- [ ] Example playbook in playbooks/
+- [ ] Example playbooks in `playbooks/{role}/` (minimum 2)
+- [ ] `playbooks/{role}/README.md` with playbook index
+- [ ] Collection docs updated (README.md, META.md, CHANGELOG.md)
+- [ ] All documentation follows organization pattern
+- [ ] Bidirectional navigation links in place
 
 ## 🌟 Best Practices Summary
 
