@@ -24,7 +24,9 @@ ansible-col-devtools/
 │   ├── troubleshooting/       # Problem solving
 │   ├── development/           # Contributing & testing
 │   └── maintenance/           # Upgrades & versions
-├── playbooks/                  # Example playbooks
+├── playbooks/                  # Example playbooks (organized by role)
+│   ├── docker/                # Docker role examples
+│   └── podman/                # Podman role examples
 ├── plugins/                    # Custom Ansible plugins
 │   ├── filter/                # Custom filters
 │   └── modules/               # Custom modules
@@ -45,6 +47,32 @@ ansible-col-devtools/
 ├── CODE_OF_CONDUCT.md         # Community standards
 └── SECURITY.md                # Security policies
 ```
+
+### ⚠️ Important: Playbooks Organization
+
+**CRITICAL**: Example playbooks should be organized by role for better maintainability.
+
+- **`playbooks/{role}/`** - Role-specific examples (single role usage)
+
+**Structure:**
+```
+playbooks/
+├── docker/                           # Docker role examples only
+│   ├── README.md                    # Index of Docker examples
+│   ├── install-docker.yml           # Basic installation
+│   ├── setup-registry-auth.yml      # Private registry auth
+│   └── setup-insecure-registry.yml  # Insecure registries
+└── podman/                           # Podman role examples only
+    ├── README.md                    # Index of Podman examples
+    ├── install-podman.yml           # Basic installation
+    └── test-podman-auth.yml         # Authentication testing
+```
+
+This organization ensures:
+- Easy discovery of role-specific examples
+- Clear separation of examples by role
+- Scalability as new roles are added
+- Each role folder has its own README documenting examples
 
 ### ⚠️ Important: Analysis Documents Location
 
