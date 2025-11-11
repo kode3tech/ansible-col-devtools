@@ -1,0 +1,13 @@
+---
+# RedHat/CentOS specific setup tasks
+
+- name: Install prerequisites
+  ansible.builtin.dnf:
+    name: "{{ podman_prerequisites_redhat }}"
+    state: present
+  tags: podman
+
+- name: Ensure Podman is available from distribution repositories
+  ansible.builtin.debug:
+    msg: "Podman is available in RHEL/CentOS/Rocky default repositories"
+  tags: podman

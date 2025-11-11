@@ -1,0 +1,84 @@
+---
+# Example playbook: Registry authentication for Docker and Podman
+#
+# This playbook demonstrates how to securely configure private registry
+# authentication for both Docker and Podman.
+#
+# SECURITY WARNING: Never commit plain-text passwords!
+# Use Ansible Vault to encrypt sensitive data.
+#
+# Usage:
+#   1. Create vault file with encrypted passwords:
+#      ansible-vault create vars/registry_secrets.yml
+#
+#   2. Add your credentials (inside vault):
+#      vault_dockerhub_password: "your_token_here"
+#      vault_ghcr_token: "ghp_your_github_token"
+#      vault_private_registry_password: "your_password"
+#
+#   3. Run playbook with vault password:
+#      ansible-playbook setup-registry-auth.yml --ask-vault-pass
+
+- name: Setup container registries authentication
+  hosts: all
+  become: true
+  
+  vars_files:
+    - vars/registry_secrets.yml  # Encrypted with ansible-vault
+
+  vars:
+    # Docker registry authentication
+    # NOTE: Use 'registry' field (not 'registry_url')
+    docker_registries_auth:
+      - registry: "https://index.docker.io/v1/"  # Docker Hub requires full URL
+        username: "myuser"
+        password: "{{ vault_dockerhub_password }}"
+        email: "user@example.com"
+      
+      - registry: "ghcr.io"  # GitHub Container Registry
+        username: "github-user"
+        password: "{{ vault_ghcr_token }}"
+      
+      - registry: "registry.mycompany.com"  # Private registry (just hostname)
+        username: "ci-user"
+        password: "{{ vault_private_registry_password }}"
+
+    # Podman registry authentication (rootless mode)
+    # NOTE: Use 'registry' field (not 'registry_url')
+    podman_enable_rootless: true
+    podman_rootless_users:
+      - devuser
+      - jenkins
+    
+    podman_registries_auth:
+      - registry: "docker.io"  # Docker Hub for Podman
+        username: "myuser"
+        password: "{{ vault_dockerhub_password }}"
+      
+      - registry: "quay.io"  # Quay.io registry
+        username: "quay-user"
+        password: "{{ vault_quay_password }}"
+      
+      - registry: "registry.mycompany.com"  # Private registry (just hostname)
+        username: "ci-user"
+        password: "{{ vault_private_registry_password }}"
+
+  roles:
+    - kode3tech.devtools.docker
+    - kode3tech.devtools.podman
+
+# Alternative: Use password files instead of direct passwords
+# This is useful when integrating with external secret management systems
+#
+# - name: Setup registries with password files
+#   hosts: all
+#   become: true
+#   
+#   vars:
+#     docker_registries_auth:
+#       - registry: "registry.mycompany.com"
+#         username: "ci-user"
+#         password_file: "/var/lib/jenkins/secrets/registry-password"
+#   
+#   roles:
+#     - kode3tech.devtools.docker

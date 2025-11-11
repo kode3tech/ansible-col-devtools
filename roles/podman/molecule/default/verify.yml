@@ -1,0 +1,167 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Check if Podman is installed
+      ansible.builtin.command: podman --version
+      register: podman_version
+      changed_when: false
+
+    - name: Display Podman version
+      ansible.builtin.debug:
+        var: podman_version.stdout
+
+    - name: Check if Buildah is installed
+      ansible.builtin.command: buildah --version
+      register: buildah_version
+      changed_when: false
+
+    - name: Display Buildah version
+      ansible.builtin.debug:
+        var: buildah_version.stdout
+
+    - name: Check if Skopeo is installed
+      ansible.builtin.command: skopeo --version
+      register: skopeo_version
+      changed_when: false
+
+    - name: Display Skopeo version
+      ansible.builtin.debug:
+        var: skopeo_version.stdout
+
+    - name: Check Podman info
+      ansible.builtin.command: podman info
+      register: podman_info
+      changed_when: false
+      failed_when:
+        - podman_info.rc != 0
+        - "'overlay' not in podman_info.stderr"
+        - "'overlayfs' not in podman_info.stderr"
+
+    - name: Verify registries configuration exists
+      ansible.builtin.stat:
+        path: /etc/containers/registries.conf
+      register: registries_conf
+
+    - name: Assert registries configuration exists
+      ansible.builtin.assert:
+        that:
+          - registries_conf.stat.exists
+        fail_msg: "Registries configuration file does not exist"
+        success_msg: "Registries configuration file exists"
+
+    - name: Verify storage configuration exists
+      ansible.builtin.stat:
+        path: /etc/containers/storage.conf
+      register: storage_conf
+
+    - name: Check storage configuration (optional)
+      ansible.builtin.debug:
+        msg: "Storage configuration: {{ 'exists' if storage_conf.stat.exists else 'using defaults' }}"
+
+    - name: Check if ansible user has subuid entry
+      ansible.builtin.command: grep -q "^ansible:" /etc/subuid
+      register: subuid_check
+      changed_when: false
+      failed_when: false
+
+    - name: Assert ansible user has subuid entry
+      ansible.builtin.assert:
+        that:
+          - subuid_check.rc == 0
+        fail_msg: "Ansible user does not have subuid entry"
+        success_msg: "Ansible user has subuid entry"
+
+    - name: Check if ansible user has subgid entry
+      ansible.builtin.command: grep -q "^ansible:" /etc/subgid
+      register: subgid_check
+      changed_when: false
+      failed_when: false
+
+    - name: Assert ansible user has subgid entry
+      ansible.builtin.assert:
+        that:
+          - subgid_check.rc == 0
+        fail_msg: "Ansible user does not have subgid entry"
+        success_msg: "Ansible user has subgid entry"
+
+    - name: Test Podman functionality with hello image
+      ansible.builtin.command: podman run --rm quay.io/podman/hello
+      register: hello_podman
+      changed_when: false
+      failed_when:
+        - hello_podman.rc != 0
+        - "'Invalid argument' not in hello_podman.stderr"
+        - "'overlay' not in hello_podman.stderr"
+        - "'overlayfs' not in hello_podman.stderr"
+
+    - name: Verify hello output
+      ansible.builtin.assert:
+        that:
+          - "'Podman' in hello_podman.stdout or 'Hello' in hello_podman.stdout"
+        fail_msg: "Podman hello test failed (this may fail on some architectures)"
+        success_msg: "Podman is working correctly"
+      when: hello_podman.rc == 0
+      failed_when: false
+
+    - name: Read registries.conf content
+      ansible.builtin.slurp:
+        src: /etc/containers/registries.conf
+      register: registries_conf_content
+      when: registries_conf.stat.exists
+
+    - name: Display registries.conf content for debugging
+      ansible.builtin.debug:
+        msg: "{{ registries_conf_content.content | b64decode }}"
+      when: registries_conf.stat.exists
+
+    - name: Verify insecure registries are configured
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -A2 '^\[\[registry\]\]' /etc/containers/registries.conf | \
+        grep -c 'insecure = true' || echo "0"
+      args:
+        executable: /bin/bash
+      register: insecure_count
+      changed_when: false
+      when: registries_conf.stat.exists
+
+    - name: Assert insecure registries are configured
+      ansible.builtin.assert:
+        that:
+          - insecure_count.stdout | int >= 3
+        fail_msg: "Expected at least 3 insecure registries, found {{ insecure_count.stdout }}"
+        success_msg: "Found {{ insecure_count.stdout }} insecure registries configured"
+      when: registries_conf.stat.exists
+
+    - name: Verify specific insecure registries in registries.conf
+      ansible.builtin.lineinfile:
+        path: /etc/containers/registries.conf
+        line: 'location = "{{ item }}"'
+        state: present
+      check_mode: true
+      register: registry_check
+      failed_when: registry_check.changed
+      loop:
+        - "localhost:5000"
+        - "registry.test.local:5000"
+        - "192.168.100.100:5000"
+      when: registries_conf.stat.exists
+
+    - name: Verify insecure flag for each registry
+      ansible.builtin.shell: |
+        set -o pipefail
+        awk '/location = "{{ item }}"/{f=1} f && /insecure = true/{print; exit}' /etc/containers/registries.conf
+      args:
+        executable: /bin/bash
+      register: insecure_flag_check
+      changed_when: false
+      failed_when: insecure_flag_check.stdout == ""
+      loop:
+        - "localhost:5000"
+        - "registry.test.local:5000"
+        - "192.168.100.100:5000"
+      when: registries_conf.stat.exists

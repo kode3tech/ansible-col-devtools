@@ -1,0 +1,23 @@
+# Core Ansible (using 2.18.x for Molecule compatibility)
+ansible>=11.0.0,<12.0.0
+ansible-core>=2.18.0,<2.19.0
+
+# Ansible Development Tools
+ansible-lint>=24.0.0
+molecule>=24.0.0
+molecule-plugins[docker]>=23.5.0
+
+# Python Dependencies
+jinja2>=3.1.0
+PyYAML>=6.0
+cryptography>=41.0.0
+
+# Testing Tools
+pytest>=8.0.0
+pytest-testinfra>=10.0.0
+
+# Formatting and Linting
+yamllint>=1.35.0
+
+# Additional useful tools
+ansible-navigator>=3.5.0

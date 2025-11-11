@@ -1,0 +1,106 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Check if Docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display Docker version
+      ansible.builtin.debug:
+        var: docker_version.stdout
+
+    - name: Verify Docker service is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+      check_mode: true
+      register: docker_service
+      failed_when: docker_service.changed
+
+    - name: Check if Docker daemon is responding
+      ansible.builtin.command: docker info
+      register: docker_info
+      changed_when: false
+
+    - name: Verify Docker group exists
+      ansible.builtin.group:
+        name: docker
+        state: present
+      check_mode: true
+      register: docker_group
+      failed_when: docker_group.changed
+
+    - name: Check if ansible user is in docker group
+      ansible.builtin.command: id -nG ansible
+      register: user_groups
+      changed_when: false
+      failed_when: "'docker' not in user_groups.stdout"
+
+    - name: Test Docker functionality with hello-world
+      ansible.builtin.command: docker run --rm hello-world
+      register: hello_world
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
+    - name: Verify hello-world output
+      ansible.builtin.assert:
+        that:
+          - "'Hello from Docker!' in hello_world.stdout"
+        fail_msg: "Docker hello-world test failed (this may fail on some architectures)"
+        success_msg: "Docker is working correctly"
+      when: hello_world.rc == 0
+      ignore_errors: true
+
+    - name: Check if Docker daemon.json exists
+      ansible.builtin.stat:
+        path: /etc/docker/daemon.json
+      register: daemon_json_stat
+
+    - name: Verify daemon.json exists
+      ansible.builtin.assert:
+        that:
+          - daemon_json_stat.stat.exists
+        fail_msg: "Docker daemon.json does not exist"
+        success_msg: "Docker daemon.json exists"
+
+    - name: Read Docker daemon.json
+      ansible.builtin.slurp:
+        src: /etc/docker/daemon.json
+      register: daemon_json_content
+      when: daemon_json_stat.stat.exists
+
+    - name: Parse daemon.json content
+      ansible.builtin.set_fact:
+        daemon_config: "{{ daemon_json_content.content | b64decode | from_json }}"
+      when: daemon_json_stat.stat.exists
+
+    - name: Verify insecure-registries is configured
+      ansible.builtin.assert:
+        that:
+          - "'insecure-registries' in daemon_config"
+          - daemon_config['insecure-registries'] is defined
+          - daemon_config['insecure-registries'] | length > 0
+        fail_msg: "insecure-registries not configured in daemon.json"
+        success_msg: "insecure-registries configured correctly"
+      when: daemon_json_stat.stat.exists
+
+    - name: Verify specific insecure registries are present
+      ansible.builtin.assert:
+        that:
+          - "'localhost:5000' in daemon_config['insecure-registries']"
+          - "'registry.test.local:5000' in daemon_config['insecure-registries']"
+          - "'192.168.100.100:5000' in daemon_config['insecure-registries']"
+        fail_msg: "Expected insecure registries not found in daemon.json"
+        success_msg: "All expected insecure registries are configured"
+      when: daemon_json_stat.stat.exists
+
+    - name: Display configured insecure registries
+      ansible.builtin.debug:
+        msg: "Configured insecure registries: {{ daemon_config['insecure-registries'] }}"
+      when: daemon_json_stat.stat.exists

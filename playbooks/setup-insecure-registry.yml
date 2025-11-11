@@ -1,0 +1,115 @@
+---
+# Example playbook: Configure insecure registries
+#
+# This playbook demonstrates how to configure Docker and Podman to work
+# with insecure registries (HTTP or self-signed certificates).
+#
+# ⚠️ WARNING: Only use insecure registries for trusted internal networks!
+#
+# Use cases:
+#   - Internal development registries without HTTPS
+#   - Registries with self-signed SSL certificates
+#   - Testing environments with localhost registries
+#
+# Usage:
+#   ansible-playbook setup-insecure-registry.yml -i inventory
+
+- name: Setup Docker with insecure registry
+  hosts: docker_hosts
+  become: true
+  
+  vars:
+    # Define insecure registries
+    docker_insecure_registries:
+      - "registry.internal.company.com:5000"
+      - "192.168.1.100:5000"
+      - "localhost:5000"
+    
+    # Optional: Authenticate to insecure registries
+    docker_registries_auth:
+      - registry_url: "http://registry.internal.company.com:5000"
+        username: "admin"
+        password: "{{ vault_internal_registry_password }}"
+  
+  roles:
+    - kode3tech.devtools.docker
+
+- name: Setup Podman with insecure registry
+  hosts: podman_hosts
+  become: true
+  
+  vars:
+    # Define insecure registries
+    podman_insecure_registries:
+      - "registry.internal.company.com:5000"
+      - "192.168.1.100:5000"
+      - "localhost:5000"
+    
+    # Optional: Authenticate to insecure registries
+    podman_registries_auth:
+      - registry_url: "registry.internal.company.com:5000"
+        username: "admin"
+        password: "{{ vault_internal_registry_password }}"
+    
+    # Optional: Configure rootless mode
+    podman_enable_rootless: true
+    podman_rootless_users:
+      - devuser
+  
+  roles:
+    - kode3tech.devtools.podman
+
+# Combined setup for hosts that need both
+- name: Setup both Docker and Podman with insecure registry
+  hosts: container_hosts
+  become: true
+  
+  vars:
+    # Shared configuration for both
+    _insecure_registries:
+      - "registry.internal.company.com:5000"
+      - "192.168.1.100:5000"
+    
+    docker_insecure_registries: "{{ _insecure_registries }}"
+    podman_insecure_registries: "{{ _insecure_registries }}"
+    
+    # Shared authentication
+    _registry_auth:
+      - registry_url: "registry.internal.company.com:5000"
+        username: "{{ registry_username }}"
+        password: "{{ vault_registry_password }}"
+    
+    docker_registries_auth: "{{ _registry_auth }}"
+    podman_registries_auth: "{{ _registry_auth }}"
+  
+  roles:
+    - kode3tech.devtools.docker
+    - kode3tech.devtools.podman
+
+# Example: Testing insecure registry connectivity
+- name: Verify insecure registry access
+  hosts: all
+  become: true
+  
+  tasks:
+    - name: Test Docker insecure registry access
+      ansible.builtin.command:
+        cmd: docker pull registry.internal.company.com:5000/test-image:latest
+      register: docker_pull
+      failed_when: false
+      changed_when: false
+      when: "'docker_hosts' in group_names or 'container_hosts' in group_names"
+    
+    - name: Test Podman insecure registry access
+      ansible.builtin.command:
+        cmd: podman pull registry.internal.company.com:5000/test-image:latest
+      register: podman_pull
+      failed_when: false
+      changed_when: false
+      when: "'podman_hosts' in group_names or 'container_hosts' in group_names"
+    
+    - name: Display results
+      ansible.builtin.debug:
+        msg: |
+          Docker pull: {{ docker_pull.rc | default('N/A') }}
+          Podman pull: {{ podman_pull.rc | default('N/A') }}

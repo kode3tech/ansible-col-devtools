@@ -1,0 +1,107 @@
+---
+# Tasks file for docker
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  tags: docker
+
+- name: Include OS-specific tasks
+  ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
+  tags: docker
+
+- name: Ensure Docker is installed
+  ansible.builtin.package:
+    name: "{{ docker_packages }}"
+    state: present
+  tags: docker
+
+- name: Install crun for better performance (optional)
+  ansible.builtin.package:
+    name: crun
+    state: present
+  failed_when: false  # Don't fail if crun is not available
+  tags: docker
+
+- name: Ensure Docker daemon configuration directory exists
+  ansible.builtin.file:
+    path: "{{ docker_daemon_config_path | dirname }}"
+    state: directory
+    mode: '0755'
+  tags: docker
+
+- name: Merge Docker daemon configuration with insecure registries
+  ansible.builtin.set_fact:
+    _docker_daemon_config_merged: >-
+      {{
+        docker_daemon_config | combine(
+          {'insecure-registries': docker_insecure_registries}
+          if docker_insecure_registries | length > 0
+          else {}
+        )
+      }}
+  tags: docker
+
+- name: Configure Docker daemon
+  ansible.builtin.copy:
+    content: "{{ _docker_daemon_config_merged | to_nice_json }}"
+    dest: "{{ docker_daemon_config_path }}"
+    mode: '0644'
+  notify: restart docker
+  when: _docker_daemon_config_merged | length > 0
+  tags: docker
+
+- name: Ensure Docker service is started and enabled
+  ansible.builtin.service:
+    name: docker
+    state: "{{ docker_service_state }}"
+    enabled: "{{ docker_service_enabled }}"
+  tags: docker
+
+- name: Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+  when: docker_users | length > 0
+  tags: docker
+
+- name: Reset SSH connection to apply group changes
+  ansible.builtin.meta: reset_connection
+  when: docker_users | length > 0
+  tags: docker
+
+- name: Install Python requests library for docker_login
+  ansible.builtin.package:
+    name: python3-requests
+    state: present
+  when: docker_registries_auth | length > 0
+  tags: docker-login
+
+- name: Login to Docker registries as root
+  community.docker.docker_login:
+    registry_url: "{{ item.registry }}"
+    username: "{{ item.username }}"
+    password: "{{ item.password | default(lookup('file', item.password_file) if item.password_file is defined else omit) }}"
+    email: "{{ item.email | default(omit) }}"
+    reauthorize: true
+  loop: "{{ docker_registries_auth }}"
+  when: docker_registries_auth | length > 0
+  no_log: true
+  tags: docker-login
+
+- name: Login to Docker registries for each user
+  become: true
+  become_user: "{{ item.0 }}"
+  community.docker.docker_login:
+    registry_url: "{{ item.1.registry }}"
+    username: "{{ item.1.username }}"
+    password: "{{ item.1.password | default(lookup('file', item.1.password_file) if item.1.password_file is defined else omit) }}"
+    email: "{{ item.1.email | default(omit) }}"
+    reauthorize: true
+  loop: "{{ docker_users | product(docker_registries_auth) | list }}"
+  when:
+    - docker_registries_auth | length > 0
+    - docker_users | length > 0
+  no_log: true
+  tags: docker-login

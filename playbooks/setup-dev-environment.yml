@@ -1,0 +1,38 @@
+---
+# Example playbook: Setup complete development environment
+# This playbook installs Docker and Podman on target hosts
+
+- name: Setup Development Tools
+  hosts: all
+  become: true
+  
+  collections:
+    - kode3tech.devtools
+  
+  vars:
+    # Docker configuration
+    docker_users:
+      - "{{ ansible_user }}"
+    
+    # Podman configuration
+    podman_rootless_users:
+      - "{{ ansible_user }}"
+  
+  tasks:
+    - name: Display target information
+      ansible.builtin.debug:
+        msg: "Setting up development tools on {{ inventory_hostname }}"
+    
+    - name: Install Docker
+      ansible.builtin.include_role:
+        name: docker
+      tags: docker
+    
+    - name: Install Podman
+      ansible.builtin.include_role:
+        name: podman
+      tags: podman
+    
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg: "Development environment setup complete!"

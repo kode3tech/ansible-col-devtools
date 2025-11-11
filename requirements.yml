@@ -1,0 +1,10 @@
+---
+# Collection dependencies for kode3tech.devtools
+collections:
+  - name: community.docker
+    version: ">=3.4.0"
+    source: https://galaxy.ansible.com
+
+  - name: containers.podman
+    version: ">=1.10.0"
+    source: https://galaxy.ansible.com

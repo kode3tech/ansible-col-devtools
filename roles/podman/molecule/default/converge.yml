@@ -1,0 +1,32 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    podman_rootless_users:
+      - ansible
+      - devuser
+    
+    # Test insecure registries configuration
+    podman_insecure_registries:
+      - "localhost:5000"
+      - "registry.test.local:5000"
+      - "192.168.100.100:5000"
+
+  tasks:
+    # Create ansible user for testing (doesn't exist in Molecule containers)
+    - name: Ensure test users exist for rootless Podman validation
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+        create_home: true
+      loop:
+        - ansible
+        - devuser
+      tags: molecule-idempotence-notest
+    
+    - name: Include podman role
+      ansible.builtin.include_role:
+        name: podman

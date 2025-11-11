@@ -1,0 +1,30 @@
+---
+# RedHat/CentOS specific setup tasks
+
+- name: Install prerequisites
+  ansible.builtin.dnf:
+    name: "{{ docker_prerequisites_redhat }}"
+    state: present
+  tags: docker
+
+- name: Add Docker repository
+  ansible.builtin.get_url:
+    url: "{{ docker_yum_repository }}"
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: '0644'
+  when: docker_configure_repo
+  tags: docker
+
+- name: Remove old Docker versions
+  ansible.builtin.dnf:
+    name:
+      - docker
+      - docker-client
+      - docker-client-latest
+      - docker-common
+      - docker-latest
+      - docker-latest-logrotate
+      - docker-logrotate
+      - docker-engine
+    state: absent
+  tags: docker

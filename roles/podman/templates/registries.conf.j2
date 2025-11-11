@@ -1,0 +1,12 @@
+unqualified-search-registries = {{ podman_registries_conf['unqualified-search-registries'] | to_json }}
+
+{% if podman_insecure_registries | length > 0 %}
+# Insecure registries (HTTP or self-signed certificates)
+# WARNING: Only use for trusted internal registries!
+{% for registry in podman_insecure_registries %}
+
+[[registry]]
+location = "{{ registry }}"
+insecure = true
+{% endfor %}
+{% endif %}

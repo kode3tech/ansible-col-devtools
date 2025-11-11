@@ -1,0 +1,264 @@
+---
+# Tasks file for podman
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  tags: podman
+
+- name: Include OS-specific tasks
+  ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
+  tags: podman
+
+- name: Ensure Podman is installed
+  ansible.builtin.package:
+    name: "{{ podman_packages }}"
+    state: present
+  tags: podman
+
+- name: Ensure containers configuration directory exists
+  ansible.builtin.file:
+    path: /etc/containers
+    state: directory
+    mode: '0755'
+  tags: podman
+
+- name: Configure Podman registries
+  ansible.builtin.template:
+    src: registries.conf.j2
+    dest: "{{ podman_registries_conf_path }}"
+    mode: '0644'
+  when: podman_registries_conf | length > 0
+  tags: podman
+
+- name: Configure Podman storage
+  ansible.builtin.template:
+    src: storage.conf.j2
+    dest: "{{ podman_storage_conf_path }}"
+    mode: '0644'
+  when: podman_storage_conf | length > 0
+  tags: podman
+
+- name: Configure Podman containers settings
+  ansible.builtin.template:
+    src: containers.conf.j2
+    dest: /etc/containers/containers.conf
+    mode: '0644'
+  when: podman_storage_conf.engine is defined
+  tags: podman
+
+- name: Configure systemd-tmpfiles for Podman XDG_RUNTIME_DIR
+  ansible.builtin.copy:
+    content: |
+      # Podman XDG_RUNTIME_DIR for root
+      # This ensures /run/user/0 is created automatically on boot
+      d /run/user/0 0700 root root -
+    dest: /etc/tmpfiles.d/podman-xdg.conf
+    mode: '0644'
+  tags: podman
+
+- name: Check if XDG_RUNTIME_DIR for root exists
+  ansible.builtin.stat:
+    path: /run/user/0
+  register: root_xdg_dir
+  tags: podman
+
+- name: Create XDG_RUNTIME_DIR for root immediately
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/podman-xdg.conf
+  when: not root_xdg_dir.stat.exists
+  changed_when: true
+  tags: podman
+
+- name: Ensure auth directory exists for root Podman
+  ansible.builtin.file:
+    path: /root/.config/containers
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  tags: podman
+
+- name: Configure rootless Podman for users
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+  tags: podman
+  block:
+    - name: Ensure subuid entries for users
+      ansible.builtin.lineinfile:
+        path: /etc/subuid
+        line: "{{ item }}:{{ podman_subuid_start + (podman_subuid_count * podman_rootless_index) }}:{{ podman_subuid_count }}"
+        regexp: "^{{ item }}:"
+        create: true
+        mode: '0644'
+      loop: "{{ podman_rootless_users }}"
+      loop_control:
+        index_var: podman_rootless_index
+
+    - name: Ensure subgid entries for users
+      ansible.builtin.lineinfile:
+        path: /etc/subgid
+        line: "{{ item }}:{{ podman_subgid_start + (podman_subgid_count * podman_rootless_index) }}:{{ podman_subgid_count }}"
+        regexp: "^{{ item }}:"
+        create: true
+        mode: '0644'
+      loop: "{{ podman_rootless_users }}"
+      loop_control:
+        index_var: podman_rootless_index
+
+    - name: Get user information for XDG_RUNTIME_DIR
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ item }}"
+      loop: "{{ podman_rootless_users }}"
+      register: user_info
+
+    - name: Configure systemd-tmpfiles for rootless users XDG_RUNTIME_DIR
+      ansible.builtin.copy:
+        content: |
+          # Podman XDG_RUNTIME_DIR for rootless users
+          {% for user_result in user_info.results %}
+          {% if user_result.ansible_facts.getent_passwd is defined %}
+          d /run/user/{{ user_result.ansible_facts.getent_passwd[user_result.item][1] }} 0700 {{ user_result.item }} {{ user_result.ansible_facts.getent_passwd[user_result.item][2] }} -
+          {% endif %}
+          {% endfor %}
+        dest: /etc/tmpfiles.d/podman-xdg-users.conf
+        mode: '0644'
+      when: user_info.results | length > 0
+
+    - name: Check if XDG_RUNTIME_DIR for rootless users exist
+      ansible.builtin.stat:
+        path: "/run/user/{{ item.ansible_facts.getent_passwd[item.item][1] }}"
+      loop: "{{ user_info.results }}"
+      when: item.ansible_facts.getent_passwd is defined
+      register: user_xdg_dirs
+
+    - name: Create XDG_RUNTIME_DIR for rootless users immediately
+      ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/podman-xdg-users.conf
+      when:
+        - user_info.results | length > 0
+        - user_xdg_dirs.results | selectattr('stat.exists', 'equalto', false) | list | length > 0
+      changed_when: true
+
+    - name: Ensure XDG_RUNTIME_DIR exists for rootless users
+      ansible.builtin.file:
+        path: "/run/user/{{ item.ansible_facts.getent_passwd[item.item][1] }}"
+        state: directory
+        owner: "{{ item.item }}"
+        group: "{{ item.ansible_facts.getent_passwd[item.item][2] }}"
+        mode: '0700'
+      loop: "{{ user_info.results }}"
+      when: item.ansible_facts.getent_passwd is defined
+
+- name: Install Python requests library for podman_login
+  ansible.builtin.package:
+    name: python3-requests
+    state: present
+  when: podman_registries_auth | length > 0
+  tags: podman-login
+
+- name: Clean up existing Podman credentials (root)
+  ansible.builtin.file:
+    path: /root/.config/containers/auth.json
+    state: absent
+  when:
+    - podman_registries_auth | length > 0
+    - podman_clean_credentials | bool
+    - not podman_enable_rootless or podman_rootless_users | length == 0
+  tags:
+    - podman
+    - podman-login
+
+- name: Clean up existing Podman credentials (rootless users)
+  become: true
+  become_user: "{{ item }}"
+  ansible.builtin.file:
+    path: "~/.config/containers/auth.json"
+    state: absent
+  loop: "{{ podman_rootless_users }}"
+  when:
+    - podman_registries_auth | length > 0
+    - podman_clean_credentials | bool
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+  tags:
+    - podman
+    - podman-login
+
+- name: Login to Podman registries (root mode) - Using podman_login module
+  containers.podman.podman_login:
+    registry: "{{ item.registry }}"
+    username: "{{ item.username }}"
+    password: "{{ item.password | default(lookup('file', item.password_file) if item.password_file is defined else omit) }}"
+  environment:
+    XDG_RUNTIME_DIR: /run/user/0
+  loop: "{{ podman_registries_auth }}"
+  when:
+    - podman_registries_auth | length > 0
+  no_log: true
+  register: podman_login_module_result
+  failed_when: false
+  tags:
+    - podman
+    - podman-login
+
+- name: Login to Podman registries (root mode) - Fallback to command
+  ansible.builtin.shell:
+    cmd: |
+      export XDG_RUNTIME_DIR=/run/user/0
+      echo "{{ item.password | default(lookup('file', item.password_file) if item.password_file is defined else '') }}" | \
+      podman login "{{ item.registry }}" -u "{{ item.username }}" --password-stdin
+  loop: "{{ podman_registries_auth }}"
+  when:
+    - podman_registries_auth | length > 0
+    - podman_login_module_result.failed is defined and podman_login_module_result.failed
+  no_log: true
+  changed_when: true
+  tags:
+    - podman
+    - podman-login
+
+- name: Ensure .config/containers directory exists for users
+  ansible.builtin.file:
+    path: "/home/{{ item }}/.config/containers"
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: '0700'
+  loop: "{{ podman_rootless_users }}"
+  when:
+    - podman_registries_auth | length > 0
+    - podman_rootless_users | length > 0
+  tags:
+    - podman
+    - podman-login
+
+- name: Enable lingering for Podman users (eliminate systemd cgroup warnings)
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ item }}"
+  loop: "{{ podman_rootless_users }}"
+  when:
+    - podman_registries_auth | length > 0
+    - podman_rootless_users | length > 0
+  register: enable_linger_result
+  changed_when: enable_linger_result.rc == 0
+  failed_when: false  # Don't fail if lingering already enabled or loginctl unavailable
+  tags:
+    - podman
+    - podman-login
+
+- name: Login to Podman registries (per user) - Using command
+  become: true
+  become_user: "{{ item.0 }}"
+  ansible.builtin.shell:
+    cmd: |
+      echo "{{ item.1.password | default(lookup('file', item.1.password_file) if item.1.password_file is defined else '') }}" | \
+      podman login "{{ item.1.registry }}" -u "{{ item.1.username }}" --password-stdin
+  loop: "{{ podman_rootless_users | product(podman_registries_auth) | list }}"
+  when:
+    - podman_registries_auth | length > 0
+    - podman_rootless_users | length > 0
+  no_log: true
+  changed_when: false  # Login commands don't have idempotency detection
+  tags:
+    - podman
+    - podman-login

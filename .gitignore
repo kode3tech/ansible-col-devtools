@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.venv/
+venv/
+ENV/
+env/
+.python-version
+
+# Ansible
+*.retry
+.ansible/
+collections/
+roles/*/tests/test.yml
+inventory
+!inventory.example
+ansible.log
+
+# Molecule
+.molecule/
+.cache/
+molecule/**/.molecule/
+molecule/**/molecule.yml.bak
+
+# Testing
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+junit/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+**/.tmp
+*.bak
+*.backup
+
+# Secrets and sensitive data
+*.pem
+*.key
+*.crt
+secrets.yml
+vault-password.txt
+.vault_pass
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Build artifacts
+*.tar.gz
+*.zip
+*.rpm
+*.deb
+
+# Lock files (opcional - remova se quiser versionar)
+requirements-lock.txt

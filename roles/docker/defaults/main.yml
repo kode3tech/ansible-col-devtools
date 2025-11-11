@@ -1,0 +1,104 @@
+# Docker edition
+docker_edition: "ce"
+
+# Docker packages to install
+docker_packages:
+  - "docker-{{ docker_edition }}"
+  - "docker-{{ docker_edition }}-cli"
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# Docker APT repository (Debian/Ubuntu)
+docker_apt_repository: >-
+  deb [arch={{ docker_apt_arch }} signed-by=/etc/apt/keyrings/docker.asc]
+  https://download.docker.com/linux/{{ ansible_distribution | lower }}
+  {{ ansible_distribution_release }} stable
+docker_apt_arch: >-
+  {{ 'amd64' if ansible_architecture == 'x86_64'
+  else 'arm64' if ansible_architecture == 'aarch64'
+  else ansible_architecture }}
+docker_apt_gpg_key: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+
+# Docker YUM repository (RHEL/CentOS)
+docker_yum_repository: "https://download.docker.com/linux/centos/docker-ce.repo"
+
+# Users to add to docker group
+docker_users: []
+
+# Docker daemon configuration
+# Performance-optimized default configuration
+docker_daemon_config:
+  # Logging configuration
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
+    max-file: "3"
+  
+  # Storage driver configuration (explicit for best performance)
+  storage-driver: "overlay2"
+
+# Enable BuildKit via environment variable (DOCKER_BUILDKIT=1)
+# Note: BuildKit cannot be enabled in daemon.json in some Docker versions
+docker_buildkit_enabled: true
+
+# Insecure registries (registries without HTTPS or with self-signed certificates)
+# WARNING: Only use this for trusted internal registries!
+docker_insecure_registries: []
+  # Example:
+  # - "registry.internal.company.com:5000"
+  # - "192.168.1.100:5000"
+  # - "localhost:5000"
+
+# Docker daemon configuration file path
+docker_daemon_config_path: /etc/docker/daemon.json
+
+# Docker service configuration
+docker_service_enabled: true
+docker_service_state: started
+
+# Configure Docker repository
+docker_configure_repo: true
+
+# Prerequisites packages
+docker_prerequisites_debian:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+
+docker_prerequisites_redhat:
+  - yum-utils
+  - device-mapper-persistent-data
+  - lvm2
+
+# Docker registry authentication
+# Login to private registries (optional)
+# NOTE: For Docker Hub, use "https://index.docker.io/v1/" as registry URL
+# For other registries, use the full URL (e.g., "registry.example.com:5000")
+#
+# IMPORTANT: Authentication will be performed for:
+# 1. Root user (system-wide)
+# 2. Each user in docker_users list (per-user credentials)
+#
+docker_registries_auth: []
+  # Example for Docker Hub:
+  # - registry: https://index.docker.io/v1/
+  #   username: myuser
+  #   password: mypassword
+  #   email: user@example.com  # optional
+  #
+  # Example for private registry:
+  # - registry: registry.example.com:5000
+  #   username: myuser
+  #   password: mypassword
+  #
+  # Example with password from file:
+  # - registry: ghcr.io
+  #   username: github-user
+  #   password_file: /path/to/token  # Read password from file
+  #
+  # Use Ansible Vault for sensitive data!
+  # IMPORTANT: The Docker CLI "docker login" command may use web-based authentication
+  # for Docker Hub by default. This role uses the Docker API directly for non-interactive login.

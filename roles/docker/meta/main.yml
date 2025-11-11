@@ -1,0 +1,42 @@
+---
+galaxy_info:
+  namespace: kode3tech
+  role_name: docker
+  author: Kode3Tech DevOps Team
+  description: Ansible role for installing and configuring Docker on Linux servers
+  company: Kode3Tech
+
+  issue_tracker_url: https://github.com/kode3tech/ansible-docker/issues
+
+  license: MIT
+
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy    # 22.04
+        - noble    # 24.04
+        - plucky   # 25.04
+    - name: Debian
+      versions:
+        - bullseye # 11
+        - bookworm # 12
+        - trixie   # 13
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+
+  galaxy_tags:
+    - docker
+    - container
+    - containerization
+    - infrastructure
+    - devops
+    - deployment
+
+dependencies: []
+
+# Collection dependencies (install via requirements.yml):
+# - community.docker >= 3.4.0

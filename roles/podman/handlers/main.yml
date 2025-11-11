@@ -1,0 +1,3 @@
+---
+# Handlers are not typically needed for Podman as it's daemonless
+# This file is kept for consistency with Ansible role structure

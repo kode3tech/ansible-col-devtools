@@ -1,0 +1,41 @@
+---
+# Debian/Ubuntu specific setup tasks
+
+- name: Install prerequisites
+  ansible.builtin.apt:
+    name: "{{ docker_prerequisites_debian }}"
+    state: present
+    update_cache: true
+  tags: docker
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  when: docker_configure_repo
+  tags: docker
+
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: "{{ docker_apt_gpg_key }}"
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    force: false
+  when: docker_configure_repo
+  tags: docker
+
+- name: Add Docker repository
+  ansible.builtin.apt_repository:
+    repo: "{{ docker_apt_repository }}"
+    state: present
+    filename: docker
+  when: docker_configure_repo
+  tags: docker
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: docker_configure_repo
+  changed_when: false
+  tags: docker

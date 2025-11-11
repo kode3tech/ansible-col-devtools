@@ -1,0 +1,38 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    docker_users:
+      - ansible
+    
+    # Test insecure registries configuration
+    docker_insecure_registries:
+      - "localhost:5000"
+      - "registry.test.local:5000"
+      - "192.168.100.100:5000"
+    
+    # Docker-in-Docker configuration (Molecule testing)
+    # Override default storage-driver to let Docker auto-detect (usually vfs in DinD)
+    docker_daemon_config:
+      log-driver: "json-file"
+      log-opts:
+        max-size: "10m"
+        max-file: "3"
+      # Note: storage-driver removed for DinD compatibility
+      # Docker will auto-select appropriate driver (usually vfs)
+
+  tasks:
+    # Create ansible user for testing (doesn't exist in Molecule containers)
+    - name: Ensure ansible user exists for testing
+      ansible.builtin.user:
+        name: ansible
+        state: present
+        create_home: true
+      tags: molecule-idempotence-notest
+    
+    - name: Include docker role
+      ansible.builtin.include_role:
+        name: docker

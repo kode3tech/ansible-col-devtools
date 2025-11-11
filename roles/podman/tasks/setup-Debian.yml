@@ -1,0 +1,57 @@
+---
+# Debian/Ubuntu specific setup tasks
+
+- name: Set fact for newer distributions with Podman in default repos
+  ansible.builtin.set_fact:
+    podman_use_default_repo: >-
+      {{
+        (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('24.04', '>='))
+        or (ansible_distribution == 'Debian' and ansible_distribution_major_version | int >= 13)
+      }}
+  tags: podman
+
+- name: Display message when using default repositories
+  ansible.builtin.debug:
+    msg: "Podman is available in {{ ansible_distribution }} {{ ansible_distribution_version }} default repositories - skipping external repo setup"
+  when: podman_use_default_repo
+  tags: podman
+
+- name: Install prerequisites for external repository
+  ansible.builtin.apt:
+    name: "{{ podman_prerequisites_debian }}"
+    state: present
+    update_cache: true
+  when: not podman_use_default_repo and podman_configure_repo
+  tags: podman
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  when: not podman_use_default_repo and podman_configure_repo
+  tags: podman
+
+- name: Download Podman GPG key
+  ansible.builtin.get_url:
+    url: "{{ podman_apt_gpg_key }}"
+    dest: /etc/apt/keyrings/podman.asc
+    mode: '0644'
+    force: false
+  when: not podman_use_default_repo and podman_configure_repo
+  tags: podman
+
+- name: Add Podman repository
+  ansible.builtin.apt_repository:
+    repo: "{{ podman_apt_repository }}"
+    state: present
+    filename: podman
+  when: not podman_use_default_repo and podman_configure_repo
+  tags: podman
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: not podman_use_default_repo and podman_configure_repo
+  changed_when: false
+  tags: podman
