@@ -1,0 +1,19 @@
+---
+# Handle curl-minimal vs curl conflict on RedHat-based systems
+
+- name: Clean DNF cache to avoid corrupted package issues
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: false
+  tags:
+    - asdf
+    - installation
+
+- name: Replace curl-minimal with curl (full version)
+  ansible.builtin.dnf:
+    name: curl
+    state: present
+    allowerasing: true
+  tags:
+    - asdf
+    - installation

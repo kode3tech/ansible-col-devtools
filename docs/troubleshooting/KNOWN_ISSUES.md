@@ -56,7 +56,7 @@ This issue is specific to Ubuntu 24.04 and does not affect:
 
 ### Problem
 
-Quando executando `molecule test` com Ansible 2.19.3+, você pode encontrar o seguinte erro:
+When running `molecule test` with Ansible 2.19.3+, you may encounter the following error:
 
 ```
 RuntimeError: Unable to list collections: CompletedProcess(args=['ansible-galaxy', 'collection', 'list', '--format=json'], returncode=2...)
@@ -65,11 +65,11 @@ ansible-galaxy: error: unrecognized arguments: --format=json
 
 ### Root Cause
 
-O Ansible 2.19.3 removeu o suporte ao flag `--format=json` do comando `ansible-galaxy collection list`, mas o `ansible-compat` ainda tenta usá-lo.
+Ansible 2.19.3 removed support for the `--format=json` flag from the `ansible-galaxy collection list` command, but `ansible-compat` still tries to use it.
 
 ### Workarounds
 
-#### Opção 1: Downgrade Ansible (Temporário)
+#### Option 1: Downgrade Ansible (Temporary)
 
 ```bash
 pip install 'ansible-core<2.19'
@@ -77,58 +77,58 @@ pip install 'ansible<12'
 molecule test
 ```
 
-#### Opção 2: Teste Manual com Containers Docker
+#### Option 2: Manual Testing with Docker Containers
 
 ```bash
-# 1. Criar containers manualmente
+# 1. Create containers manually
 docker run -d --name ubuntu-test --privileged \
   -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
   --cgroupns=host \
   geerlingguy/docker-ubuntu2204-ansible:latest
 
-# 2. Executar playbook no container
+# 2. Run playbook in container
 ansible-playbook -i ubuntu-test, \
   -e ansible_connection=docker \
   -e ansible_user=root \
   docker/molecule/default/converge.yml
 
-# 3. Executar verificações
+# 3. Run verifications
 ansible-playbook -i ubuntu-test, \
   -e ansible_connection=docker \
   -e ansible_user=root \
   docker/molecule/default/verify.yml
 
-# 4. Limpar
+# 4. Cleanup
 docker rm -f ubuntu-test
 ```
 
-#### Opção 3: Testes com ansible-playbook direto
+#### Option 3: Direct Testing with ansible-playbook
 
 ```bash
-# Validar sintaxe
+# Validate syntax
 ansible-playbook --syntax-check docker/molecule/default/converge.yml
 ansible-playbook --syntax-check docker/molecule/default/verify.yml
 
-# Executar ansible-lint
+# Run ansible-lint
 ansible-lint docker/
 
-# Executar yamllint
+# Run yamllint
 yamllint docker/
 ```
 
-#### Opção 4: Aguardar correção
+#### Option 4: Wait for Fix
 
-Este é um problema conhecido e deve ser corrigido em versões futuras do `ansible-compat` ou `molecule`.
+This is a known issue and should be fixed in future versions of `ansible-compat` or `molecule`.
 
 Track issues:
 - https://github.com/ansible/ansible-compat/issues
 - https://github.com/ansible/molecule/issues
 
-### Testes Validados
+### Validated Tests
 
-Mesmo sem executar Molecule completo, os seguintes testes foram realizados com sucesso:
+Even without running complete Molecule tests, the following tests were successfully performed:
 
-✅ **Sintaxe dos Playbooks**
+✅ **Playbook Syntax**
 ```bash
 ansible-playbook --syntax-check molecule/default/converge.yml
 ansible-playbook --syntax-check molecule/default/verify.yml

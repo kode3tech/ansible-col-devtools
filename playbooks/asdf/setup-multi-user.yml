@@ -1,0 +1,109 @@
+---
+# Multi-user asdf configuration
+# This playbook demonstrates configuring asdf for multiple users with different requirements
+
+- name: Configure asdf for multiple users
+  hosts: all
+  become: true
+
+  vars:
+    # asdf configuration
+    asdf_version: "latest"
+    asdf_install_dir: "/opt/asdf"
+    asdf_install_dependencies: true
+    asdf_configure_shell: true
+
+    # Multi-user configuration
+    asdf_users:
+      # Backend developer configuration
+      - name: "backend-dev"
+        home: "/home/backend-dev"
+        shell: "bash"
+        plugins:
+          - name: "nodejs"
+            versions:
+              - "20.10.0"
+            global: "20.10.0"
+          - name: "python"
+            versions:
+              - "3.11.6"
+            global: "3.11.6"
+          - name: "golang"
+            versions:
+              - "1.21.4"
+            global: "1.21.4"
+
+      # Frontend developer configuration
+      - name: "frontend-dev"
+        home: "/home/frontend-dev"
+        shell: "zsh"
+        plugins:
+          - name: "nodejs"
+            versions:
+              - "20.10.0"
+              - "18.18.0"
+            global: "20.10.0"
+
+      # DevOps engineer configuration
+      - name: "devops"
+        home: "/home/devops"
+        shell: "bash"
+        plugins:
+          - name: "terraform"
+            versions:
+              - "1.6.4"
+            global: "1.6.4"
+          - name: "kubectl"
+            versions:
+              - "1.28.4"
+            global: "1.28.4"
+          - name: "python"
+            versions:
+              - "3.11.6"
+            global: "3.11.6"
+
+  pre_tasks:
+    - name: Ensure all users exist
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        state: present
+        create_home: true
+        shell: "{{ '/bin/zsh' if item.shell == 'zsh' else '/bin/bash' }}"
+      loop: "{{ asdf_users }}"
+      tags:
+        - users
+
+  tasks:
+    - name: Include asdf role from kode3tech.devtools collection
+      ansible.builtin.include_role:
+        name: kode3tech.devtools.asdf
+      tags:
+        - asdf
+        - installation
+
+  post_tasks:
+    - name: Display multi-user configuration summary
+      ansible.builtin.debug:
+        msg:
+          - "asdf has been configured for multiple users!"
+          - ""
+          - "Backend Developer (backend-dev):"
+          - "  - Node.js 20.10.0"
+          - "  - Python 3.11.6"
+          - "  - Golang 1.21.4"
+          - ""
+          - "Frontend Developer (frontend-dev):"
+          - "  - Node.js 20.10.0, 18.18.0"
+          - "  - Shell: zsh"
+          - ""
+          - "DevOps Engineer (devops):"
+          - "  - Terraform 1.6.4"
+          - "  - kubectl 1.28.4"
+          - "  - Python 3.11.6"
+          - ""
+          - "Each user should:"
+          - "1. Login to their account"
+          - "2. Source their profile"
+          - "3. Verify tools: asdf current"
+      tags:
+        - info

@@ -1,0 +1,26 @@
+---
+# RedHat/CentOS/Rocky specific variables for asdf role
+
+# System dependencies for RedHat-based systems
+# Note: curl is installed separately via setup-curl-RedHat.yml to handle curl-minimal conflict
+asdf_system_packages:
+  - git
+  - gcc
+  - gcc-c++
+  - make
+  - openssl-devel
+  - zlib-devel
+  - bzip2-devel
+  - readline-devel
+  - sqlite-devel
+  - wget
+  - llvm
+  - ncurses-devel
+  - xz-devel
+  - tk-devel
+  - libffi-devel
+  - xz
+  - tar  # Required for extracting asdf binary archives
+
+# Package manager
+asdf_package_manager: "dnf"

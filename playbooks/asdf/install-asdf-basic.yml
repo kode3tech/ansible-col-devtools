@@ -1,0 +1,82 @@
+---
+# Basic asdf installation with lightweight plugins for quick testing
+# Plugins: direnv, jq (fast installation, no compilation)
+# Use this for quick tests and CI/CD pipelines
+
+- name: Install asdf with lightweight plugins
+  hosts: all
+  become: true
+  
+  vars:
+    asdf_version: "latest"
+    asdf_install_dir: "/opt/asdf"
+    asdf_install_dependencies: true
+    asdf_configure_shell: true
+    
+    # Lightweight plugins for testing (installation time: ~10-15 seconds total)
+    asdf_users:
+      - name: "{{ ansible_user }}"
+        shell: "bash"
+        plugins:
+          # direnv - Shell extension for environment variables
+          # Installation: ~5-10 seconds (shell script only, no compilation)
+          - name: "direnv"
+            versions:
+              - "2.32.3"
+            global: "2.32.3"
+          
+          # jq - JSON processor
+          # Installation: ~3-5 seconds (pre-compiled binary download)
+          - name: "jq"
+            versions:
+              - "1.7.1"
+            global: "1.7.1"
+  
+  roles:
+    - role: asdf
+      tags: asdf
+
+  post_tasks:
+    - name: Verify asdf installation
+      ansible.builtin.command: "{{ asdf_install_dir }}/bin/asdf --version"
+      register: asdf_version_check
+      changed_when: false
+      tags: verify
+
+    - name: List installed plugins
+      ansible.builtin.command: asdf plugin list
+      register: asdf_plugins
+      become_user: "{{ ansible_user }}"
+      changed_when: false
+      tags: verify
+
+    - name: Test direnv functionality
+      ansible.builtin.command: direnv version
+      register: direnv_test
+      become_user: "{{ ansible_user }}"
+      environment:
+        PATH: "{{ ansible_env.HOME }}/.asdf/shims:{{ ansible_env.PATH }}"
+      changed_when: false
+      tags: verify
+
+    - name: Test jq functionality
+      ansible.builtin.shell: echo '{"status":"ok"}' | jq .status
+      register: jq_test
+      become_user: "{{ ansible_user }}"
+      environment:
+        PATH: "{{ ansible_env.HOME }}/.asdf/shims:{{ ansible_env.PATH }}"
+      changed_when: false
+      tags: verify
+
+    - name: Display installation summary
+      ansible.builtin.debug:
+        msg:
+          - "========================================="
+          - "  asdf Installation Summary"
+          - "========================================="
+          - "✅ asdf version: {{ asdf_version_check.stdout }}"
+          - "✅ Installed plugins: {{ asdf_plugins.stdout_lines | join(', ') }}"
+          - "✅ direnv: {{ 'Working' if direnv_test.rc == 0 else 'Failed' }}"
+          - "✅ jq: {{ 'Working (' + jq_test.stdout + ')' if jq_test.rc == 0 else 'Failed' }}"
+          - "========================================="
+      tags: verify

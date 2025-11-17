@@ -1,0 +1,8 @@
+---
+# Handlers for asdf role
+# Note: asdf doesn't have a service, but handlers kept for consistency
+
+- name: Reload asdf configuration
+  ansible.builtin.debug:
+    msg: "asdf configuration reloaded - users should restart their shells"
+  changed_when: true

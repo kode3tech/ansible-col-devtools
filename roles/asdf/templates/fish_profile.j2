@@ -1,0 +1,18 @@
+# asdf version manager configuration (ANSIBLE MANAGED)
+# Binary installation - add shims to PATH
+{% if asdf_data_dir is defined and asdf_data_dir != '' %}
+set -gx ASDF_DATA_DIR "{{ asdf_data_dir }}"
+{% endif %}
+
+if test -z $ASDF_DATA_DIR
+    set _asdf_shims "{{ asdf_install_dir }}/shims"
+else
+    set _asdf_shims "$ASDF_DATA_DIR/shims"
+end
+
+# Do not use fish_add_path (added in Fish 3.2) because it
+# potentially changes the order of items in PATH
+if not contains $_asdf_shims $PATH
+    set -gx --prepend PATH $_asdf_shims
+end
+set --erase _asdf_shims

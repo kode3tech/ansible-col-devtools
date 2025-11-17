@@ -1,0 +1,38 @@
+---
+# Role metadata for asdf
+
+galaxy_info:
+  role_name: asdf
+  namespace: kode3tech
+  author: Kode3Tech DevOps Team
+  description: Ansible role for installing and configuring asdf version manager
+  company: Kode3Tech
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy    # 22.04
+        - noble    # 24.04
+        - plucky   # 25.04
+    - name: Debian
+      versions:
+        - bullseye # 11
+        - bookworm # 12
+        - trixie   # 13
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+
+  galaxy_tags:
+    - devops
+    - tools
+    - asdf
+    - versionmanager
+    - development
+    - programming
+    - languages
+
+dependencies: []

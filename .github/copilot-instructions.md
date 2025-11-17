@@ -1,5 +1,9 @@
 # GitHub Copilot Instructions - kode3tech.devtools Ansible Collection
 
+> **📐 Documentation Quality Standards**: This project follows strict documentation standards (see section "📐 Documentation Quality Standards" below).
+> When user requests to **"update documentation"**, **"improve docs"**, **"document feature"**, or similar commands, 
+> **ALL 14 standards MUST be applied systematically**. This ensures consistency, quality, and maintainability.
+
 ## 📋 Project Overview
 
 This is an **Ansible Collection** project following official Ansible best practices and Galaxy standards.
@@ -451,6 +455,58 @@ Kode3Tech DevOps Team <devops@kode3.com.br>
 
 ## 🚀 Development Workflow
 
+### 🎯 Documentation and Changelog Update Rules
+
+**CRITICAL**: To optimize the development process, follow these rules strictly:
+
+#### Rule 1: Documentation Updates ONLY When Requested
+- ❌ **DO NOT** update documentation during feature implementation
+- ❌ **DO NOT** update CHANGELOG.md during feature implementation
+- ❌ **DO NOT** update README.md during feature implementation
+- ❌ **DO NOT** update META.md during feature implementation
+- ✅ **ONLY** update documentation when **explicitly requested** by the user
+- ✅ **ONLY** update documentation when user says "update docs" or similar
+
+#### Rule 2: Final Documentation Update on Feature Completion
+- ✅ When user explicitly says **"feature finished"**, **"finalize feature"**, **"complete implementation"**, or similar:
+  - Update all relevant documentation (README.md, role README.md, etc.)
+  - Update CHANGELOG.md with feature description
+  - Update META.md if needed
+  - Update playbooks/README.md if new examples were added
+  - Update collection-level docs if applicable
+  - Verify all bidirectional links are correct
+
+#### Workflow Summary
+
+```
+┌─ Feature Development Lifecycle
+│
+├─ 1. IMPLEMENTATION PHASE
+│  ├─ Write code
+│  ├─ Create tests
+│  ├─ Run linters
+│  └─ ❌ NO documentation updates
+│
+├─ 2. TESTING PHASE
+│  ├─ Run molecule tests
+│  ├─ Fix issues
+│  └─ ❌ NO documentation updates
+│
+└─ 3. FINALIZATION PHASE (User says "feature finished")
+   ├─ ✅ Update all documentation
+   ├─ ✅ Update CHANGELOG.md
+   ├─ ✅ Update README files
+   ├─ ✅ Update playbook examples
+   └─ ✅ Verify all links
+```
+
+#### Exceptions
+
+Documentation updates ARE allowed during implementation ONLY when:
+- User **explicitly** asks to "update docs"
+- User **explicitly** asks to "document this feature"
+- User says "finalize", "complete", "finish feature", or similar completion commands
+
 ### Creating a New Role
 ```bash
 # 1. Navigate to roles directory
@@ -474,6 +530,9 @@ molecule test
 cd ../..
 ansible-lint roles/<role_name>/
 yamllint roles/<role_name>/
+
+# 8. Documentation (ONLY when user says "feature finished")
+# Update README.md, CHANGELOG.md, META.md, etc.
 ```
 
 ### Makefile Commands
@@ -975,6 +1034,552 @@ See [Docker Role](../roles/docker/README.md) for Docker-specific configuration.
 
 ---
 
+## 📐 Documentation Quality Standards
+
+**CRITICAL**: When user requests to "update documentation", "improve docs", "document feature", or similar commands, **ALL** of the following standards MUST be applied systematically.
+
+### Quick Reference: The 14 Documentation Standards
+
+| # | Standard | When to Apply | Impact |
+|---|----------|---------------|--------|
+| 1️⃣ | **Language Consistency** | All docs must be English | CRITICAL |
+| 2️⃣ | **Bidirectional Navigation** | All docs need `[← Back]` links | CRITICAL |
+| 3️⃣ | **Table of Contents (TOC)** | Docs > 100 lines | HIGH |
+| 4️⃣ | **DRY Principle** | Content duplicated 2+ places | HIGH |
+| 5️⃣ | **Link Validation** | All links must work | CRITICAL |
+| 6️⃣ | **Centralized References** | FAQ, Variables reference | MEDIUM |
+| 7️⃣ | **Semantic Emoji Usage** | Consistent emoji meanings | LOW |
+| 8️⃣ | **Directory Index Files** | Every dir needs README.md | HIGH |
+| 9️⃣ | **Code Examples Progression** | Simple → Complex | MEDIUM |
+| 🔟 | **Variable Documentation** | Consistent format everywhere | HIGH |
+| 1️⃣1️⃣ | **Security Warnings** | Prominent warnings for risks | CRITICAL |
+| 1️⃣2️⃣ | **Checklist Format** | Use `- [ ]` checkboxes | LOW |
+| 1️⃣3️⃣ | **Update Metadata** | CHANGELOG, indexes, etc. | HIGH |
+| 1️⃣4️⃣ | **Documentation Workflow** | Systematic 5-step process | CRITICAL |
+
+---
+
+### 🌍 Standard 1: Language Consistency
+
+**Rule**: ALL documentation MUST be written in **English** (US/International).
+
+- ✅ **ALWAYS** write new documentation in English
+- ✅ **ALWAYS** translate existing Portuguese (PT-BR) content to English
+- ❌ **NEVER** mix Portuguese and English in the same document
+- ❌ **NEVER** leave Portuguese comments, headers, or examples
+
+**Applies to**:
+- All `.md` files in `docs/`, `roles/`, `playbooks/`
+- All code comments in YAML files
+- All commit messages
+- All examples and snippets
+
+**Exception**: User-facing messages that need localization (NOT applicable to this project currently).
+
+### 🔗 Standard 2: Bidirectional Navigation
+
+**Rule**: Every document MUST have a navigation link back to its parent/index.
+
+**Format**:
+```markdown
+[← Back to {Parent Section}](README.md)
+```
+
+**Placement**: At the **bottom** of the document, after all content, before any horizontal rules.
+
+**Examples**:
+```markdown
+# In docs/user-guides/REGISTRY_AUTHENTICATION.md
+[← Back to User Guides](README.md)
+
+# In roles/docker/README.md  
+[← Back to Roles](../README.md)
+
+# In docs/getting-started/QUICKSTART.md
+[← Back to Getting Started](README.md)
+```
+
+**Applies to**:
+- All documents in `docs/` subdirectories
+- All role README.md files
+- All playbook README.md files
+- Any document more than 2 levels deep
+
+**Exception**: Root-level files (main README.md, CONTRIBUTING.md) don't need back navigation.
+
+### 📑 Standard 3: Table of Contents (TOC)
+
+**Rule**: Documents with **100+ lines** MUST have a Table of Contents.
+
+**Placement**: After the main title, before the first section.
+
+**Format**:
+```markdown
+# Document Title
+
+Brief description (1-2 sentences).
+
+## 📋 Table of Contents
+
+- [Section 1](#section-1)
+- [Section 2](#section-2)
+  - [Subsection 2.1](#subsection-21)
+- [Section 3](#section-3)
+```
+
+**Requirements**:
+- Use `##` for "Table of Contents" heading
+- Include emoji 📋 before "Table of Contents"
+- Link to ALL main sections (`##` level)
+- Include subsections (`###`) if document has 5+ subsections
+- Use lowercase, hyphenated anchor links
+
+**Applies to**:
+- All role README.md files (typically 200-400 lines)
+- Long user guides (> 100 lines)
+- CONTRIBUTING.md, CHANGELOG.md if long
+- Any technical documentation > 100 lines
+
+**Exception**: Short docs under 100 lines don't need TOC.
+
+### 🔄 Standard 4: DRY Principle (Don't Repeat Yourself)
+
+**Rule**: Detailed content should exist in **ONE place only**. Other locations should have **summaries + links**.
+
+**Pattern**:
+```markdown
+# In role README.md (SUMMARY)
+### Registry Authentication
+
+Quick example:
+```yaml
+docker_registries_auth:
+  - registry_url: "ghcr.io"
+    username: "myuser"
+    password: "{{ vault_token }}"
+```
+
+📖 **Complete guide**: [Registry Authentication](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
+
+# In docs/user-guides/REGISTRY_AUTHENTICATION.md (COMPLETE)
+[Full detailed content with all examples, explanations, security notes]
+```
+
+**Reduction Target**: When applying DRY, aim to reduce duplicated sections by **50-70%** (keep 30-50% as summary).
+
+**Summary Components**:
+1. **Brief description** (1-2 sentences)
+2. **Quick example** (simplest use case)
+3. **Link to complete guide** (with emoji 📖)
+
+**Applies to**:
+- Registry authentication (Docker + Podman roles)
+- LXC container configuration (Docker + Podman roles)
+- Testing procedures (if repeated across roles)
+- Security considerations (if repeated)
+- Troubleshooting steps (if repeated)
+
+**When to apply**:
+- Content appears in **2+ places**
+- Section exceeds **30 lines** in role README
+- Same examples repeated verbatim
+- Same security warnings repeated
+
+**Decision**: 
+- If content applies to **2+ roles** → Full version in `docs/`, summaries in role READMEs
+- If content is **role-specific** → Full version in `roles/{role}/docs/`, summary in role README
+
+### 🔍 Standard 5: Link Validation
+
+**Rule**: ALL links MUST be valid and use correct relative paths.
+
+**Validation checklist**:
+- [ ] All `[text](path)` links point to existing files
+- [ ] All anchor links `#section` match actual heading IDs
+- [ ] All relative paths are correct from document location
+- [ ] No broken links after file moves/renames
+- [ ] Cross-references between docs/ and roles/ use correct `../../` navigation
+
+**Common patterns**:
+```markdown
+# From docs/user-guides/ to docs/troubleshooting/
+../troubleshooting/KNOWN_ISSUES.md
+
+# From roles/docker/ to docs/user-guides/
+../../docs/user-guides/REGISTRY_AUTHENTICATION.md
+
+# From docs/getting-started/ to roles/docker/
+../../roles/docker/README.md
+
+# From playbooks/docker/ to roles/docker/
+../../roles/docker/README.md
+```
+
+**Testing**: When updating links, verify by:
+1. Checking file exists at specified path
+2. Testing anchor links match heading structure
+3. Verifying relative path depth matches directory nesting
+
+### 📚 Standard 6: Centralized References
+
+**Rule**: Common questions and reference material should be centralized, not scattered.
+
+**Centralized documents**:
+- **`docs/FAQ.md`** - All frequently asked questions
+- **`docs/reference/VARIABLES.md`** - All role variables reference
+- **`docs/reference/README.md`** - Index of all reference material
+
+**When to add to FAQ**:
+- Question appears in 2+ role READMEs
+- Common user question from issues/discussions
+- Conceptual questions (not role-specific)
+- Troubleshooting that applies broadly
+
+**When to add to VARIABLES.md**:
+- New role variables added
+- Variable behavior changes
+- Security-sensitive variables
+- Performance-tuning variables
+
+**Update requirement**: When adding content to FAQ or VARIABLES, MUST also update:
+1. Parent `docs/README.md` - link in appropriate category
+2. Parent `docs/reference/README.md` - link with description
+3. Related role READMEs - link to centralized content instead of duplicating
+
+### 🏷️ Standard 7: Semantic Emoji Usage
+
+**Rule**: Use emojis consistently for visual navigation and meaning.
+
+**Standard emoji meanings**:
+```markdown
+📋 - Table of Contents
+📝 - Documentation / Writing
+📚 - Documentation section / Library
+🔗 - Links / References
+🔙 - Back navigation
+📖 - Complete guide / Full documentation
+⚠️ - Warning / Important note
+✅ - Correct / Recommended
+❌ - Wrong / Not recommended
+🎯 - Goal / Objective
+🚀 - Getting started / Quick start
+🔧 - Configuration / Tools
+🧪 - Testing
+🔍 - Search / Investigation
+💡 - Tip / Insight
+🔐 - Security
+🌍 - Language / International
+🔄 - Process / Workflow
+📦 - Package / Component
+🏗️ - Architecture / Structure
+📞 - Support / Contact
+🌟 - Best practices / Important
+```
+
+**Usage**:
+- Use **ONE** emoji per heading (not multiple)
+- Place emoji **before** heading text with space: `## 📋 Table of Contents`
+- Use same emoji for same concept across all docs
+- Don't overuse - only for main sections, not every paragraph
+
+### 📝 Standard 8: Directory Index Files
+
+**Rule**: Every directory with multiple documents MUST have a `README.md` index.
+
+**Required content**:
+1. **Purpose** - What this directory contains (1-2 sentences)
+2. **Document list** - Table with Name, Description
+3. **Links** - Relative links to each document
+4. **Back navigation** - Link to parent index
+
+**Template**:
+```markdown
+# {Category Name}
+
+Brief description of what this category contains.
+
+## Documents
+
+| Document | Description |
+|----------|-------------|
+| [Document Name](DOCUMENT.md) | Brief description of content |
+| [Another Document](ANOTHER.md) | Brief description of content |
+
+## Quick Links
+
+- [Main Documentation](../README.md)
+- [Related Category](../category/README.md)
+
+[← Back to Documentation](../README.md)
+```
+
+**Applies to**:
+- `docs/getting-started/README.md`
+- `docs/user-guides/README.md`
+- `docs/troubleshooting/README.md`
+- `docs/development/README.md`
+- `docs/maintenance/README.md`
+- `docs/reference/README.md`
+- `playbooks/{role}/README.md`
+- `roles/{role}/docs/README.md` (if docs/ exists)
+
+### 🔢 Standard 9: Code Examples Progression
+
+**Rule**: Examples should progress from **simple → complex**.
+
+**Pattern**:
+```markdown
+## Example Playbook
+
+### Basic Installation
+[Simplest possible example - no variables]
+
+### With Custom Configuration
+[Add 1-2 common variables]
+
+### Advanced Setup
+[Complex scenario with multiple features]
+
+### Production Example
+[Real-world scenario with all best practices]
+```
+
+**Requirements**:
+- Start with **minimal working example** (< 10 lines)
+- Each example adds **ONE new concept**
+- Label complexity: "Basic", "Intermediate", "Advanced", "Production"
+- Include comments explaining **why**, not just **what**
+- Always show **working code**, not pseudo-code
+
+### 📊 Standard 10: Variable Documentation Format
+
+**Rule**: Variables MUST be documented with consistent format.
+
+**In `defaults/main.yml`** (inline comments):
+```yaml
+# Docker edition: "ce" (Community Edition) or "ee" (Enterprise Edition)
+docker_edition: "ce"
+
+# List of Docker packages to install
+docker_packages:
+  - "docker-{{ docker_edition }}"
+  - "docker-{{ docker_edition }}-cli"
+  - containerd.io
+
+# Users to add to docker group (password-less docker access)
+# WARNING: Users in docker group have root-equivalent privileges!
+docker_users: []
+```
+
+**In role README.md** (variables section):
+```markdown
+## Role Variables
+
+| Variable | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `docker_edition` | string | No | `"ce"` | Docker edition: "ce" or "ee" |
+| `docker_packages` | list | No | `[...]` | Packages to install |
+| `docker_users` | list | No | `[]` | Users for docker group |
+```
+
+**In `docs/reference/VARIABLES.md`** (complete reference):
+```markdown
+### `docker_edition`
+
+- **Type**: String
+- **Required**: No
+- **Default**: `"ce"`
+- **Valid values**: `"ce"`, `"ee"`
+- **Description**: Docker edition to install
+- **Example**:
+  ```yaml
+  docker_edition: "ce"
+  ```
+- **Notes**: Community Edition (ce) is free, Enterprise (ee) requires license
+```
+
+### ⚙️ Standard 11: Security Warnings Format
+
+**Rule**: Security-sensitive content MUST have prominent warnings.
+
+**Format**:
+```markdown
+**⚠️ Security Warning**: Brief warning in bold
+
+Detailed explanation of the security implications...
+
+**Recommended**: Secure alternative or best practice
+```
+
+**Example**:
+```markdown
+**⚠️ Security Warning**: Users in the `docker` group have root-equivalent privileges!
+
+Adding users to the docker group allows them to run containers with root privileges,
+potentially compromising system security. Only add trusted users.
+
+**Recommended**: Use rootless Podman for unprivileged container management, or implement
+additional access controls with sudo policies.
+```
+
+**Applies to**:
+- User privileges (docker group, sudo)
+- Credential management (passwords, tokens)
+- Insecure registries (HTTP, self-signed certs)
+- Network exposure (ports, firewalls)
+- File permissions (sensitive configs)
+
+### 📋 Standard 12: Checklist Format
+
+**Rule**: Action items MUST use GitHub-flavored Markdown checkboxes.
+
+**Format**:
+```markdown
+- [ ] **Phase 1**: Description of task
+  - [ ] Subtask 1
+  - [ ] Subtask 2
+- [ ] **Phase 2**: Description of task
+```
+
+**Requirements**:
+- Use `- [ ]` for unchecked items
+- Use `- [x]` for completed items (in progress tracking)
+- Bold phase/section names: `**Phase 1**:`
+- Indent subtasks with 2 spaces
+- Number phases if sequential: `**Phase 1**`, `**Phase 2**`
+
+**Applies to**:
+- Complete Role Creation Checklist
+- Feature implementation checklists
+- Documentation update checklists
+- Migration guides step-by-step
+
+### 🎯 Standard 13: Update Metadata
+
+**Rule**: When documentation is updated, related metadata MUST be updated.
+
+**Files to check**:
+```markdown
+1. `CHANGELOG.md` - Add entry in [Unreleased] section
+2. `META.md` - Update if capabilities/features changed
+3. Parent `README.md` files - Update indexes/links
+4. `docs/README.md` - Update if new category/major doc added
+5. `playbooks/README.md` - Update if new examples added
+```
+
+**CHANGELOG.md format**:
+```markdown
+## [Unreleased]
+
+### Documentation
+- Enhanced Docker role README with TOC and improved examples
+- Added centralized FAQ (39 questions)
+- Created complete variables reference
+- Translated all PT-BR content to English
+```
+
+**When NOT to update CHANGELOG**:
+- Minor typo fixes
+- Link corrections
+- Formatting improvements (unless major)
+- Internal analysis documents (`.tmp/analysis/`)
+
+### 🔄 Standard 14: Documentation Update Workflow
+
+**Rule**: Follow systematic workflow when user requests documentation updates.
+
+**Workflow**:
+```
+1. ANALYZE SCOPE
+   ├─ What needs updating? (specific files or entire project)
+   ├─ What type of update? (new content, translation, restructure, fixes)
+   └─ Priority level? (critical, medium, low)
+
+2. IDENTIFY PATTERNS
+   ├─ Check for language inconsistencies (PT-BR → EN)
+   ├─ Check for missing TOCs (> 100 lines)
+   ├─ Check for missing back navigation
+   ├─ Check for broken links
+   ├─ Check for duplicated content (DRY violations)
+   └─ Check for missing centralized references
+
+3. APPLY STANDARDS (in order)
+   ├─ Standard 1: Language consistency (if needed)
+   ├─ Standard 2: Bidirectional navigation (if missing)
+   ├─ Standard 3: TOC (if document > 100 lines)
+   ├─ Standard 4: DRY principle (if duplication found)
+   ├─ Standard 5: Link validation (fix broken links)
+   ├─ Standards 6-13: Apply as applicable
+   └─ Standard 13: Update metadata (CHANGELOG, indexes)
+
+4. VERIFY QUALITY
+   ├─ All links work
+   ├─ All TOCs complete
+   ├─ All back navigation present
+   ├─ Language consistent
+   ├─ No duplication
+   └─ Metadata updated
+
+5. REPORT COMPLETION
+   └─ Summarize changes made (brief, factual)
+```
+
+**Batch operations**: When multiple files need same fix (e.g., translation), use `multi_replace_string_in_file` for efficiency.
+
+**Priority handling**:
+- **CRITICAL**: Language, broken links, missing navigation
+- **MEDIUM**: TOC, DRY, centralization
+- **LOW**: Formatting, emoji consistency, examples
+
+### 📝 Example: Applying Documentation Standards
+
+**User Request**: "Update the Docker role documentation"
+
+**Expected Agent Actions**:
+
+1. **Read current state** of `roles/docker/README.md`
+2. **Check all 14 standards**:
+   - ✅ Standard 1: Is it in English? (check for PT-BR)
+   - ✅ Standard 2: Does it have back navigation link?
+   - ✅ Standard 3: If > 100 lines, does it have TOC?
+   - ✅ Standard 4: Any duplicated content? (check against docs/)
+   - ✅ Standard 5: Are all links valid?
+   - ✅ Standard 6: Should content be in FAQ/VARIABLES?
+   - ✅ Standard 7: Consistent emoji usage?
+   - ✅ Standard 8: Does playbooks/docker/ have README index?
+   - ✅ Standard 9: Examples progress from simple to complex?
+   - ✅ Standard 10: Variables documented consistently?
+   - ✅ Standard 11: Security warnings properly formatted?
+   - ✅ Standard 12: Checklists use `- [ ]` format?
+   - ✅ Standard 13: Need to update CHANGELOG.md?
+   - ✅ Standard 14: Following the workflow?
+
+3. **Apply fixes** using appropriate tools:
+   - Use `multi_replace_string_in_file` for multiple related changes
+   - Use `replace_string_in_file` for single targeted changes
+   - Use `create_file` for new FAQ entries or reference docs
+
+4. **Verify quality**:
+   - All standards applied
+   - No broken links
+   - Consistent format
+
+5. **Report completion**:
+   - Brief summary of changes
+   - Standards applied
+   - Files modified
+
+**User Request**: "Translate PT-BR content in troubleshooting docs"
+
+**Expected Agent Actions**:
+
+1. **Identify scope**: Find all `.md` files with Portuguese content
+2. **Batch operation**: Use `multi_replace_string_in_file` for efficiency
+3. **Apply all standards**: Not just translation - also check navigation, TOC, links, etc.
+4. **Update metadata**: CHANGELOG.md entry if significant changes
+5. **Report**: List of files translated + other improvements made
+
+---
 
 ## 📞 Support
 

@@ -2,32 +2,32 @@
 
 ## Overview
 
-A role `docker` foi criada usando `ansible-galaxy init` e customizada para instalar e configurar o Docker em servidores Linux.
+The `docker` role was created using `ansible-galaxy init` and customized to install and configure Docker on Linux servers.
 
 ## Structure
 
 ```text
 docker/
-├── README.md                   # Documentação da role
+├── README.md                   # Role documentation
 ├── defaults/
-│   └── main.yml               # Variáveis padrão configuráveis
-├── files/                     # Arquivos estáticos (vazio)
+│   └── main.yml               # Configurable default variables
+├── files/                     # Static files (empty)
 ├── handlers/
-│   └── main.yml               # Handler para restart do Docker
+│   └── main.yml               # Handler for Docker restart
 ├── meta/
-│   └── main.yml               # Metadados da role (autor, licença, plataformas)
+│   └── main.yml               # Role metadata (author, license, platforms)
 ├── tasks/
-│   ├── main.yml               # Tasks principais
-│   ├── setup-Debian.yml       # Tasks específicas para Debian/Ubuntu
-│   └── setup-RedHat.yml       # Tasks específicas para RHEL/CentOS
-├── templates/                 # Templates Jinja2 (vazio)
+│   ├── main.yml               # Main tasks
+│   ├── setup-Debian.yml       # Debian/Ubuntu specific tasks
+│   └── setup-RedHat.yml       # RHEL/CentOS specific tasks
+├── templates/                 # Jinja2 templates (empty)
 ├── tests/
-│   ├── inventory              # Inventário de teste
-│   └── test.yml               # Playbook de teste básico
+│   ├── inventory              # Test inventory
+│   └── test.yml               # Basic test playbook
 └── vars/
-    ├── Debian.yml             # Variáveis específicas Debian/Ubuntu
-    ├── main.yml               # Variáveis gerais
-    └── RedHat.yml             # Variáveis específicas RHEL/CentOS
+    ├── Debian.yml             # Debian/Ubuntu specific variables
+    ├── main.yml               # General variables
+    └── RedHat.yml             # RHEL/CentOS specific variables
 ```
 
 ## Features
@@ -48,6 +48,17 @@ See `docker/defaults/main.yml` for all available variables:
 - `docker_daemon_config`: Docker daemon JSON configuration
 - `docker_service_enabled`: Enable Docker on boot
 - `docker_service_state`: Docker service state (started/stopped)
+
+## Testing
+
+Each role includes Molecule tests for:
+- Ubuntu 22.04
+- Debian 12
+- Rocky Linux 9
+
+---
+
+[← Back to Development Documentation](README.md)
 - `docker_configure_repo`: Whether to configure Docker repository
 
 ### Tasks Overview

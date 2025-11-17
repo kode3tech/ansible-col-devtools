@@ -1,0 +1,25 @@
+---
+# Debian/Ubuntu specific variables for asdf role
+
+# System dependencies for Debian-based systems
+asdf_system_packages:
+  - git
+  - curl
+  - build-essential
+  - libssl-dev
+  - zlib1g-dev
+  - libbz2-dev
+  - libreadline-dev
+  - libsqlite3-dev
+  - wget
+  - llvm
+  - libncurses5-dev
+  - libncursesw5-dev
+  - xz-utils
+  - tk-dev
+  - libffi-dev
+  - liblzma-dev
+  - tar  # Required for extracting asdf binary archives
+
+# Package manager
+asdf_package_manager: "apt"

@@ -15,6 +15,13 @@ Start here if you're new to this collection.
 Learn how to use the collection effectively.
 - [Registry Authentication](user-guides/REGISTRY_AUTHENTICATION.md) - Configure private registry authentication for Docker and Podman
 
+### 📖 [Reference](reference/)
+Technical reference documentation.
+- [Variables Reference](reference/VARIABLES.md) - Complete list of all role variables
+
+### ❓ [FAQ](FAQ.md)
+Frequently asked questions about installation, usage, performance, and troubleshooting.
+
 ### 🔧 [Troubleshooting](troubleshooting/)
 Having issues? Check here first.
 - [LXC Containers](troubleshooting/TROUBLESHOOTING_LXC.md) - Running Docker/Podman in LXC containers
@@ -58,8 +65,10 @@ Each role maintains its own documentation:
 ### For New Users
 1. [Quick Start](getting-started/QUICKSTART.md)
 2. [Setup Summary](getting-started/SETUP_SUMMARY.md)
-3. [Docker Role README](../roles/docker/README.md)
-4. [Podman Role README](../roles/podman/README.md)
+3. [FAQ](FAQ.md)
+4. [Docker Role README](../roles/docker/README.md)
+5. [Podman Role README](../roles/podman/README.md)
+6. [asdf Role README](../roles/asdf/README.md)
 
 ### For Developers
 1. [Contributing Guide](../CONTRIBUTING.md)
@@ -68,9 +77,14 @@ Each role maintains its own documentation:
 4. [Molecule Testing](development/testing/MOLECULE_TESTING.md)
 
 ### For Troubleshooting
-1. [Known Issues](troubleshooting/KNOWN_ISSUES.md)
-2. [LXC Containers](troubleshooting/TROUBLESHOOTING_LXC.md)
-3. [Registry Authentication](user-guides/REGISTRY_AUTHENTICATION.md)
+1. [FAQ](FAQ.md)
+2. [Known Issues](troubleshooting/KNOWN_ISSUES.md)
+3. [LXC Containers](troubleshooting/TROUBLESHOOTING_LXC.md)
+4. [Registry Authentication](user-guides/REGISTRY_AUTHENTICATION.md)
+
+### For Reference
+1. [Variables Reference](reference/VARIABLES.md)
+2. [Version Information](maintenance/VERSIONS.md)
 
 ---
 

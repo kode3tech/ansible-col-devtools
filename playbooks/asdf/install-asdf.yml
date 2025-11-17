@@ -1,0 +1,46 @@
+---
+# Basic asdf installation playbook
+# This playbook installs asdf version manager without any plugins
+
+- name: Install asdf version manager
+  hosts: all
+  become: true
+
+  vars:
+    # asdf version to install
+    asdf_version: "latest"
+
+    # Installation directory
+    asdf_install_dir: "/opt/asdf"
+
+    # Install system dependencies
+    asdf_install_dependencies: true
+
+    # Configure shell profiles (optional)
+    asdf_configure_shell: true
+
+    # Users to configure (empty = no shell configuration)
+    asdf_users: []
+
+  tasks:
+    - name: Include asdf role from kode3tech.devtools collection
+      ansible.builtin.include_role:
+        name: kode3tech.devtools.asdf
+      tags:
+        - asdf
+        - installation
+
+    - name: Display asdf installation information
+      ansible.builtin.debug:
+        msg:
+          - "asdf has been installed successfully!"
+          - "Installation directory: {{ asdf_install_dir }}"
+          - "asdf executable: {{ asdf_install_dir }}/bin/asdf"
+          - ""
+          - "To use asdf, users should:"
+          - "1. Add asdf to their shell profile"
+          - "2. Source their profile: source ~/.bashrc (or ~/.zshrc)"
+          - "3. Verify installation: {{ asdf_install_dir }}/bin/asdf --version"
+      tags:
+        - asdf
+        - info

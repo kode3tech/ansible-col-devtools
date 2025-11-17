@@ -1,0 +1,77 @@
+---
+# Setup asdf with Node.js and Python plugins
+# This playbook configures asdf with common development tools
+
+- name: Setup asdf with Node.js and Python
+  hosts: all
+  become: true
+
+  vars:
+    # asdf configuration
+    asdf_version: "latest"
+    asdf_install_dir: "/opt/asdf"
+    asdf_install_dependencies: true
+    asdf_configure_shell: true
+
+    # Configure asdf for development users
+    asdf_users:
+      - name: "deploy"
+        home: "/home/deploy"
+        shell: "bash"
+        plugins:
+          # Node.js configuration
+          - name: "nodejs"
+            versions:
+              - "20.10.0"   # LTS version
+              - "18.18.0"   # Previous LTS
+            global: "20.10.0"
+
+          # Python configuration
+          - name: "python"
+            versions:
+              - "3.11.6"    # Latest stable
+              - "3.10.13"   # Previous stable
+            global: "3.11.6"
+
+  pre_tasks:
+    - name: Ensure deploy user exists
+      ansible.builtin.user:
+        name: deploy
+        state: present
+        create_home: true
+        shell: /bin/bash
+      tags:
+        - users
+
+  tasks:
+    - name: Include asdf role from kode3tech.devtools collection
+      ansible.builtin.include_role:
+        name: kode3tech.devtools.asdf
+      tags:
+        - asdf
+        - installation
+
+  post_tasks:
+    - name: Display installation summary
+      ansible.builtin.debug:
+        msg:
+          - "asdf with Node.js and Python has been configured!"
+          - ""
+          - "Installed for user: deploy"
+          - ""
+          - "Node.js versions:"
+          - "  - 20.10.0 (global)"
+          - "  - 18.18.0"
+          - ""
+          - "Python versions:"
+          - "  - 3.11.6 (global)"
+          - "  - 3.10.13"
+          - ""
+          - "Next steps for user 'deploy':"
+          - "1. Login as deploy user"
+          - "2. Source profile: source ~/.bashrc"
+          - "3. Verify Node.js: node --version"
+          - "4. Verify Python: python --version"
+          - "5. Switch versions: asdf global nodejs 18.18.0"
+      tags:
+        - info

@@ -1,0 +1,12 @@
+# asdf version manager configuration (ANSIBLE MANAGED)
+# Binary installation - add shims to PATH
+export PATH="${ASDF_DATA_DIR:-{{ asdf_install_dir }}}/shims:$PATH"
+
+# Set up completions for ZSH
+fpath=(${ASDF_DATA_DIR:-{{ asdf_install_dir }}}/completions $fpath)
+autoload -Uz compinit && compinit
+
+{% if asdf_data_dir is defined and asdf_data_dir != '' %}
+# Custom data directory
+export ASDF_DATA_DIR="{{ asdf_data_dir }}"
+{% endif %}

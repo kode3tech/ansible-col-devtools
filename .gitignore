@@ -79,3 +79,5 @@ Desktop.ini
 
 # Lock files (opcional - remova se quiser versionar)
 requirements-lock.txt
+
+**/_temp/**

@@ -1,0 +1,165 @@
+---
+# Main task file for asdf role
+# Orchestrates the installation and configuration of asdf
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  tags:
+    - asdf
+    - configuration
+
+- name: Include OS-specific tasks
+  ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
+  tags:
+    - asdf
+    - installation
+
+- name: Ensure asdf installation directory exists
+  ansible.builtin.file:
+    path: "{{ asdf_install_dir }}"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  tags:
+    - asdf
+    - installation
+
+- name: Install asdf using binary method
+  ansible.builtin.include_tasks: install-binary.yml
+  tags:
+    - asdf
+    - installation
+
+- name: Get user home directories
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ item.name }}"
+  loop: "{{ asdf_users }}"
+  when: asdf_users | length > 0
+  register: asdf_users_getent
+  tags:
+    - asdf
+    - configuration
+
+- name: Build user list with home directories
+  ansible.builtin.set_fact:
+    asdf_users_with_home: >-
+      {{
+        asdf_users | map('combine', {
+          'home': getent_passwd[item.name][4]
+        }) | list
+      }}
+  loop: "{{ asdf_users }}"
+  when: asdf_users | length > 0
+  tags:
+    - asdf
+    - configuration
+
+- name: Configure asdf in user shell profiles
+  ansible.builtin.blockinfile:
+    path: >-
+      {{ item.home }}/{{
+        asdf_shell_profiles[item.shell | default('bash')]
+      }}
+    block: >-
+      {{
+        lookup(
+          'template',
+          item.shell | default('bash') + '_profile.j2'
+        )
+      }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - asdf"
+    create: true
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: '0644'
+  loop: "{{ asdf_users_with_home | default([]) }}"
+  when:
+    - asdf_configure_shell | bool
+    - asdf_users | length > 0
+  tags:
+    - asdf
+    - configuration
+
+- name: Install asdf plugins for users
+  ansible.builtin.command:
+    cmd: "{{ asdf_install_dir }}/bin/asdf plugin add {{ item.1.name }}"
+  become: true
+  become_user: "{{ item.0.name }}"
+  environment:
+    HOME: "{{ item.0.home }}"
+  loop: "{{ asdf_users_with_home | default([]) | subelements('plugins', skip_missing=True) }}"
+  register: asdf_plugin_add
+  changed_when: asdf_plugin_add.rc == 0 and 'already added' not in asdf_plugin_add.stderr
+  failed_when:
+    - asdf_plugin_add.rc != 0
+    - "'already added' not in asdf_plugin_add.stderr"
+    - "'Could not resolve host' not in asdf_plugin_add.stderr"
+    - "'unable to access' not in asdf_plugin_add.stderr"
+  tags:
+    - asdf
+    - plugins
+
+- name: Install asdf plugin versions for users
+  ansible.builtin.shell: |
+    set -o pipefail
+    for version in {{ item.1.versions | join(' ') }}; do
+      {{ asdf_install_dir }}/bin/asdf install {{ item.1.name }} $version || true
+    done
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ item.0.name }}"
+  environment:
+    HOME: "{{ item.0.home }}"
+  loop: "{{ asdf_users_with_home | default([]) | subelements('plugins', skip_missing=True) }}"
+  when:
+    - item.1.versions is defined
+    - item.1.versions | length > 0
+  register: asdf_version_install
+  changed_when: "'Downloading' in asdf_version_install.stdout or 'Installing' in asdf_version_install.stdout"
+  tags:
+    - asdf
+    - plugins
+
+- name: Check current global version for plugins
+  ansible.builtin.shell: |
+    set -o pipefail
+    {{ asdf_install_dir }}/bin/asdf current {{ item.1.name }} 2>/dev/null | tail -1 | awk '{print $1}' || echo "none"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ item.0.name }}"
+  environment:
+    HOME: "{{ item.0.home }}"
+  loop: "{{ asdf_users_with_home | default([]) | subelements('plugins', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.name }} - {{ item.1.name }}"
+  when:
+    - item.1.global is defined
+  register: asdf_current_version
+  changed_when: false
+  tags:
+    - asdf
+    - plugins
+
+- name: Set global asdf plugin versions for users
+  ansible.builtin.command:
+    cmd: "{{ asdf_install_dir }}/bin/asdf set {{ item.item.1.name }} {{ item.item.1.global }}"
+  become: true
+  become_user: "{{ item.item.0.name }}"
+  environment:
+    HOME: "{{ item.item.0.home }}"
+  loop: "{{ asdf_current_version.results }}"
+  loop_control:
+    label: "{{ item.item.0.name }} - {{ item.item.1.name }}"
+  when:
+    - not item.skipped | default(false)
+    - item.stdout != item.item.1.global
+  register: asdf_global_set
+  changed_when: asdf_global_set.rc == 0
+  tags:
+    - asdf
+    - plugins
+    - asdf-set-global

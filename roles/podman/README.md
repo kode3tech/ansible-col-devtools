@@ -2,6 +2,17 @@
 
 Ansible role for installing and configuring Podman on Linux servers.
 
+## 📋 Table of Contents
+
+- [Requirements](#requirements)
+- [Role Variables](#role-variables)
+- [Performance Tuning](#performance-tuning)
+- [Dependencies](#dependencies)
+- [Example Playbook](#example-playbook)
+- [Testing](#testing)
+- [License](#license)
+- [Author Information](#author-information)
+
 ## Requirements
 
 - Ansible >= 2.15
@@ -60,51 +71,34 @@ podman_subgid_count: 65536
 # Insecure registries (HTTP or self-signed certificates)
 # WARNING: Only use for trusted internal registries!
 podman_insecure_registries: []
-# Example:
-#   - "registry.internal.company.com:5000"
-#   - "192.168.1.100:5000"
-#   - "localhost:5000"
 
 # Private registry authentication (optional)
-# WARNING: Use Ansible Vault to encrypt sensitive data!
+# See: https://github.com/kode3tech/ansible-col-devtools/blob/main/docs/user-guides/REGISTRY_AUTHENTICATION.md
 podman_registries_auth: []
-# Example:
-#   - registry_url: "https://registry.example.com"
-#     username: "myuser"
-#     password: "{{ vault_registry_password }}"  # Use Vault!
-#   - registry_url: "quay.io"
-#     username: "myuser"
-#     password_file: "/path/to/password/file"  # Alternative to password
 
 # Clean up existing credentials before re-authentication
-# Set to true to remove old/invalid credentials before logging in
-# Useful when changing passwords or troubleshooting authentication issues
 podman_clean_credentials: false
 ```
 
-### Security Note
+For complete documentation on variables, see [Variables Reference](../../docs/reference/VARIABLES.md).
 
-**⚠️ CRITICAL**: Never commit plain-text passwords to version control!
+### Registry Authentication
 
-For registry authentication, always use **Ansible Vault** to encrypt sensitive data:
+This role supports authentication to private container registries.
 
-```bash
-# Create encrypted password variable
-ansible-vault encrypt_string 'my_secret_password' --name 'vault_registry_password'
-
-# Reference it in your variables:
+**Quick example:**
+```yaml
 podman_registries_auth:
-  - registry_url: "https://registry.example.com"
+  - registry_url: "quay.io"
     username: "myuser"
-    password: "{{ vault_registry_password }}"
+    password: "{{ vault_quay_password }}"
 ```
 
-### Rootless Registry Authentication
+**⚠️ Security:** Always use Ansible Vault for passwords!
 
-When `podman_enable_rootless: true` and `podman_rootless_users` are configured:
-- Registry authentication is performed **per-user** (not system-wide)
-- Each user in `podman_rootless_users` will be logged into all registries in `podman_registries_auth`
-- Authentication files are stored in each user's `$XDG_RUNTIME_DIR` or `~/.local/share/containers/auth.json`
+**Rootless mode:** Authentication is performed per-user (not system-wide).
+
+📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
 ## Performance Tuning
 
@@ -168,27 +162,19 @@ The role automatically configures `systemd-tmpfiles` to create `/run/user/0` for
 - ✅ Proper permissions (0700)
 - ✅ Works in LXC unprivileged containers
 
-### LXC Container Optimization
+📖 **Detailed guide:** [Podman XDG Runtime Fix](docs/PODMAN_XDG_RUNTIME_FIX.md)
 
-If running Podman inside an **LXC unprivileged container** (Proxmox, LXD):
+### LXC Container Support
 
-1. Add to LXC config (`/etc/pve/lxc/XXX.conf`):
-   ```
-   features: nesting=1
-   lxc.apparmor.profile: unconfined
-   ```
+Podman can run inside LXC containers (Proxmox, LXD) with proper configuration.
 
-2. Restart the LXC container:
-   ```bash
-   pct restart XXX
-   ```
-
-This resolves network permission issues and maintains ~95-98% native performance.
-
-**Without this configuration**, Podman may fail with:
+**Required LXC configuration:**
 ```
-Error: socket: permission denied
+features: nesting=1
+lxc.apparmor.profile: unconfined
 ```
+
+📖 **Complete guide:** [LXC Troubleshooting Guide](../../docs/troubleshooting/TROUBLESHOOTING_LXC.md)
 
 ### Custom Configuration
 

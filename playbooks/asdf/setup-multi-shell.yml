@@ -1,0 +1,83 @@
+---
+# Example: Configure asdf for multiple users with different shells
+# This playbook demonstrates shell-specific configuration
+
+- name: Setup asdf with multi-user and multi-shell configuration
+  hosts: all
+  become: true
+
+  vars:
+    asdf_install_method: "binary"
+    asdf_version: "latest"
+    asdf_data_dir: "/opt/asdf-data"  # Custom data directory
+
+    asdf_users:
+      # Bash user
+      - name: "deploy"
+        home: "/home/deploy"
+        shell: "bash"
+        plugins:
+          - name: "nodejs"
+            versions:
+              - "20.10.0"
+            global: "20.10.0"
+
+      # ZSH user (with oh-my-zsh compatible configuration)
+      - name: "developer"
+        home: "/home/developer"
+        shell: "zsh"
+        plugins:
+          - name: "python"
+            versions:
+              - "3.11.6"
+            global: "3.11.6"
+          - name: "ruby"
+            versions:
+              - "3.2.2"
+            global: "3.2.2"
+
+      # Fish shell user
+      - name: "sysadmin"
+        home: "/home/sysadmin"
+        shell: "fish"
+        plugins:
+          - name: "golang"
+            versions:
+              - "1.21.4"
+            global: "1.21.4"
+
+  tasks:
+    - name: Include asdf role
+      ansible.builtin.include_role:
+        name: kode3tech.devtools.asdf
+
+    - name: Display post-installation instructions
+      ansible.builtin.debug:
+        msg: |
+          ========================================
+          asdf Installation Complete!
+          ========================================
+
+          Shell-specific configuration has been added to:
+          - Bash users: ~/.bashrc
+          - ZSH users: ~/.zshrc
+          - Fish users: ~/.config/fish/config.fish
+
+          Next steps for each user:
+          1. Restart shell or source configuration:
+             - Bash: source ~/.bashrc
+             - ZSH: source ~/.zshrc
+             - Fish: source ~/.config/fish/config.fish
+
+          2. Verify asdf installation:
+             asdf --version
+
+          3. Check installed plugins:
+             asdf plugin list
+
+          4. List available versions for a plugin:
+             asdf list all <plugin_name>
+
+          Custom data directory: {{ asdf_data_dir }}
+
+          ========================================

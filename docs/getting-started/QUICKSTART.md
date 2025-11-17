@@ -1,49 +1,50 @@
-# Guia de Início Rápido
+````markdown
+# Quick Start Guide
 
-## 🚀 Setup Inicial
+## 🚀 Initial Setup
 
-### 1. Pré-requisitos
+### 1. Prerequisites
 
-Certifique-se de ter instalado:
-- asdf (gerenciador de versões)
-- Plugin Python3 do asdf
+Ensure you have installed:
+- asdf (version manager)
+- Python plugin for asdf
 - Git
 
-### 2. Clonar o Repositório
+### 2. Clone the Repository
 
 ```bash
 git clone https://github.com/kode3tech/ansible-col-devtools.git
 cd ansible-col-devtools
 ```
 
-### 3. Configurar Python
+### 3. Configure Python
 
-O projeto já está configurado com Python3 3.11.2 via asdf:
+The project is already configured with Python 3.11.2 via asdf:
 
 ```bash
-# Instalar a versão Python3 do .tool-versions
+# Install Python version from .tool-versions
 asdf install
 
-# Verificar
-python3 --version  # Deve mostrar: Python3 3.11.2
+# Verify
+python3 --version  # Should show: Python 3.11.2
 ```
 
-### 4. Instalar Dependências
+### 4. Install Dependencies
 
-**Opção A: Usando o script (Recomendado)**
+**Option A: Using the script (Recommended)**
 
 ```bash
 source activate.sh
 ```
 
-**Opção B: Usando make**
+**Option B: Using make**
 
 ```bash
 make install
 source .venv/bin/activate
 ```
 
-**Opção C: Manual**
+**Option C: Manual**
 
 ```bash
 python3 -m venv .venv
@@ -52,95 +53,95 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 5. Verificar Instalação
+### 5. Verify Installation
 
 ```bash
-# Usando make
+# Using make
 make version
 
-# Ou manualmente
+# Or manually
 ansible --version
 ansible-lint --version
 molecule --version
 ```
 
-## 🛠️ Comandos Úteis
+## 🛠️ Useful Commands
 
-### Ativação do Ambiente
+### Environment Activation
 
 ```bash
-# Sempre que abrir um novo terminal
+# Every time you open a new terminal
 source .venv/bin/activate
 
-# Ou use o script
+# Or use the script
 source activate.sh
 ```
 
 ### Linting
 
 ```bash
-# Executar todos os linters
+# Run all linters
 make lint
 
-# Apenas YAML
+# YAML only
 make lint-yaml
 
-# Apenas Ansible
+# Ansible only
 make lint-ansible
 ```
 
-### Testes
+### Testing
 
 ```bash
-# Testes com Molecule
+# Tests with Molecule
 make test
 
-# Testes com pytest
+# Tests with pytest
 make test-pytest
 ```
 
-### Limpeza
+### Cleanup
 
 ```bash
-# Limpar arquivos temporários
+# Clean temporary files
 make clean
 
-# Limpar tudo (incluindo venv)
+# Clean everything (including venv)
 make clean-all
 ```
 
-## 📚 Estrutura de Arquivos
+## 📚 File Structure
 
 ```text
 .
-├── .tool-versions       # Versão Python3 (asdf)
-├── .python-version      # Versão Python3 alternativa
-├── requirements.txt     # Dependências
-├── ansible.cfg          # Configuração Ansible
-├── .ansible-lint        # Configuração ansible-lint
-├── .yamllint            # Configuração yamllint
-├── Makefile             # Comandos úteis
-├── activate.sh          # Script de ativação
-├── inventory.example    # Exemplo de inventário
-└── docs/                # Documentação
+├── .tool-versions       # Python version (asdf)
+├── .python-version      # Alternative Python version
+├── requirements.txt     # Dependencies
+├── ansible.cfg          # Ansible configuration
+├── .ansible-lint        # ansible-lint configuration
+├── .yamllint            # yamllint configuration
+├── Makefile             # Useful commands
+├── activate.sh          # Activation script
+├── inventory.example    # Inventory example
+└── docs/                # Documentation
 ```
 
-## 🔧 Próximos Passos
+## 🔧 Next Steps
 
-1. **Configurar Inventário**: Copie e edite `inventory.example`
+1. **Configure Inventory**: Copy and edit `inventory.example`
    ```bash
    cp inventory.example inventory
-   # Edite com seus hosts
+   # Edit with your hosts
    ```
 
-2. **Criar uma Role**: Use o molecule para inicializar
+2. **Create a Role**: Use molecule to initialize
    ```bash
-   molecule init role nome-da-role
+   molecule init role role-name
    ```
 
-3. **Desenvolver**: Crie suas tasks, handlers, templates, etc.
+3. **Develop**: Create your tasks, handlers, templates, etc.
 
-4. **Testar**: Execute os testes
+4. **Test**: Run the tests
    ```bash
    make lint
    make test
@@ -148,39 +149,43 @@ make clean-all
 
 ## 🆘 Troubleshooting
 
-### Ambiente virtual não ativa
+### Virtual environment won't activate
 
 ```bash
-# Remover e recriar
+# Remove and recreate
 rm -rf .venv
 make install
 ```
 
-### Versão Python3 incorreta
+### Incorrect Python version
 
 ```bash
-# Verificar asdf
+# Check asdf
 asdf current python
 
-# Reinstalar
-asdf install python3 3.11.2
-asdf set python3 3.11.2
+# Reinstall
+asdf install python 3.11.2
+asdf global python 3.11.2
 ```
 
-### Dependências não instalam
+### Dependencies won't install
 
 ```bash
-# Atualizar pip primeiro
+# Update pip first
 pip install --upgrade pip
 
-# Depois instalar requirements
+# Then install requirements
 pip install -r requirements.txt
 ```
 
-## 📞 Suporte
+## 📞 Support
 
-Para dúvidas ou problemas, contate o time da Kode3Tech.
+For questions or issues, contact the Kode3Tech team.
 
 ---
 
+[← Back to Getting Started](README.md)
+
 **Happy Coding! 🚀**
+
+````

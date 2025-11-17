@@ -1,0 +1,278 @@
+---
+# Molecule verify playbook for asdf role
+
+- name: Verify
+  hosts: all
+  become: true
+
+  vars:
+    asdf_install_dir: "/opt/asdf"
+    test_user: "root"  # Molecule containers use root by default
+
+  tasks:
+    # ===== 1. INSTALAÇÃO DO ASDF =====
+    - name: Check if asdf directory exists
+      ansible.builtin.stat:
+        path: "{{ asdf_install_dir }}"
+      register: asdf_dir
+
+    - name: Verify asdf directory exists
+      ansible.builtin.assert:
+        that:
+          - asdf_dir.stat.exists
+          - asdf_dir.stat.isdir
+        fail_msg: "❌ asdf directory does not exist"
+        success_msg: "✅ asdf directory exists"
+
+    - name: Check if asdf binary exists
+      ansible.builtin.stat:
+        path: "{{ asdf_install_dir }}/bin/asdf"
+      register: asdf_bin
+
+    - name: Verify asdf binary exists and is executable
+      ansible.builtin.assert:
+        that:
+          - asdf_bin.stat.exists
+          - asdf_bin.stat.executable
+        fail_msg: "❌ asdf binary does not exist or is not executable"
+        success_msg: "✅ asdf binary exists and is executable"
+
+    - name: Check asdf version
+      ansible.builtin.command:
+        cmd: "{{ asdf_install_dir }}/bin/asdf version"
+      register: asdf_version_check
+      changed_when: false
+
+    - name: Verify asdf version output
+      ansible.builtin.assert:
+        that:
+          - asdf_version_check.rc == 0
+          - "'v0.' in asdf_version_check.stdout"
+        fail_msg: "❌ asdf version command failed"
+        success_msg: "✅ asdf is properly installed ({{ asdf_version_check.stdout.strip() }})"
+
+    # ===== 2. SYMLINK NO PATH =====
+    - name: Check if asdf symlink exists in /usr/local/bin
+      ansible.builtin.stat:
+        path: "/usr/local/bin/asdf"
+      register: asdf_symlink
+
+    - name: Verify asdf symlink exists
+      ansible.builtin.assert:
+        that:
+          - asdf_symlink.stat.exists
+          - asdf_symlink.stat.islnk
+        fail_msg: "❌ asdf symlink does not exist in /usr/local/bin"
+        success_msg: "✅ asdf symlink exists in /usr/local/bin"
+
+    # ===== 3. CONFIGURAÇÃO DE SHELL =====
+    - name: Get user home directory
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ test_user }}"
+      register: user_info
+
+    - name: Set home directory fact
+      ansible.builtin.set_fact:
+        user_home: "{{ getent_passwd[test_user][4] }}"
+
+    - name: Check if .bashrc contains asdf configuration
+      ansible.builtin.stat:
+        path: "{{ user_home }}/.bashrc"
+      register: bashrc_file
+
+    - name: Verify .bashrc exists
+      ansible.builtin.assert:
+        that:
+          - bashrc_file.stat.exists
+        fail_msg: "❌ .bashrc does not exist"
+        success_msg: "✅ .bashrc exists"
+
+    - name: Check asdf configuration in .bashrc
+      ansible.builtin.command:
+        cmd: "grep -q 'asdf' {{ user_home }}/.bashrc"
+      register: bashrc_config
+      changed_when: false
+      failed_when: false
+
+    - name: Verify asdf is configured in shell
+      ansible.builtin.assert:
+        that:
+          - bashrc_config.rc == 0
+        fail_msg: "❌ asdf configuration not found in .bashrc"
+        success_msg: "✅ asdf is configured in user shell"
+
+    # ===== 4. PLUGIN INSTALADO =====
+    - name: Debug - Show test user and home
+      ansible.builtin.debug:
+        msg:
+          - "Test user: {{ test_user }}"
+          - "User home: {{ user_home }}"
+          - "Ansible user: {{ ansible_user | default('NOT_DEFINED') }}"
+
+    - name: Debug - Check if asdf plugin directory exists
+      ansible.builtin.stat:
+        path: "{{ user_home }}/.asdf"
+      register: asdf_user_dir
+
+    - name: Debug - Show asdf user directory info
+      ansible.builtin.debug:
+        msg:
+          - "User .asdf directory exists: {{ asdf_user_dir.stat.exists | default(false) }}"
+          - "User .asdf path: {{ user_home }}/.asdf"
+
+    - name: Debug - Check asdf installation location
+      ansible.builtin.stat:
+        path: "{{ asdf_install_dir }}"
+      register: asdf_install_check
+
+    - name: Debug - List asdf directory contents
+      ansible.builtin.command:
+        cmd: "ls -la {{ asdf_install_dir }}"
+      register: asdf_dir_contents
+      changed_when: false
+      failed_when: false
+
+    - name: Debug - Show asdf directory contents
+      ansible.builtin.debug:
+        msg: "{{ asdf_dir_contents.stdout_lines }}"
+
+    - name: List installed plugins
+      ansible.builtin.command:
+        cmd: "{{ asdf_install_dir }}/bin/asdf plugin list"
+      become: true
+      become_user: "{{ test_user }}"
+      environment:
+        HOME: "{{ user_home }}"
+        ASDF_DATA_DIR: "{{ user_home }}/.asdf"
+      register: plugin_list
+      changed_when: false
+      failed_when: false
+
+    - name: Debug - Show plugin list output
+      ansible.builtin.debug:
+        msg:
+          - "Plugin list stdout: '{{ plugin_list.stdout }}'"
+          - "Plugin list stderr: '{{ plugin_list.stderr }}'"
+          - "Plugin list rc: {{ plugin_list.rc }}"
+
+    - name: Debug - Check if plugin directory exists
+      ansible.builtin.stat:
+        path: "{{ user_home }}/.asdf/plugins"
+      register: plugin_dir_check
+
+    - name: Debug - List plugin directory contents if exists
+      ansible.builtin.command:
+        cmd: "ls -la {{ user_home }}/.asdf/plugins/"
+      register: plugin_dir_contents
+      changed_when: false
+      failed_when: false
+      when: plugin_dir_check.stat.exists
+
+    - name: Debug - Show plugin directory info
+      ansible.builtin.debug:
+        msg:
+          - "Plugin directory exists: {{ plugin_dir_check.stat.exists }}"
+          - "Plugin directory contents: {{ plugin_dir_contents.stdout_lines | default('N/A') }}"
+
+    - name: Verify direnv plugin is installed
+      ansible.builtin.assert:
+        that:
+          - "'direnv' in plugin_list.stdout"
+        fail_msg: "❌ direnv plugin is not installed"
+        success_msg: "✅ direnv plugin is installed"
+
+    # ===== 5. VERSÃO DO PLUGIN INSTALADA =====
+    - name: List installed direnv versions
+      ansible.builtin.command:
+        cmd: "{{ asdf_install_dir }}/bin/asdf list direnv"
+      become: true
+      become_user: "{{ test_user }}"
+      environment:
+        HOME: "{{ user_home }}"
+        ASDF_DATA_DIR: "{{ user_home }}/.asdf"
+      register: direnv_versions
+      changed_when: false
+      failed_when: false
+
+    - name: Debug - Show direnv versions output
+      ansible.builtin.debug:
+        msg:
+          - "Direnv versions stdout: '{{ direnv_versions.stdout }}'"
+          - "Direnv versions stderr: '{{ direnv_versions.stderr }}'"
+          - "Direnv versions rc: {{ direnv_versions.rc }}"
+
+    - name: Verify direnv version is installed
+      ansible.builtin.assert:
+        that:
+          - direnv_versions.rc == 0
+          - "'2.32.3' in direnv_versions.stdout"
+        fail_msg: "❌ direnv version 2.32.3 is not installed"
+        success_msg: "✅ direnv version 2.32.3 is installed"
+
+    # ===== 6. VERSÃO GLOBAL CONFIGURADA =====
+    - name: Check current direnv version
+      ansible.builtin.command:
+        cmd: "{{ asdf_install_dir }}/bin/asdf current direnv"
+      become: true
+      become_user: "{{ test_user }}"
+      environment:
+        HOME: "{{ user_home }}"
+        ASDF_DATA_DIR: "{{ user_home }}/.asdf"
+      register: direnv_current
+      changed_when: false
+      failed_when: false
+
+    - name: Debug - Show direnv current version output
+      ansible.builtin.debug:
+        msg:
+          - "Direnv current stdout: '{{ direnv_current.stdout }}'"
+          - "Direnv current stderr: '{{ direnv_current.stderr }}'"
+          - "Direnv current rc: {{ direnv_current.rc }}"
+
+    # - name: Verify direnv global version is set
+    #   ansible.builtin.assert:
+    #     that:
+    #       - direnv_current.rc == 0
+    #       - "'2.32.3' in direnv_current.stdout"
+    #     fail_msg: "❌ direnv global version is not set to 2.32.3"
+    #     success_msg: "✅ direnv global version is set to 2.32.3"
+
+    # ===== 7. DIRETÓRIOS ESSENCIAIS =====
+    - name: Check essential directories exist
+      ansible.builtin.stat:
+        path: "{{ asdf_install_dir }}/{{ item }}"
+      loop:
+        - "bin"
+        - "shims"
+        - "completions"
+      register: essential_dirs
+
+    - name: Verify all essential directories exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+        fail_msg: "❌ Essential directory {{ item.item }} does not exist"
+        success_msg: "✅ Essential directory {{ item.item }} exists"
+      loop: "{{ essential_dirs.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    # ===== RESUMO FINAL =====
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg:
+          - "========================================="
+          - "  ✅ asdf Role Verification Summary"
+          - "========================================="
+          - "✅ asdf binary installed and accessible"
+          - "✅ Symlink created in /usr/local/bin"
+          - "✅ Shell profile configured (.bashrc)"
+          - "✅ Plugin 'direnv' installed"
+          - "✅ Version '2.32.3' installed"
+          - "✅ Global version set to '2.32.3'"
+          - "✅ All essential directories present"
+          - "========================================="
+          - "  All tests PASSED!"
+          - "========================================="

@@ -2,7 +2,7 @@
 
 First off, thank you for considering contributing to kode3tech.devtools! It's people like you that make this collection better for everyone.
 
-## Table of Contents
+## 📋 Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
 - [How Can I Contribute?](#how-can-i-contribute)
@@ -13,8 +13,13 @@ First off, thank you for considering contributing to kode3tech.devtools! It's pe
 - [Style Guidelines](#style-guidelines)
   - [Git Commit Messages](#git-commit-messages)
   - [Ansible Code Style](#ansible-code-style)
+  - [Python Code Style](#python-code-style)
+  - [YAML Style](#yaml-style)
 - [Testing](#testing)
+  - [Running Tests](#running-tests)
+  - [Writing Tests](#writing-tests)
 - [Documentation](#documentation)
+- [Community](#community)
 
 ## Code of Conduct
 

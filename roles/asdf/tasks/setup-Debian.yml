@@ -1,0 +1,43 @@
+---
+# Debian/Ubuntu specific tasks for asdf role
+
+- name: Update apt cache on Debian-based systems
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  tags:
+    - asdf
+    - installation
+
+- name: Install asdf system dependencies on Debian-based systems
+  ansible.builtin.apt:
+    name: "{{ asdf_system_packages }}"
+    state: present
+  when: asdf_install_dependencies | bool
+  tags:
+    - asdf
+    - installation
+
+- name: Ensure /usr/local/bin is in system PATH (profile.d)
+  ansible.builtin.copy:
+    dest: /etc/profile.d/usr-local-bin.sh
+    content: |
+      # Add /usr/local/bin to PATH if not already present
+      if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then
+        export PATH="/usr/local/bin:$PATH"
+      fi
+    mode: '0644'
+  tags:
+    - asdf
+    - installation
+
+- name: Add /usr/local/bin to system-wide PATH (/etc/environment)
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    regexp: '^PATH='
+    line: 'PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"'
+    create: true
+    mode: '0644'
+  tags:
+    - asdf
+    - installation

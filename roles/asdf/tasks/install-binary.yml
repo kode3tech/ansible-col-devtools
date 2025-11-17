@@ -1,0 +1,181 @@
+---
+# Binary installation tasks for asdf role
+
+- name: Detect system architecture for binary download
+  ansible.builtin.set_fact:
+    asdf_arch: >-
+      {{ 'amd64' if ansible_architecture == 'x86_64'
+      else 'arm64' if ansible_architecture == 'aarch64'
+      else ansible_architecture }}
+  tags:
+    - asdf
+    - installation
+
+- name: Detect operating system for binary download
+  ansible.builtin.set_fact:
+    asdf_os: >-
+      {{ 'linux' if ansible_system == 'Linux'
+      else 'darwin' if ansible_system == 'Darwin'
+      else ansible_system | lower }}
+  tags:
+    - asdf
+    - installation
+
+- name: Get latest asdf release version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/asdf-vm/asdf/releases/latest"
+    return_content: true
+  register: asdf_latest_release
+  when: asdf_version == "latest"
+  tags:
+    - asdf
+    - installation
+
+- name: Set asdf version from latest release
+  ansible.builtin.set_fact:
+    asdf_release_version: "{{ asdf_latest_release.json.tag_name }}"
+  when: asdf_version == "latest"
+  tags:
+    - asdf
+    - installation
+
+- name: Set asdf version from variable
+  ansible.builtin.set_fact:
+    asdf_release_version: "{{ asdf_version }}"
+  when: asdf_version != "latest"
+  tags:
+    - asdf
+    - installation
+
+- name: Construct asdf binary download URL
+  ansible.builtin.set_fact:
+    asdf_download_url: >-
+      {{ asdf_binary_url }}/{{ asdf_release_version }}/asdf-{{
+      asdf_release_version }}-{{ asdf_os }}-{{ asdf_arch }}.tar.gz
+  tags:
+    - asdf
+    - installation
+
+- name: Check if asdf binary already exists
+  ansible.builtin.stat:
+    path: "{{ asdf_install_dir }}/bin/asdf"
+  register: asdf_binary_stat
+  tags:
+    - asdf
+    - installation
+
+- name: Get installed asdf version
+  ansible.builtin.command:
+    cmd: "{{ asdf_install_dir }}/bin/asdf version"
+  register: asdf_installed_version
+  changed_when: false
+  failed_when: false
+  when: asdf_binary_stat.stat.exists
+  tags:
+    - asdf
+    - installation
+
+- name: Set fact for asdf needs update
+  ansible.builtin.set_fact:
+    asdf_needs_update: >-
+      {{
+        not asdf_binary_stat.stat.exists or
+        asdf_release_version not in asdf_installed_version.stdout | default('')
+      }}
+  tags:
+    - asdf
+    - installation
+
+- name: Create temporary download directory
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: asdf
+  register: asdf_temp_dir
+  when: asdf_needs_update
+  tags:
+    - asdf
+    - installation
+
+- name: Download asdf binary archive
+  ansible.builtin.get_url:
+    url: "{{ asdf_download_url }}"
+    dest: "{{ asdf_temp_dir.path }}/asdf.tar.gz"
+    mode: '0644'
+  when: asdf_needs_update
+  tags:
+    - asdf
+    - installation
+
+- name: Ensure asdf bin directory exists
+  ansible.builtin.file:
+    path: "{{ asdf_install_dir }}/bin"
+    state: directory
+    mode: '0755'
+  tags:
+    - asdf
+    - installation
+
+- name: Extract asdf binary from archive
+  ansible.builtin.unarchive:
+    src: "{{ asdf_temp_dir.path }}/asdf.tar.gz"
+    dest: "{{ asdf_install_dir }}/bin"
+    remote_src: true
+    creates: "{{ asdf_install_dir }}/bin/asdf"
+  when: asdf_needs_update
+  tags:
+    - asdf
+    - installation
+
+- name: Make asdf binary executable
+  ansible.builtin.file:
+    path: "{{ asdf_install_dir }}/bin/asdf"
+    mode: '0755'
+  tags:
+    - asdf
+    - installation
+
+- name: Ensure asdf shims directory exists
+  ansible.builtin.file:
+    path: "{{ asdf_install_dir }}/shims"
+    state: directory
+    mode: '0755'
+  tags:
+    - asdf
+    - installation
+
+- name: Ensure asdf completions directory exists
+  ansible.builtin.file:
+    path: "{{ asdf_install_dir }}/completions"
+    state: directory
+    mode: '0755'
+  tags:
+    - asdf
+    - installation
+
+- name: Ensure /usr/local/bin directory exists
+  ansible.builtin.file:
+    path: /usr/local/bin
+    state: directory
+    mode: '0755'
+  tags:
+    - asdf
+    - installation
+
+- name: Create symlink to asdf binary in system PATH
+  ansible.builtin.file:
+    src: "{{ asdf_install_dir }}/bin/asdf"
+    dest: /usr/local/bin/asdf
+    state: link
+    force: true
+  tags:
+    - asdf
+    - installation
+
+- name: Remove temporary download directory
+  ansible.builtin.file:
+    path: "{{ asdf_temp_dir.path }}"
+    state: absent
+  when: asdf_needs_update and asdf_temp_dir.path is defined
+  tags:
+    - asdf
+    - installation

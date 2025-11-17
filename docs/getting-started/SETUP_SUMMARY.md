@@ -1,102 +1,106 @@
-# Setup do Projeto Ansible Docker - Resumo
+# Ansible Collection Setup Summary
 
-## ✅ Status do Setup
+## ✅ Setup Status
 
-O projeto foi configurado com sucesso em **4 de novembro de 2025**.
+The project was successfully configured on **November 4, 2025**.
 
-## 🔧 Configuração Realizada
+## 🔧 Configuration Completed
 
-### 1. Gerenciamento de Versão Python
-- **asdf** configurado com Python 3.11.2
-- Arquivo `.tool-versions` criado
-- Arquivo `.python-version` como fallback
+### 1. Python Version Management
+- **asdf** configured with Python 3.11.2
+- `.tool-versions` file created
+- `.python-version` as fallback
 
-### 2. Ambiente Virtual Python
-- Virtual environment criado em `.venv/`
-- Python 3.11.2 ativo no ambiente
-- pip atualizado para versão 25.3
+### 2. Python Virtual Environment
+- Virtual environment created in `.venv/`
+- Python 3.11.2 active in environment
+- pip updated to version 25.3
 
-### 3. Dependências Instaladas
+### 3. Installed Dependencies
 
 #### Ansible Core
 - ansible 12.1.0
 - ansible-core 2.19.3
 
-#### Ferramentas de Desenvolvimento
+#### Development Tools
 - ansible-lint 25.9.2
 - molecule 25.9.0
-- molecule-plugins 25.8.12 (com suporte Docker)
+- molecule-plugins 25.8.12 (with Docker support)
 - ansible-navigator 25.9.0
 - ansible-runner 2.4.2
 - ansible-builder 3.1.1
 
-#### Ferramentas de Teste
+#### Testing Tools
 - pytest 8.4.2
 - pytest-testinfra 10.2.2
 
-#### Linters e Formatação
+#### Linters and Formatting
 - yamllint 1.37.1
 - black 25.9.0
 
-#### Bibliotecas Base
+#### Base Libraries
 - jinja2 3.1.6
 - PyYAML 6.0.3
 - cryptography 46.0.3
 - docker (Python SDK) 7.1.0
 
-## 📁 Estrutura de Arquivos Criada
+## 📁 Created File Structure
 
 ```text
-ansible-docker/
-├── .tool-versions          ✅ Versão Python (asdf)
-├── .python-version         ✅ Versão Python alternativa
-├── .gitignore              ✅ Ignorar arquivos desnecessários
-├── .ansible-lint           ✅ Configuração ansible-lint
-├── .yamllint               ✅ Configuração yamllint
-├── requirements.txt        ✅ Dependências Python
-├── ansible.cfg             ✅ Configuração Ansible
-├── activate.sh             ✅ Script de ativação do venv
-├── Makefile                ✅ Comandos úteis (make help)
-├── inventory.example       ✅ Exemplo de inventário
-├── README.md               ✅ Documentação principal
+ansible-col-devtools/
+├── .tool-versions          ✅ Python version (asdf)
+├── .python-version         ✅ Alternative Python version
+├── .gitignore              ✅ Ignore unnecessary files
+├── .ansible-lint           ✅ ansible-lint configuration
+├── .yamllint               ✅ yamllint configuration
+├── requirements.txt        ✅ Python dependencies
+├── ansible.cfg             ✅ Ansible configuration
+├── activate.sh             ✅ venv activation script
+├── Makefile                ✅ Useful commands (make help)
+├── inventory.example       ✅ Inventory example
+├── README.md               ✅ Main documentation
 └── docs/
-    ├── VERSIONS.md         ✅ Versões instaladas
-    └── QUICKSTART.md       ✅ Guia de início rápido
+    ├── VERSIONS.md         ✅ Installed versions
+    └── QUICKSTART.md       ✅ Quick start guide
 ```
 
-## 🚀 Como Usar
+## 🚀 How to Use
 
-### Ativação do Ambiente
+### Environment Activation
 
 ```bash
-# Opção 1: Script automático
+# Option 1: Automatic script
 source activate.sh
 
-# Opção 2: Ativação manual
+# Option 2: Manual activation
 source .venv/bin/activate
 ```
 
-### Verificação
+### Verification
 
 ```bash
-# Ver todas as versões
+# See all versions
 make version
 
-# Ou individualmente
+# Or individually
 ansible --version
 ansible-lint --version
 molecule --version
 ```
 
-### Comandos Disponíveis
+### Available Commands
 
 ```bash
-make help          # Lista todos os comandos
-make install       # Reinstala dependências
-make lint          # Executa linters
-make test          # Executa testes
-make clean         # Limpa arquivos temporários
+make help          # List all commands
+make install       # Reinstall dependencies
+make lint          # Run linters
+make test          # Run tests
+make clean         # Clean temporary files
 ```
+
+---
+
+[← Back to Getting Started](README.md)
 
 ## 🔍 Validação do Setup
 

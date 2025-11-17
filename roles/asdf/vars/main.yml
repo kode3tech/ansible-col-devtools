@@ -1,0 +1,7 @@
+---
+# General variables for asdf role
+
+# Common asdf configuration
+asdf_common_dependencies:
+  - git
+  - curl

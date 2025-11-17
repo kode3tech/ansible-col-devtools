@@ -2,6 +2,26 @@
 
 Ansible role for installing and configuring Docker Engine on Linux servers.
 
+## 📋 Table of Contents
+
+- [Ansible Role: Docker](#ansible-role-docker)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [Requirements](#requirements)
+    - [Supported Distributions](#supported-distributions)
+  - [Role Variables](#role-variables)
+    - [Security Note](#security-note)
+  - [Performance Tuning](#performance-tuning)
+    - [Default Optimizations](#default-optimizations)
+    - [Performance Gains](#performance-gains)
+    - [Optional: crun Runtime](#optional-crun-runtime)
+    - [LXC Container Optimization](#lxc-container-optimization)
+    - [Custom Configuration](#custom-configuration)
+  - [Dependencies](#dependencies)
+  - [Example Playbook](#example-playbook)
+  - [Testing](#testing)
+  - [License](#license)
+  - [Author Information](#author-information)
+
 ## Requirements
 
 - Ansible >= 2.15
@@ -45,40 +65,30 @@ docker_configure_repo: true
 # Insecure registries (HTTP or self-signed certificates)
 # WARNING: Only use for trusted internal registries!
 docker_insecure_registries: []
-# Example:
-#   - "registry.internal.company.com:5000"
-#   - "192.168.1.100:5000"
-#   - "localhost:5000"
 
 # Private registry authentication (optional)
-# WARNING: Use Ansible Vault to encrypt sensitive data!
+# See: https://github.com/kode3tech/ansible-col-devtools/blob/main/docs/user-guides/REGISTRY_AUTHENTICATION.md
 docker_registries_auth: []
-# Example:
-#   - registry_url: "https://registry.example.com"
-#     username: "myuser"
-#     password: "{{ vault_registry_password }}"  # Use Vault!
-#     email: "user@example.com"  # Optional
-#   - registry_url: "ghcr.io"
-#     username: "myuser"
-#     password_file: "/path/to/password/file"  # Alternative to password
 ```
 
-### Security Note
+For complete documentation on variables, see [Variables Reference](../../docs/reference/VARIABLES.md).
 
-**⚠️ CRITICAL**: Never commit plain-text passwords to version control!
+### Registry Authentication
 
-For registry authentication, always use **Ansible Vault** to encrypt sensitive data:
+This role supports authentication to private container registries. 
 
-```bash
-# Create encrypted password variable
-ansible-vault encrypt_string 'my_secret_password' --name 'vault_registry_password'
-
-# Reference it in your variables:
+**Quick example:**
+```yaml
 docker_registries_auth:
-  - registry_url: "https://registry.example.com"
+  - registry_url: "ghcr.io"
     username: "myuser"
-    password: "{{ vault_registry_password }}"
+    password: "{{ vault_github_token }}"
 ```
+
+**⚠️ Security:** Always use Ansible Vault for passwords!
+
+📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
+
 
 ## Performance Tuning
 
@@ -164,22 +174,17 @@ docker_daemon_config:
       path: "/usr/bin/crun"
 ```
 
-### LXC Container Optimization
+### LXC Container Support
 
-If running Docker inside an **LXC unprivileged container** (Proxmox, LXD):
+Docker can run inside LXC containers (Proxmox, LXD) with proper configuration.
 
-1. Add to LXC config (`/etc/pve/lxc/XXX.conf`):
-   ```
-   features: nesting=1
-   lxc.apparmor.profile: unconfined
-   ```
+**Required LXC configuration:**
+```
+features: nesting=1
+lxc.apparmor.profile: unconfined
+```
 
-2. Restart the LXC container:
-   ```bash
-   pct restart XXX
-   ```
-
-This resolves network permission issues and maintains ~95-98% native performance.
+📖 **Complete guide:** [LXC Troubleshooting Guide](../../docs/troubleshooting/TROUBLESHOOTING_LXC.md)
 
 ### Custom Configuration
 

@@ -24,6 +24,14 @@ Podman installation with rootless container support.
 - OCI-compliant
 - Compatible with Docker commands
 
+### 🔧 asdf
+asdf version manager for managing multiple runtime versions.
+- Multi-language version management
+- Support for Node.js, Python, Ruby, Golang, and many more
+- Per-user and per-project version control
+- Plugin-based architecture
+- Shell integration (bash, zsh, fish)
+
 ## 🚀 Installation
 
 ### Prerequisites - Virtual Environment
@@ -154,14 +162,25 @@ ansible-galaxy collection install community.docker
 ansible-galaxy collection install containers.podman
 ```
 
-##  Example Playbooks
+## 📋 Example Playbooks
 
-The collection includes ready-to-use example playbooks in the `playbooks/` directory:
+The collection includes ready-to-use example playbooks organized by role in the `playbooks/` directory:
 
-- `setup-dev-environment.yml` - Complete development setup (Docker + Podman)
-- `install-docker.yml` - Docker installation only
-- `install-podman.yml` - Podman installation only
-- `setup-registry-auth.yml` - Private registry authentication setup
+### Docker Examples
+- **[playbooks/docker/install-docker.yml](playbooks/docker/install-docker.yml)** - Basic Docker installation
+- **[playbooks/docker/setup-registry-auth.yml](playbooks/docker/setup-registry-auth.yml)** - Private registry authentication
+- **[playbooks/docker/setup-insecure-registry.yml](playbooks/docker/setup-insecure-registry.yml)** - Insecure registry configuration
+
+### Podman Examples
+- **[playbooks/podman/install-podman.yml](playbooks/podman/install-podman.yml)** - Basic Podman installation
+- **[playbooks/podman/test-podman-auth.yml](playbooks/podman/test-podman-auth.yml)** - Podman authentication testing
+
+### asdf Examples
+- **[playbooks/asdf/install-asdf-basic.yml](playbooks/asdf/install-asdf-basic.yml)** - Quick testing with lightweight plugins
+- **[playbooks/asdf/install-asdf-full.yml](playbooks/asdf/install-asdf-full.yml)** - Full installation with Node.js and Python
+- **[playbooks/asdf/setup-multi-user.yml](playbooks/asdf/setup-multi-user.yml)** - Multi-user configuration
+
+See [playbooks/README.md](playbooks/README.md) for complete documentation of all available examples.
 
 ### Running Examples
 
@@ -175,7 +194,7 @@ source activate.sh
 ansible-galaxy collection install -r requirements.yml
 
 # 3. Run playbook
-ansible-playbook playbooks/setup-dev-environment.yml -i inventory
+ansible-playbook playbooks/docker/install-docker.yml -i inventory
 ```
 
 ## 🛠️ Development Setup

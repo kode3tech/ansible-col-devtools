@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **[asdf]** New role for asdf version manager (v1.0.0)
+  - **Binary installation** (asdf v0.16.0+): Fast, reliable installation from official GitHub releases
+  - **Multi-distribution support**: Ubuntu 22/24/25, Debian 11/12/13, RHEL/Rocky 9/10
+  - **Plugin management**: Automatic installation and configuration of asdf plugins
+  - **Version management**: Install multiple versions of runtime tools
+  - **Global version configuration**: Set default versions per user with `asdf set` command
+  - **Shell integration**: Automatic configuration for bash, zsh, and fish shells
+  - **Automatic home detection**: Uses `getent` to detect user home directories
+  - **Internet connectivity check**: Graceful handling of offline environments
+  - **RedHat optimizations**:
+    - Automatic curl-minimal to curl replacement with `allowerasing=true`
+    - DNF cache management (clean + makecache)
+    - PATH configuration for `/usr/local/bin`
+  - **Performance**: Lightweight plugins (direnv, jq) for fast testing (~15s)
+  - **Idempotency**: Full idempotent operations with version checking
+  - **Comprehensive testing**: Molecule tests on Ubuntu, Debian, and Rocky Linux
+  - **Example playbooks**: 6 complete examples (basic, lightweight, full, multi-user, multi-shell)
+  - **Documentation**: Complete README with troubleshooting and performance tips
+- **[asdf]** Supported plugins categories:
+  - **Lightweight plugins** (for testing/CI): direnv, jq, yq, kubectl, helm (~3-10s each)
+  - **Heavy plugins** (for production): nodejs, python, ruby, golang, rust (~2-30min each)
 - **[Docker]** Performance optimization configuration (v1.1.0)
   - **Storage driver**: Explicit `overlay2` with kernel check override (+15-30% I/O)
   - **Logging**: Compressed, non-blocking logs (-70% disk space, +10-20% I/O)

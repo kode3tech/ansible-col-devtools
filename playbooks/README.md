@@ -12,9 +12,13 @@ playbooks/
 │   ├── install-docker.yml           # Basic Docker installation
 │   ├── setup-registry-auth.yml      # Private registry authentication
 │   └── setup-insecure-registry.yml  # Insecure registry configuration
-└── podman/                           # Podman role examples
-    ├── install-podman.yml           # Basic Podman installation
-    └── test-podman-auth.yml         # Podman authentication testing
+├── podman/                           # Podman role examples
+│   ├── install-podman.yml           # Basic Podman installation
+│   └── test-podman-auth.yml         # Podman authentication testing
+└── asdf/                             # asdf role examples
+    ├── install-asdf.yml             # Basic asdf installation
+    ├── setup-nodejs-python.yml      # Node.js and Python configuration
+    └── setup-multi-user.yml         # Multi-user setup
 ```
 
 ## 🎯 Organization Principle
@@ -65,6 +69,32 @@ Test Podman registry authentication and troubleshoot issues.
 **Usage:**
 ```bash
 ansible-playbook playbooks/podman/test-podman-auth.yml -i inventory
+```
+
+### 🔧 asdf Examples (`asdf/`)
+
+#### [install-asdf.yml](asdf/install-asdf.yml)
+Basic asdf installation without plugins.
+
+**Usage:**
+```bash
+ansible-playbook playbooks/asdf/install-asdf.yml -i inventory
+```
+
+#### [setup-nodejs-python.yml](asdf/setup-nodejs-python.yml)
+Install asdf with Node.js and Python plugins for development.
+
+**Usage:**
+```bash
+ansible-playbook playbooks/asdf/setup-nodejs-python.yml -i inventory
+```
+
+#### [setup-multi-user.yml](asdf/setup-multi-user.yml)
+Configure asdf for multiple users with different plugin requirements.
+
+**Usage:**
+```bash
+ansible-playbook playbooks/asdf/setup-multi-user.yml -i inventory
 ```
 
 ## 🔧 Prerequisites

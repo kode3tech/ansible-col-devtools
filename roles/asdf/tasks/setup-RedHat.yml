@@ -1,0 +1,48 @@
+---
+# RedHat/CentOS/Rocky specific tasks for asdf role
+
+- name: Handle curl installation (curl-minimal conflict)
+  ansible.builtin.include_tasks: setup-curl-RedHat.yml
+  when: asdf_install_dependencies | bool
+
+- name: Refresh DNF metadata cache
+  ansible.builtin.command:
+    cmd: dnf makecache
+  changed_when: false
+  when: asdf_install_dependencies | bool
+  tags:
+    - asdf
+    - installation
+
+- name: Install asdf system dependencies on RedHat-based systems
+  ansible.builtin.dnf:
+    name: "{{ asdf_system_packages }}"
+    state: present
+  when: asdf_install_dependencies | bool
+  tags:
+    - asdf
+    - installation
+
+- name: Ensure /usr/local/bin is in system PATH (profile.d)
+  ansible.builtin.copy:
+    dest: /etc/profile.d/usr-local-bin.sh
+    content: |
+      # Add /usr/local/bin to PATH if not already present
+      if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then
+        export PATH="/usr/local/bin:$PATH"
+      fi
+    mode: '0644'
+  tags:
+    - asdf
+    - installation
+
+- name: Add /usr/local/bin to system-wide PATH (/etc/environment)
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    regexp: '^PATH='
+    line: 'PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"'
+    create: true
+    mode: '0644'
+  tags:
+    - asdf
+    - installation

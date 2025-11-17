@@ -1,0 +1,23 @@
+---
+# Molecule converge playbook for asdf role
+
+- name: Converge
+  hosts: all
+  become: true
+
+  vars:
+    asdf_version: "latest"
+    asdf_users:
+      - name: "root"  # Molecule containers use root by default
+        shell: "bash"
+        plugins:
+          # Using direnv - lightweight plugin (shell script only)
+          - name: "direnv"
+            versions:
+              - "2.32.3"
+            global: "2.32.3"
+
+  tasks:
+    - name: Include asdf role
+      ansible.builtin.include_role:
+        name: asdf
