@@ -1013,14 +1013,13 @@ Every documentation directory **MUST** have a `README.md` index:
 
 ### Example Documentation References
 
+**Note**: The examples below show correct relative paths **from the perspective of the source file**, not from this copilot-instructions.md file. Use these patterns when writing documentation in the appropriate locations.
+
 ```markdown
-# In role README.md - referencing collection docs
-See [Registry Authentication](../../docs/user-guides/REGISTRY_AUTHENTICATION.md) for details.
+# In role README.md (e.g., roles/podman/README.md) - referencing collection docs
+See [Registry Authentication](../docs/user-guides/REGISTRY_AUTHENTICATION.md) for details.
 
-# In role README.md - referencing role-specific docs
-See [XDG Runtime Fix](docs/PODMAN_XDG_RUNTIME_FIX.md) for troubleshooting.
-
-# In collection docs - referencing role docs
+# In collection docs (e.g., docs/user-guides/SOME_GUIDE.md) - referencing role docs
 See [Docker Role](../roles/docker/README.md) for Docker-specific configuration.
 ```
 
@@ -1148,7 +1147,7 @@ Brief description (1-2 sentences).
 
 **Pattern**:
 ```markdown
-# In role README.md (SUMMARY)
+# In role README.md (e.g., roles/docker/README.md) - SUMMARY
 ### Registry Authentication
 
 Quick example:
@@ -1159,9 +1158,9 @@ docker_registries_auth:
     password: "{{ vault_token }}"
 ```
 
-📖 **Complete guide**: [Registry Authentication](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
+📖 **Complete guide**: [Registry Authentication](../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
-# In docs/user-guides/REGISTRY_AUTHENTICATION.md (COMPLETE)
+# In docs/user-guides/REGISTRY_AUTHENTICATION.md - COMPLETE
 [Full detailed content with all examples, explanations, security notes]
 ```
 
@@ -1206,13 +1205,13 @@ docker_registries_auth:
 ../troubleshooting/KNOWN_ISSUES.md
 
 # From roles/docker/ to docs/user-guides/
-../../docs/user-guides/REGISTRY_AUTHENTICATION.md
+../docs/user-guides/REGISTRY_AUTHENTICATION.md
 
 # From docs/getting-started/ to roles/docker/
-../../roles/docker/README.md
+../roles/docker/README.md
 
 # From playbooks/docker/ to roles/docker/
-../../roles/docker/README.md
+../roles/docker/README.md
 ```
 
 **Testing**: When updating links, verify by:

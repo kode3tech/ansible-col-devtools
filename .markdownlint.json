@@ -1,0 +1,12 @@
+{
+  "default": true,
+  "MD013": false,
+  "MD033": false,
+  "MD041": false,
+  "ignore": [
+    ".github/copilot-instructions.md",
+    "node_modules/**",
+    ".venv/**",
+    "collections/**"
+  ]
+}

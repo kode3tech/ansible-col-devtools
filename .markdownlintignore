@@ -1,0 +1,11 @@
+# Ignore copilot instructions file (contains contextual examples with relative paths)
+.github/copilot-instructions.md
+
+# Ignore dependencies
+node_modules/
+.venv/
+collections/
+
+# Ignore temporary files
+.tmp/
+*.tmp
