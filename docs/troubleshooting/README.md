@@ -45,7 +45,7 @@ Common problems and their solutions.
 1. Check [Known Issues](KNOWN_ISSUES.md)
 2. Search [GitHub Issues](https://github.com/kode3tech/ansible-devtools/issues)
 3. Create a new issue with details
-4. Email: devops@kode3.com.br
+4. Email: suporte@kode3.tech
 
 ---
 

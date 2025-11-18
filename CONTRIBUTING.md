@@ -74,7 +74,7 @@ When creating an enhancement suggestion, please include:
 1. **Fork the repository** and create your branch from `main`
 2. **Make your changes** following our style guidelines
 3. **Add tests** for your changes
-4. **Ensure all tests pass** (`make test-all`)
+4. **Ensure all tests pass** (`make test`)
 5. **Ensure linting passes** (`make lint`)
 6. **Update documentation** if needed
 7. **Commit your changes** using conventional commits
@@ -270,12 +270,8 @@ All changes must include tests and all tests must pass before merging.
 ### Running Tests
 
 ```bash
-# Test specific role
-make test-docker
-make test-podman
-
 # Test all roles
-make test-all
+make test
 
 # Run linting
 make lint
@@ -381,7 +377,7 @@ Default: `[]` (empty list)
 
 - **Issues:** [GitHub Issues](https://github.com/kode3tech/ansible-devtools/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/kode3tech/ansible-devtools/discussions)
-- **Email:** devops@kode3.com.br
+- **Email:** suporte@kode3.tech
 
 ## Recognition
 

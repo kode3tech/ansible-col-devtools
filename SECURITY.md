@@ -19,7 +19,7 @@ The Kode3Tech team takes security vulnerabilities seriously. We appreciate your 
 
 Instead, please report security vulnerabilities by email to:
 
-**devops@kode3.com.br**
+**suporte@kode3.tech**
 
 Please include the following information:
 
@@ -149,7 +149,7 @@ Security advisories are published at:
 
 ## Contact
 
-- **Security Email**: devops@kode3.com.br
+- **Security Email**: suporte@kode3.tech
 - **General Issues**: https://github.com/kode3tech/ansible-devtools/issues
 - **Website**: https://github.com/kode3tech
 

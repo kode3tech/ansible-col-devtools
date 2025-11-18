@@ -23,7 +23,7 @@ Describe the tests you ran to verify your changes:
 - [ ] Tested on Ubuntu 22.04
 - [ ] Tested on Debian 12
 - [ ] Tested on Rocky Linux 9
-- [ ] All Molecule tests pass (`make test-all`)
+- [ ] All Molecule tests pass (`make test`)
 - [ ] Linting passes (`make lint`)
 - [ ] Manual testing performed
 

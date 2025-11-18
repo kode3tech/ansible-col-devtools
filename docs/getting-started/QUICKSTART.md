@@ -105,9 +105,6 @@ make test-pytest
 ```bash
 # Clean temporary files
 make clean
-
-# Clean everything (including venv)
-make clean-all
 ```
 
 ## 📚 File Structure

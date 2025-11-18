@@ -336,18 +336,19 @@ kode3tech.devtools/
 
 ## 🔨 Makefile Commands
 
-The project includes a Makefile with useful commands:
+The project includes a Makefile with useful commands for CI/CD:
 
 ```bash
 make help                 # Show all available commands
 make install              # Install dependencies
 make version              # Show installed versions
-make lint                 # Run all linters
-make test-docker          # Test Docker role
-make test-podman          # Test Podman role
-make test-all             # Test all roles
+make lint                 # Run all linters (yamllint + ansible-lint)
+make lint-yaml            # Run yamllint only
+make lint-ansible         # Run ansible-lint only
+make test                 # Test all roles with Molecule
 make build                # Build collection tarball
 make install-collection   # Install collection locally
+make publish              # Publish to Galaxy (requires GALAXY_API_KEY)
 make clean                # Clean build artifacts
 ```
 
@@ -365,7 +366,7 @@ Contributions are welcome! Please:
 - Follow existing code style
 - Add tests for new features
 - Update documentation
-- Ensure all tests pass (`make test-all`)
+- Ensure all tests pass (`make test`)
 - Ensure linting passes (`make lint`)
 - Use conventional commits format
 

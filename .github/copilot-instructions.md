@@ -450,7 +450,7 @@ MIT
 
 ## Author Information
 
-Kode3Tech DevOps Team <devops@kode3.com.br>
+Kode3Tech DevOps Team <suporte@kode3.tech>
 ```
 
 ## 🚀 Development Workflow
@@ -537,14 +537,17 @@ yamllint roles/<role_name>/
 
 ### Makefile Commands
 ```bash
-make help              # Show available commands
-make install           # Install dependencies
-make lint              # Run all linters
-make test-<role>       # Test specific role
-make test-all          # Test all roles
-make build             # Build collection tarball
-make install-collection # Install locally
-make publish           # Publish to Galaxy
+make help               # Show available commands
+make install            # Install dependencies
+make version            # Show installed versions
+make lint               # Run all linters (yamllint + ansible-lint)
+make lint-yaml          # Run yamllint only
+make lint-ansible       # Run ansible-lint only
+make test               # Test all roles
+make build              # Build collection tarball
+make install-collection # Install collection locally
+make publish            # Publish to Galaxy (requires GALAXY_API_KEY)
+make clean              # Clean build artifacts
 ```
 
 ## 🎨 YAML Style Guidelines
@@ -623,7 +626,7 @@ name: devtools
 version: <semver>
 readme: README.md
 authors:
-  - Kode3Tech DevOps Team <devops@kode3.com.br>
+  - Kode3Tech DevOps Team <suporte@kode3.tech>
 description: >-
   Detailed description...
 license:
@@ -1584,7 +1587,7 @@ additional access controls with sudo policies.
 
 For questions or issues:
 - GitHub Issues: https://github.com/kode3tech/ansible-devtools/issues
-- Email: devops@kode3.com.br
+- Email: suporte@kode3.tech
 
 ---
 

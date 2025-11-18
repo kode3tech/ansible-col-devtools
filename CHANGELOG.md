@@ -81,7 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New pytest tests for JSON/TOML configuration validation
   - Tests verify: file existence, syntax, content, and structure
   - Full test coverage on Ubuntu 22.04, Debian 12, Rocky Linux 9
-  - Documentation: `docs/MOLECULE_TESTS_UPDATE.md`
+    - Performance tuning defaults (overlay2, BuildKit, optimized logging)
+  - Complete Molecule tests
+  - Documentation improvements
 - **[Podman]** Smart repository detection for modern distributions
   - Auto-detect Ubuntu 24.04+ and Debian 13+ with native Podman support
   - Skip external repository setup when not needed

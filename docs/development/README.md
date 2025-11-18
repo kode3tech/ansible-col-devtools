@@ -13,21 +13,16 @@ Understanding how roles are organized in this collection.
 
 ### [Testing](testing/)
 Complete testing documentation.
-- [Testing Strategy](testing/TESTING.md) - Overall testing approach
 - [Molecule Testing](testing/MOLECULE_TESTING.md) - Molecule test framework
-- [Quick Reference](testing/MOLECULE_QUICK_REFERENCE.md) - Molecule commands
-- [Test Summary](testing/MOLECULE_TESTS_SUMMARY.md) - Current test coverage
-- [Test Updates](testing/MOLECULE_TESTS_UPDATE.md) - Recent test changes
-- [Test Reports](testing/TEST_REPORT.md) - Latest test results
+- [Molecule Quick Reference](testing/MOLECULE_QUICK_REFERENCE.md) - Molecule commands
 
 ---
 
 ## 🎯 For New Contributors
 
-1. **Read** [Contributing Guide](../../CONTRIBUTING.md)
-2. **Understand** [Role Structure](ROLE_STRUCTURE.md)
-3. **Learn** [Testing Strategy](testing/TESTING.md)
-4. **Run** tests with Molecule
+1. **Read** [Role Structure Guide](ROLE_STRUCTURE.md)
+2. **Review** [Molecule Testing](testing/MOLECULE_TESTING.md)
+3. **Run** tests with `make test`
 
 ---
 
@@ -35,11 +30,7 @@ Complete testing documentation.
 
 ```bash
 # Test all roles
-make test-all
-
-# Test specific role
-make test-docker
-make test-podman
+make test
 
 # Using Molecule directly
 cd roles/docker

@@ -5,7 +5,7 @@ version: 1.0.0
 readme: README.md
 
 authors:
-  - Kode3Tech DevOps Team <devops@kode3.com.br>
+  - Kode3Tech DevOps Team <suporte@kode3.tech>
 
 description: >-
   Ansible Collection for DevOps tools installation and configuration.

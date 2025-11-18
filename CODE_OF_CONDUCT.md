@@ -60,7 +60,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-devops@kode3.com.br.
+suporte@kode3.tech.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
@@ -130,4 +130,4 @@ https://www.contributor-covenant.org/translations.
 
 ---
 
-**Questions?** Contact us at devops@kode3.com.br
+**Questions?** Contact us at suporte@kode3.tech

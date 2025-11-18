@@ -56,7 +56,7 @@ Each role maintains its own documentation:
 - 🔧 Check [Troubleshooting](troubleshooting/)
 - 🐛 Report bugs in [GitHub Issues](https://github.com/kode3tech/ansible-devtools/issues)
 - 💬 Ask questions in [GitHub Discussions](https://github.com/kode3tech/ansible-devtools/discussions)
-- 📧 Email: devops@kode3.com.br
+- 📧 Email: suporte@kode3.tech
 
 ---
 
@@ -73,8 +73,7 @@ Each role maintains its own documentation:
 ### For Developers
 1. [Contributing Guide](../CONTRIBUTING.md)
 2. [Role Structure](development/ROLE_STRUCTURE.md)
-3. [Testing Guide](development/testing/TESTING.md)
-4. [Molecule Testing](development/testing/MOLECULE_TESTING.md)
+3. [Molecule Testing](development/testing/MOLECULE_TESTING.md)
 
 ### For Troubleshooting
 1. [FAQ](FAQ.md)

@@ -376,7 +376,7 @@ Para validar performance real, use os playbooks de exemplo:
 
 ```bash
 # Testar em ambiente real
-ansible-playbook -i inventory.ini playbooks/install-docker.yml
+ansible-playbook -i inventory.ini playbooks/docker/install-docker.yml
 
 # Validar configurações
 ansible -i inventory.ini all -m shell \

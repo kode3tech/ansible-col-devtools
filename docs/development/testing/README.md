@@ -4,13 +4,6 @@ Comprehensive testing documentation for the kode3tech.devtools collection.
 
 ## 📋 Available Guides
 
-### [Testing Strategy](TESTING.md)
-Overall testing approach and strategy.
-- Test structure
-- Test platforms (Ubuntu, Debian, Rocky)
-- Test sequence
-- Running tests
-
 ### [Molecule Testing Guide](MOLECULE_TESTING.md)
 Complete Molecule testing framework documentation.
 - Molecule overview
@@ -25,20 +18,7 @@ Quick reference for common Molecule commands.
 - Common workflows
 - Troubleshooting
 
-### [Test Summary](MOLECULE_TESTS_SUMMARY.md)
-Current test coverage and test scenarios.
-- Docker role tests
-- Podman role tests
-- Insecure registry tests
-- Verification methods
-
-### [Test Updates](MOLECULE_TESTS_UPDATE.md)
-Recent updates to test scenarios.
-- Latest changes
-- New test coverage
-- Breaking changes
-
-### [Test Report](TEST_REPORT.md)
+## 🚀 Running Tests
 Latest test execution results.
 - Test results by platform
 - Pass/fail status
@@ -50,7 +30,7 @@ Latest test execution results.
 
 ### Run All Tests
 ```bash
-make test-all
+make test
 ```
 
 ### Test Specific Role

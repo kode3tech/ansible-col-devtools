@@ -26,3 +26,8 @@ ignore: |
   .molecule/
   .cache/
   .git/
+  .ansible/
+  collections/
+  _temp/
+  node_modules/
+  *.tar.gz

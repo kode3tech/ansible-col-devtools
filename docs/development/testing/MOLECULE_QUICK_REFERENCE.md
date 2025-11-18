@@ -40,10 +40,8 @@ cd roles/podman && molecule destroy
 
 ### Both Roles (from project root)
 ```bash
-# Using Makefile
-make test-docker
-make test-podman
-make test-all
+# Using Makefile shortcuts
+make test  # Test all roles
 
 # Direct commands
 for role in docker podman; do
@@ -374,8 +372,7 @@ jobs:
 
 - [Molecule Documentation](https://molecule.readthedocs.io/)
 - [Testinfra Documentation](https://testinfra.readthedocs.io/)
-- [TESTING.md](./TESTING.md) - Detailed testing guide
-- [MOLECULE_TESTS_UPDATE.md](./MOLECULE_TESTS_UPDATE.md) - Test update documentation
+- [MOLECULE_TESTING.md](./MOLECULE_TESTING.md) - Complete testing guide
 
 ---
 

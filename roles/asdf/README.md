@@ -392,8 +392,8 @@ MIT
 This role was created by the **Kode3Tech DevOps Team**.
 
 - GitHub: [kode3tech](https://github.com/kode3tech)
-- Email: devops@kode3.com.br
-- Website: [kode3.com.br](https://kode3.com.br)
+- Email: suporte@kode3.tech
+- Website: [kode3.tech](https://kode3.tech)
 
 ## 🤝 Contributing
 

@@ -31,8 +31,11 @@ Misturar essas configurações causava:
 #### Opção 1: Atualização Automática (Recomendado)
 
 ```bash
-# 1. Executar playbook (irá reorganizar arquivos)
-ansible-playbook -i inventory.ini playbooks/install-podman.yml
+# Install collection
+ansible-galaxy collection install kode3tech.devtools
+
+# Run playbook
+ansible-playbook -i inventory.ini playbooks/podman/install-podman.yml
 
 # 2. Resetar storage do Podman (REMOVE containers/imagens!)
 ansible -i inventory.ini all -m shell \
@@ -175,7 +178,7 @@ Se encontrar problemas, você pode voltar para v1.0.x:
 git checkout tags/v1.0.0
 
 # 2. Executar playbook
-ansible-playbook -i inventory.ini playbooks/install-podman.yml
+ansible-playbook -i inventory.ini playbooks/podman/install-podman.ymlman.yml
 
 # 3. Resetar storage (novamente)
 ansible -i inventory.ini all -m shell \
@@ -189,7 +192,7 @@ Se encontrar problemas durante a atualização:
 
 1. Verifique os logs: `journalctl -xeu podman`
 2. Abra uma issue: https://github.com/kode3tech/ansible-devtools/issues
-3. Email: devops@kode3.com.br
+3. Email: suporte@kode3.tech
 
 ---
 

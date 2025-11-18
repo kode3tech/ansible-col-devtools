@@ -15,7 +15,13 @@ exclude_paths:
   - .git/
   - .ansible/
   - collections/
+  - _temp/
+  - node_modules/
   - '*.tar.gz'
+  - '**/.molecule/'
+  - '**/.cache/'
+  - '**/molecule/*/.cache/'
+  - '**/molecule/*/.molecule/'
 
 # Usar regras progressivas
 progressive: true
