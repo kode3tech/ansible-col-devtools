@@ -140,6 +140,34 @@ podman_registries_auth:
 
 📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
+## Time Synchronization
+
+The role includes **automatic time synchronization** to ensure proper repository access and package validation.
+
+### Ubuntu/Debian Specific Handling
+
+**Problem**: Ubuntu 25+ and newer Debian versions may have time synchronization issues that cause repository release files to be considered "invalid" (from the future).
+
+**Solution**: The role automatically handles time synchronization for newer Ubuntu/Debian systems:
+
+```yaml
+# Ubuntu 25+ / Debian 13+: Restart systemd-timesyncd for immediate sync
+systemctl restart systemd-timesyncd
+timedatectl set-ntp true
+wait 15 seconds
+```
+
+**Benefits:**
+- ✅ **Automatic repository validation** - release files accessible without time-related errors
+- ✅ **Distribution-specific logic** - uses systemd-timesyncd (Ubuntu/Debian standard)
+- ✅ **Immediate effect** - forces NTP sync and verification
+- ✅ **Zero configuration** - works out of the box for Ubuntu 25+ and Debian 13+
+
+**Error prevented:**
+```
+E:Release file for http://archive.ubuntu.com/ubuntu/dists/plucky-updates/InRelease is not valid yet (invalid for another 10d 22h 8min 48s)
+```
+
 ## Performance Tuning
 
 This role includes **performance-optimized defaults** that provide significant improvements over vanilla Podman installations:
