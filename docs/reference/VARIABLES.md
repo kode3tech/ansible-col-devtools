@@ -105,31 +105,32 @@ docker_insecure_registries:
 **Example `docker_registries_auth`:**
 ```yaml
 docker_registries_auth:
-  - registry_url: "https://index.docker.io/v1/"
+  - registry: "https://index.docker.io/v1/"
     username: "dockerhub-user"
     password: "{{ vault_dockerhub_token }}"
     email: "user@example.com"  # Optional
   
-  - registry_url: "ghcr.io"
+  - registry: "ghcr.io"
     username: "github-user"
     password: "{{ vault_github_token }}"
   
-  - registry_url: "registry.company.com"
+  - registry: "registry.company.com"
     username: "ci-user"
-    password_file: "/path/to/password/file"  # Alternative to password
+    password: "{{ vault_registry_password }}"
 ```
 
 ### Registry Authentication Object Properties
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `registry_url` | string | Yes | Registry URL (Docker Hub: `https://index.docker.io/v1/`, others: hostname) |
+| `registry` | string | Yes | Registry URL (Docker Hub: `https://index.docker.io/v1/`, others: hostname) |
 | `username` | string | Yes | Registry username |
-| `password` | string | No* | User password or access token |
-| `password_file` | string | No* | Path to file containing password |
+| `password` | string | Yes | User password or access token |
 | `email` | string | No | User email (legacy, rarely needed) |
 
-*Either `password` or `password_file` must be provided.
+**⚠️ Security Note**: Always use Ansible Vault to encrypt passwords. Never store plain-text credentials.
+
+**🔧 RHEL Enhancement**: The Docker role automatically fixes file ownership for `~/.docker/config.json` on RHEL systems, ensuring users can access Docker without permission denied errors.
 
 ---
 
@@ -226,11 +227,11 @@ podman_insecure_registries:
 **Example `podman_registries_auth`:**
 ```yaml
 podman_registries_auth:
-  - registry_url: "quay.io"
+  - registry: "quay.io"
     username: "myuser"
     password: "{{ vault_quay_password }}"
   
-  - registry_url: "registry.company.com"
+  - registry: "registry.company.com"
     username: "ci-user"
     password_file: "/path/to/password/file"
 ```
@@ -239,10 +240,16 @@ podman_registries_auth:
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `registry_url` | string | Yes | Registry URL (hostname or full URL) |
+| `registry` | string | Yes | Registry hostname (Docker Hub: `docker.io`, others: hostname) |
 | `username` | string | Yes | Registry username |
 | `password` | string | No* | User password or access token |
 | `password_file` | string | No* | Path to file containing password |
+
+*Either `password` or `password_file` must be provided.
+
+**⚠️ Security Note**: Always use Ansible Vault to encrypt passwords. Never store plain-text credentials.
+
+**🔧 RHEL Enhancement**: The Podman role automatically fixes file ownership for authentication files in user's `XDG_RUNTIME_DIR` on RHEL systems, ensuring proper per-user authentication with correct permissions.
 
 *Either `password` or `password_file` must be provided.
 

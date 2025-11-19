@@ -91,7 +91,8 @@
     - name: Ensure subuid entries for users
       ansible.builtin.lineinfile:
         path: /etc/subuid
-        line: "{{ item }}:{{ podman_subuid_start + (podman_subuid_count * podman_rootless_index) }}:{{ podman_subuid_count }}"
+        line: >
+          {{ item }}:{{ podman_subuid_start + (podman_subuid_count * podman_rootless_index) }}:{{ podman_subuid_count }}
         regexp: "^{{ item }}:"
         create: true
         mode: '0644'
@@ -102,7 +103,8 @@
     - name: Ensure subgid entries for users
       ansible.builtin.lineinfile:
         path: /etc/subgid
-        line: "{{ item }}:{{ podman_subgid_start + (podman_subgid_count * podman_rootless_index) }}:{{ podman_subgid_count }}"
+        line: >
+          {{ item }}:{{ podman_subgid_start + (podman_subgid_count * podman_rootless_index) }}:{{ podman_subgid_count }}
         regexp: "^{{ item }}:"
         create: true
         mode: '0644'
@@ -170,7 +172,9 @@
 
 - name: Display warning if Podman login skipped
   ansible.builtin.debug:
-    msg: "⚠️ WARNING: Podman registry authentication skipped - containers.podman collection not installed. Install with: ansible-galaxy collection install containers.podman"
+    msg: >
+      ⚠️ WARNING: Podman registry authentication skipped - containers.podman collection not installed.
+      Install with: ansible-galaxy collection install containers.podman
   when:
     - podman_registries_auth | length > 0
     - podman_collection_check.rc != 0

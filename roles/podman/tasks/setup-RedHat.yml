@@ -1,6 +1,51 @@
 ---
 # RedHat/CentOS specific setup tasks
 
+# Time synchronization fix - CRITICAL for RHEL 10 GPG signature validation
+# RHEL 8-9: Use chronyd (default) | RHEL 10: Use chronyd with specific restart logic
+- name: Ensure NTP service is running for RHEL 10 (GPG signature validation)
+  ansible.builtin.systemd:
+    name: "{{ ntp_service }}"
+    enabled: true
+    state: restarted
+  vars:
+    ntp_service: "{{ 'chronyd' if ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8 else 'systemd-timesyncd' }}"
+  when: ansible_distribution_major_version|int >= 10
+  tags: podman
+
+- name: Wait for time synchronization (RHEL 10 GPG fix)
+  ansible.builtin.wait_for:
+    timeout: 10
+  when: ansible_distribution_major_version|int >= 10
+  tags: podman
+
+- name: Verify system time is synchronized (RHEL 10)
+  ansible.builtin.command:
+    cmd: timedatectl show --property=NTPSynchronized --value
+  register: ntp_status_rhel10
+  changed_when: false
+  when: ansible_distribution_major_version|int >= 10
+  tags: podman
+
+# Fallback time sync for RHEL 8-9 (certificate issues)
+- name: Ensure NTP service is running (RHEL 8-9 certificate validation fix)
+  ansible.builtin.systemd:
+    name: chronyd
+    enabled: true
+    state: started
+  when: ansible_distribution_major_version|int < 10
+  failed_when: false
+  tags: podman
+
+- name: Force time synchronization (RHEL 8-9 with chronyd)
+  ansible.builtin.command:
+    cmd: chronyc makestep
+  when:
+    - ansible_distribution_major_version|int < 10
+  changed_when: false
+  failed_when: false
+  tags: podman
+
 - name: Install prerequisites
   ansible.builtin.dnf:
     name: "{{ podman_prerequisites_redhat }}"
@@ -11,3 +56,5 @@
   ansible.builtin.debug:
     msg: "Podman is available in RHEL/CentOS/Rocky default repositories"
   tags: podman
+
+

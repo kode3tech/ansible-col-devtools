@@ -25,7 +25,7 @@ Ansible role for installing and configuring Docker Engine on Linux servers.
 ## Requirements
 
 - Ansible >= 2.15
-- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 9+
+- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 8+
 - Root or sudo privileges on target hosts
 - **Collection**: `community.docker` >= 3.4.0 (required for registry authentication)
 
@@ -33,7 +33,17 @@ Ansible role for installing and configuring Docker Engine on Linux servers.
 
 - **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
+- **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
+
+### RHEL-Specific Features
+
+This role includes enhanced support for RHEL-based systems:
+
+- ✅ **Automatic permission fixes** for user Docker config files
+- ✅ **Time synchronization handling** for GPG signature validation (RHEL 10)
+- ✅ **Certificate validation fixes** for container registries (RHEL 8-9)
+- ✅ **SELinux context restoration** for Docker configuration directories
+- ✅ **Version-specific optimizations** for each RHEL release
 
 ## Role Variables
 
@@ -75,7 +85,7 @@ For complete documentation on variables, see [Variables Reference](../../docs/re
 
 ### Registry Authentication
 
-This role supports authentication to private container registries. 
+This role supports **comprehensive** authentication to private container registries with **automatic permission handling**.
 
 **Quick example:**
 ```yaml
@@ -87,8 +97,92 @@ docker_registries_auth:
 
 **⚠️ Security:** Always use Ansible Vault for passwords!
 
+**✅ Features:**
+- **Multiple registry support** (Docker Hub, GHCR, Quay.io, private registries)
+- **Automatic permission fixes** for user config files on RHEL systems
+- **Per-user authentication** with proper file ownership
+- **SELinux context restoration** on supported systems
+- **Non-interactive authentication** (perfect for CI/CD)
+
 📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
+### RHEL Permission Handling
+
+**Problem**: On RHEL systems, Docker login creates `~/.docker/config.json` as `root:root`, causing permission denied errors for regular users.
+
+**Solution**: This role **automatically fixes** file ownership and permissions when `docker_registries_auth` is configured:
+
+```bash
+# Before (❌ - permission denied)
+-rw-------. 1 root    root    162 /home/user/.docker/config.json
+
+# After (✅ - automatic fix)
+-rw-------. 1 user    user    162 /home/user/.docker/config.json
+```
+
+**How it works:**
+1. Login tasks create config files (may be as root)
+2. Permission fix tasks run **automatically after login**
+3. Files get correct `user:user` ownership
+4. SELinux contexts restored if enabled
+5. Users can access Docker without permission errors
+
+**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+
+### RHEL Permission Handling
+
+**Problem**: On RHEL systems, Docker login creates `~/.docker/config.json` as `root:root`, causing permission denied errors for regular users.
+
+**Solution**: This role **automatically fixes** file ownership and permissions when `docker_registries_auth` is configured:
+
+```bash
+# Before (❌ - permission denied)
+-rw-------. 1 root    root    162 /home/user/.docker/config.json
+
+# After (✅ - automatic fix)
+-rw-------. 1 user    user    162 /home/user/.docker/config.json
+```
+
+**How it works:**
+1. Login tasks create config files (may be as root)
+2. Permission fix tasks run **automatically after login**
+3. Files get correct `user:user` ownership
+4. SELinux contexts restored if enabled
+5. Users can access Docker without permission errors
+
+**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+
+## Time Synchronization
+
+The role includes **automatic time synchronization** to ensure proper GPG signature validation and certificate verification.
+
+### RHEL 10 Specific Handling
+
+**Problem**: RHEL 10 systems may have clock skew issues that cause Docker repository GPG signature validation to fail.
+
+**Solution**: The role automatically handles time synchronization with version-specific logic:
+
+```yaml
+# RHEL 10: Restart chronyd for immediate sync
+systemctl restart chronyd
+wait 10 seconds
+
+# RHEL 8-9: Start chronyd + force sync
+systemctl start chronyd
+chronyc makestep
+wait 15 seconds
+```
+
+**Benefits:**
+- ✅ **Automatic GPG validation** - repositories accessible without time-related errors
+- ✅ **Version-specific logic** - optimized for each RHEL release
+- ✅ **Certificate validation** - HTTPS connections work properly
+- ✅ **Zero configuration** - works out of the box
+
+**Error prevented:**
+```
+GPG signature verification failed - system clock may be incorrect
+```
 
 ## Performance Tuning
 

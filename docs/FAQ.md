@@ -24,7 +24,11 @@ The `code3tech.devtools` collection automates the installation and configuration
 
 - **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
+- **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
+
+**Enhanced RHEL support** includes automatic fixes for common issues like file permissions and time synchronization.
+
+**Enhanced RHEL support** includes automatic fixes for common issues like file permissions and time synchronization.
 
 ### What Ansible version is required?
 
@@ -104,6 +108,80 @@ sudo apt update && sudo apt upgrade docker-ce docker-ce-cli containerd.io
 sudo dnf update docker-ce docker-ce-cli containerd.io
 ```
 
+### Why do I get "permission denied" errors with Docker on RHEL?
+
+**Symptom**: Users get permission denied when trying to access Docker after registry authentication:
+```bash
+$ docker images
+permission denied while trying to connect to the Docker daemon
+```
+
+**Cause**: On RHEL systems, Docker login creates `~/.docker/config.json` as `root:root`.
+
+**Solution**: The Docker role **automatically fixes** this! If you still see issues:
+
+1. **Check file ownership**:
+   ```bash
+   ls -la ~/.docker/config.json
+   # Should be: username:username, not root:root
+   ```
+
+2. **Manual fix** (if needed):
+   ```bash
+   sudo chown $USER:$USER ~/.docker/config.json
+   ```
+
+3. **Re-run the playbook** with registry authentication to auto-fix all users:
+   ```yaml
+   docker_registries_auth:
+     - registry: "docker.io"
+       username: "myuser"
+       password: "{{ vault_password }}"
+   ```
+
+### Why does Docker repository setup fail on RHEL 10?
+
+**Symptom**: GPG signature verification fails:
+```
+GPG signature verification failed - system clock may be incorrect
+```
+
+**Cause**: RHEL 10 systems may have clock skew affecting GPG validation.
+
+**Solution**: The Docker role **automatically handles** time synchronization:
+- ✅ Restarts chronyd on RHEL 10
+- ✅ Waits for time sync completion
+- ✅ Version-specific logic for RHEL 8-9 vs 10
+
+**Manual verification**:
+```bash
+sudo systemctl restart chronyd
+chronyc sources -v
+date
+```
+
+### Can I use Docker with private registries?
+
+**Yes!** The role supports comprehensive registry authentication:
+
+```yaml
+docker_registries_auth:
+  - registry: "ghcr.io"
+    username: "myuser"
+    password: "{{ vault_github_token }}"
+  - registry: "registry.company.com"
+    username: "ci-user"
+    password: "{{ vault_registry_password }}"
+```
+
+**Features:**
+- ✅ Multiple registries (Docker Hub, GHCR, Quay.io, private)
+- ✅ Automatic permission fixes on RHEL
+- ✅ Non-interactive authentication (perfect for CI/CD)
+- ✅ Ansible Vault integration for security
+
+📖 **Complete guide**: [Registry Authentication](user-guides/REGISTRY_AUTHENTICATION.md)
+
 ### Can I customize Docker daemon configuration?
 
 Yes! Use the `docker_daemon_config` variable:
@@ -168,8 +246,55 @@ When `podman_enable_rootless: true`:
 - No daemon required
 - Uses user namespaces and subuid/subgid
 - Storage in `~/.local/share/containers/storage`
+- **RHEL enhancement**: Automatic permission fixes for auth files
 
-Configure with:
+### Why do I get "permission denied" errors with Podman on RHEL?
+
+**Symptom**: Rootless users can't access Podman authentication files:
+```bash
+$ podman login registry.example.com
+Error: permission denied: /run/user/1000/containers/auth.json
+```
+
+**Cause**: On RHEL systems, Podman login may create files with incorrect ownership.
+
+**Solution**: The Podman role **automatically fixes** this! If you still see issues:
+
+1. **Check file ownership**:
+   ```bash
+   ls -la $XDG_RUNTIME_DIR/containers/auth.json
+   # Should be: username:username, not root:root
+   ```
+
+2. **Manual fix** (if needed):
+   ```bash
+   sudo chown $USER:$USER $XDG_RUNTIME_DIR/containers/auth.json
+   ```
+
+3. **Re-run the playbook** with registry authentication to auto-fix all users:
+   ```yaml
+   podman_enable_rootless: true
+   podman_rootless_users:
+     - myuser
+   podman_registries_auth:
+     - registry: "quay.io"
+       username: "myuser"
+       password: "{{ vault_password }}"
+   ```
+
+### What's the difference between root and rootless Podman?
+
+| Feature | Root Podman | Rootless Podman |
+|---------|-------------|------------------|
+| **Daemon** | No daemon (like rootless) | No daemon |
+| **Privileges** | Requires root/sudo | No root required |
+| **Storage** | `/var/lib/containers/storage` | `~/.local/share/containers/storage` |
+| **Network** | Full network access | Limited network (no privileged ports) |
+| **Systemd** | System-wide services | User services only |
+| **Security** | Higher privileges | Better isolation |
+| **Authentication** | System-wide | Per-user with auto-fixes |
+
+**Recommendation**: Use rootless unless you specifically need privileged features.
 ```yaml
 podman_enable_rootless: true
 podman_rootless_users:

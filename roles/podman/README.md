@@ -16,7 +16,7 @@ Ansible role for installing and configuring Podman on Linux servers.
 ## Requirements
 
 - Ansible >= 2.15
-- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 9+
+- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 8+
 - Root or sudo privileges on target hosts
 - **Collection**: `containers.podman` >= 1.10.0 (required for registry authentication)
 
@@ -24,7 +24,17 @@ Ansible role for installing and configuring Podman on Linux servers.
 
 - **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
+- **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
+
+### RHEL-Specific Features
+
+This role includes enhanced support for RHEL-based systems:
+
+- ✅ **Automatic permission fixes** for user Podman config files
+- ✅ **Enhanced rootless authentication** with proper file ownership
+- ✅ **SELinux context restoration** for container directories
+- ✅ **Multi-user support** with isolated authentication
+- ✅ **XDG_RUNTIME_DIR fixes** for proper rootless operation
 
 ## Role Variables
 
@@ -84,7 +94,7 @@ For complete documentation on variables, see [Variables Reference](../../docs/re
 
 ### Registry Authentication
 
-This role supports authentication to private container registries.
+This role supports **comprehensive** authentication to private container registries with **automatic permission handling**.
 
 **Quick example:**
 ```yaml
@@ -96,7 +106,37 @@ podman_registries_auth:
 
 **⚠️ Security:** Always use Ansible Vault for passwords!
 
-**Rootless mode:** Authentication is performed per-user (not system-wide).
+**✅ Features:**
+- **Multiple registry support** (Docker Hub, Quay.io, GHCR, private registries)
+- **Automatic permission fixes** for user config files on RHEL systems
+- **Per-user authentication** for rootless mode (isolated credentials)
+- **SELinux context restoration** on supported systems
+- **Non-interactive authentication** (perfect for CI/CD)
+
+**Rootless mode:** Authentication is performed per-user with proper file ownership.
+
+### RHEL Permission Handling
+
+**Problem**: On RHEL systems, Podman login may create authentication files with incorrect ownership, causing permission denied errors.
+
+**Solution**: This role **automatically fixes** file ownership and permissions when `podman_registries_auth` is configured:
+
+```bash
+# Before (❌ - permission denied)
+-rw-------. 1 root    root    245 /run/user/1000/containers/auth.json
+
+# After (✅ - automatic fix)
+-rw-------. 1 user    user    245 /run/user/1000/containers/auth.json
+```
+
+**How it works:**
+1. Login tasks authenticate to registries (may create files as root)
+2. Permission fix tasks run **automatically after login**
+3. Files get correct `user:user` ownership in user's XDG_RUNTIME_DIR
+4. SELinux contexts restored if enabled
+5. Each user has isolated, properly-owned authentication
+
+**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
 
 📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 

@@ -1,0 +1,106 @@
+---
+# Podman registry authentication tasks
+# This file handles both root and rootless Podman authentication
+
+# Root mode authentication (when rootless is disabled)
+- name: Login to Podman registries (root mode)
+  containers.podman.podman_login:
+    registry: "{{ item.registry }}"
+    username: "{{ item.username }}"
+    password: >
+      {{ item.password | default(
+        lookup('file', item.password_file)
+        if item.password_file is defined else omit
+      ) }}
+    reauthorize: true
+  loop: "{{ podman_registries_auth }}"
+  when: not podman_enable_rootless
+  no_log: true
+  register: podman_root_login_result
+
+# Rootless mode authentication (for each configured user)
+- name: Login to Podman registries for rootless users
+  become: true
+  become_user: "{{ item.0 }}"
+  containers.podman.podman_login:
+    registry: "{{ item.1.registry }}"
+    username: "{{ item.1.username }}"
+    password: >
+      {{ item.1.password | default(
+        lookup('file', item.1.password_file)
+        if item.1.password_file is defined else omit
+      ) }}
+    reauthorize: true
+  loop: "{{ podman_rootless_users | product(podman_registries_auth) | list }}"
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+  no_log: true
+  register: podman_rootless_login_result
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['getent_passwd'][item.0][1] }}"
+
+# Display login results and warnings
+- name: Display Podman root login warnings
+  ansible.builtin.debug:
+    msg: "Warning: Failed to login to registry {{ item.item.registry }} - check credentials"
+  loop: "{{ podman_root_login_result.results | default([]) }}"
+  when:
+    - not podman_enable_rootless
+    - item.failed | default(false)
+
+- name: Display Podman rootless login warnings
+  ansible.builtin.debug:
+    msg: "Warning: Failed to login user {{ item.item.0 }} to registry {{ item.item.1.registry }} - check credentials"
+  loop: "{{ podman_rootless_login_result.results | default([]) }}"
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+    - item.failed | default(false)
+
+# RedHat-specific Podman permission fixes (must run AFTER login tasks)
+# These tasks fix ownership issues when auth files are created with wrong permissions
+- name: Create .config/containers directory for rootless users (RedHat permission fix)
+  ansible.builtin.file:
+    path: "/home/{{ item }}/.config/containers"
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: '0700'
+  loop: "{{ podman_rootless_users }}"
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+    - podman_registries_auth | length > 0
+    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+  tags: podman
+
+- name: Fix Podman auth file permissions for rootless users (RedHat permission fix)
+  ansible.builtin.file:
+    path: "/home/{{ item }}/.config/containers/auth.json"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: '0600'
+    state: file
+  loop: "{{ podman_rootless_users }}"
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+    - podman_registries_auth | length > 0
+    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+  failed_when: false  # Don't fail if file doesn't exist
+  tags: podman
+
+- name: Restore SELinux context for Podman config directories (RedHat SELinux fix)
+  ansible.builtin.command: restorecon -R "/home/{{ item }}/.config/containers/"
+  loop: "{{ podman_rootless_users }}"
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+    - podman_registries_auth | length > 0
+    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+    - ansible_selinux.status is defined
+    - ansible_selinux.status == "enabled"
+  failed_when: false  # Don't fail if SELinux is not available or directory doesn't exist
+  changed_when: false  # This is a maintenance operation
+  tags: podman

@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **[Docker]** RHEL 8+ support and enhanced features (v1.2.0)
+  - **Extended platform support**: Now supports RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+  - **Automatic permission fixes**: Resolves Docker config file ownership issues on RHEL systems
+  - **Time synchronization**: Automatic chronyd handling for GPG signature validation
+  - **Registry authentication**: Enhanced multi-registry support with automatic permission handling
+  - **SELinux context restoration**: Proper security contexts for Docker directories
+  - **Per-user config management**: Automated `.docker/config.json` ownership fixes
+- **[Podman]** RHEL 8+ support and enhanced rootless features (v1.2.0)
+  - **Extended platform support**: Now supports RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+  - **Enhanced rootless authentication**: Per-user authentication with automatic permission fixes
+  - **Multi-user support**: Isolated credentials for each user in XDG_RUNTIME_DIR
+  - **SELinux context restoration**: Proper security contexts for container directories
+  - **Automatic permission handling**: Resolves auth file ownership issues on RHEL systems
+- **[Registry Authentication]** Enhanced RHEL support (v1.2.0)
+  - **Automatic permission fixes**: Both Docker and Podman now handle RHEL file ownership
+  - **Non-interactive authentication**: Perfect for CI/CD with proper credential handling
+  - **Multi-registry support**: Docker Hub, GHCR, Quay.io, private registries
+  - **Security enhancements**: Proper file ownership and SELinux contexts
 - **[asdf]** New role for asdf version manager (v1.0.0)
   - **Binary installation** (asdf v0.16.0+): Fast, reliable installation from official GitHub releases
   - **Multi-distribution support**: Ubuntu 22/24/25, Debian 11/12/13, RHEL/Rocky 9/10
@@ -54,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[Docker/Podman]** Private registry authentication support
   - New variables: `docker_registries_auth` and `podman_registries_auth`
   - Secure login with `no_log: true` to prevent credential exposure
-  - Support for password or password_file authentication methods
+  - Support for password authentication (Docker) or password/password_file authentication (Podman)
   - Rootless-aware authentication for Podman (per-user login)
   - Automatic fallback to shell command if module fails (Podman)
   - **New**: `podman_clean_credentials` option to remove old/invalid credentials

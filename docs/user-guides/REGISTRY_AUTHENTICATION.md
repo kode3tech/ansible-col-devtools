@@ -97,18 +97,7 @@ ansible-playbook playbook.yml --vault-password-file ~/.vault_pass
 ansible-playbook playbook.yml --vault-id prod@~/.vault_pass_prod
 ```
 
-### Alternative: Password Files
 
-For integration with external secret management (HashiCorp Vault, AWS Secrets Manager, etc.):
-
-```yaml
-docker_registries_auth:
-  - registry: "registry.example.com"
-    username: "ci-user"
-    password_file: "/var/lib/jenkins/secrets/registry-password"
-```
-
-**Note**: Ensure the password file has appropriate permissions (600 or 400).
 
 ## Docker Registry Authentication
 
@@ -153,11 +142,8 @@ docker_registries_auth:
 |----------|------|----------|-------------|
 | `registry` | string | Yes | Registry URL. Docker Hub: `https://index.docker.io/v1/`, others: hostname |
 | `username` | string | Yes | Registry username |
-| `password` | string | No* | User password or token |
-| `password_file` | string | No* | Path to file containing password |
+| `password` | string | Yes | User password or token |
 | `email` | string | No | User email (legacy, rarely needed) |
-
-**Note**: Either `password` or `password_file` must be provided.
 
 ### How It Works
 
@@ -165,6 +151,29 @@ docker_registries_auth:
 2. Credentials are stored in `~/.docker/config.json`
 3. Task uses `no_log: true` to prevent credential exposure in logs
 4. Login is performed **system-wide** (affects all users)
+5. **RHEL systems**: Automatic permission fixes ensure proper file ownership
+
+### RHEL Permission Fixes
+
+**Problem**: On RHEL systems, Docker login creates `~/.docker/config.json` as `root:root`, causing permission denied errors for regular users.
+
+**Solution**: The Docker role **automatically fixes** file ownership and permissions:
+
+```bash
+# Before (❌ - permission denied)
+-rw-------. 1 root    root    162 /home/user/.docker/config.json
+
+# After (✅ - automatic fix)
+-rw-------. 1 user    user    162 /home/user/.docker/config.json
+```
+
+**Features:**
+- ✅ **Automatic detection** of users needing config files
+- ✅ **Proper ownership** (`user:user`) for each user's config
+- ✅ **SELinux context restoration** if enabled
+- ✅ **Zero configuration** - works automatically when `docker_registries_auth` is configured
+
+**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
 
 ### Example Playbook
 
@@ -255,6 +264,30 @@ podman_registries_auth:
 3. Uses `become_user` to switch to target user
 4. Credentials stored in user's `$XDG_RUNTIME_DIR/containers/auth.json`
 5. Each user has isolated authentication
+6. **RHEL systems**: Automatic permission fixes ensure proper file ownership
+
+### RHEL Permission Fixes
+
+**Problem**: On RHEL systems, Podman login may create authentication files with incorrect ownership, causing permission denied errors.
+
+**Solution**: The Podman role **automatically fixes** file ownership and permissions:
+
+```bash
+# Before (❌ - permission denied)
+-rw-------. 1 root    root    245 /run/user/1000/containers/auth.json
+
+# After (✅ - automatic fix)
+-rw-------. 1 user    user    245 /run/user/1000/containers/auth.json
+```
+
+**Features:**
+- ✅ **Per-user authentication** with isolated credentials
+- ✅ **Automatic permission fixes** for each user's auth files
+- ✅ **XDG_RUNTIME_DIR handling** in user's runtime directory
+- ✅ **SELinux context restoration** if enabled
+- ✅ **Zero configuration** - works automatically when `podman_registries_auth` is configured
+
+**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
 
 ### Example Playbook
 
@@ -436,25 +469,7 @@ Rootless Podman requires `XDG_RUNTIME_DIR`. Role handles this, but if issues per
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 ```
 
-### Password File Not Found
 
-If using `password_file`:
-```yaml
-- registry: "registry.example.com"
-  username: "user"
-  password_file: "/path/to/password"
-```
-
-Ensure:
-1. File exists on target host
-2. File is readable by the user performing login
-3. File contains only the password (no newlines)
-
-```bash
-# Create password file
-echo -n "my_password" > /secure/path/registry-password
-chmod 600 /secure/path/registry-password
-```
 
 ### Credentials Not Persisting
 
