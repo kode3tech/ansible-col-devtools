@@ -108,16 +108,16 @@ podman_registries_auth:
 
 **✅ Features:**
 - **Multiple registry support** (Docker Hub, Quay.io, GHCR, private registries)
-- **Automatic permission fixes** for user config files on RHEL systems
+- **Automatic permission fixes** for user config files on all supported systems
 - **Per-user authentication** for rootless mode (isolated credentials)
-- **SELinux context restoration** on supported systems
+- **SELinux context restoration** on RHEL/CentOS systems
 - **Non-interactive authentication** (perfect for CI/CD)
 
 **Rootless mode:** Authentication is performed per-user with proper file ownership.
 
-### RHEL Permission Handling
+### Podman Permission Handling
 
-**Problem**: On RHEL systems, Podman login may create authentication files with incorrect ownership, causing permission denied errors.
+**Problem**: On Linux systems, Podman login may create authentication files with incorrect ownership when using sudo/become, causing permission denied errors.
 
 **Solution**: This role **automatically fixes** file ownership and permissions when `podman_registries_auth` is configured:
 
@@ -133,10 +133,10 @@ podman_registries_auth:
 1. Login tasks authenticate to registries (may create files as root)
 2. Permission fix tasks run **automatically after login**
 3. Files get correct `user:user` ownership in user's XDG_RUNTIME_DIR
-4. SELinux contexts restored if enabled
+4. SELinux contexts restored if enabled (RHEL/CentOS only)
 5. Each user has isolated, properly-owned authentication
 
-**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+**Applies to:** All supported distributions (Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux)
 
 📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 

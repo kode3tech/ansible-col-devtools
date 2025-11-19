@@ -99,39 +99,16 @@ docker_registries_auth:
 
 **✅ Features:**
 - **Multiple registry support** (Docker Hub, GHCR, Quay.io, private registries)
-- **Automatic permission fixes** for user config files on RHEL systems
+- **Automatic permission fixes** for user config files on all supported systems
 - **Per-user authentication** with proper file ownership
-- **SELinux context restoration** on supported systems
+- **SELinux context restoration** on RHEL/CentOS systems
 - **Non-interactive authentication** (perfect for CI/CD)
 
 📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
-### RHEL Permission Handling
+### Docker Permission Handling
 
-**Problem**: On RHEL systems, Docker login creates `~/.docker/config.json` as `root:root`, causing permission denied errors for regular users.
-
-**Solution**: This role **automatically fixes** file ownership and permissions when `docker_registries_auth` is configured:
-
-```bash
-# Before (❌ - permission denied)
--rw-------. 1 root    root    162 /home/user/.docker/config.json
-
-# After (✅ - automatic fix)
--rw-------. 1 user    user    162 /home/user/.docker/config.json
-```
-
-**How it works:**
-1. Login tasks create config files (may be as root)
-2. Permission fix tasks run **automatically after login**
-3. Files get correct `user:user` ownership
-4. SELinux contexts restored if enabled
-5. Users can access Docker without permission errors
-
-**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
-
-### RHEL Permission Handling
-
-**Problem**: On RHEL systems, Docker login creates `~/.docker/config.json` as `root:root`, causing permission denied errors for regular users.
+**Problem**: On Linux systems, Docker login may create `~/.docker/config.json` as `root:root` when using sudo/become, causing permission denied errors for regular users.
 
 **Solution**: This role **automatically fixes** file ownership and permissions when `docker_registries_auth` is configured:
 
@@ -147,10 +124,10 @@ docker_registries_auth:
 1. Login tasks create config files (may be as root)
 2. Permission fix tasks run **automatically after login**
 3. Files get correct `user:user` ownership
-4. SELinux contexts restored if enabled
+4. SELinux contexts restored if enabled (RHEL/CentOS only)
 5. Users can access Docker without permission errors
 
-**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+**Applies to:** All supported distributions (Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux)
 
 ## Time Synchronization
 

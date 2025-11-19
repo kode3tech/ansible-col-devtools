@@ -11,7 +11,8 @@ Ansible Collection for DevOps tools installation and configuration. This collect
 ### 🐳 Docker
 Complete Docker Engine installation and configuration with Docker Compose support.
 - **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 8+
-- **RHEL enhancements**: Automatic permission fixes, time sync, SELinux support
+- **All systems**: Automatic permission fixes for user Docker config files
+- **RHEL enhancements**: Time sync, SELinux support
 - **Registry authentication**: Multi-registry support with automatic permission handling
 - **Performance optimized**: 2-5x performance improvements with optimized defaults
 - **User permissions management**: Automated Docker group configuration
@@ -22,7 +23,8 @@ Podman installation with rootless container support.
 - **Daemonless container engine**: No Docker daemon required
 - **Enhanced rootless support**: Per-user authentication with automatic permission fixes
 - **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 8+
-- **RHEL enhancements**: Automatic permission fixes, SELinux support, XDG runtime fixes
+- **All systems**: Automatic permission fixes for user Podman auth files
+- **RHEL enhancements**: SELinux support, XDG runtime fixes
 - **Performance optimized**: crun runtime, parallel downloads, optimized storage
 - **Complete toolchain**: Buildah and Skopeo included
 - **OCI-compliant**: Compatible with Docker commands
@@ -92,15 +94,15 @@ The `requirements.yml` includes:
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
 - **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
 
-### Enhanced RHEL Support
+### Enhanced Multi-Distribution Support
 
-This collection includes **comprehensive RHEL support** with automatic fixes for common issues:
+This collection includes **comprehensive support** for all distributions with automatic fixes for common container issues:
 
-- ✅ **Permission management**: Automatic fixes for Docker/Podman config files
-- ✅ **Time synchronization**: Handles chronyd for GPG validation (RHEL 10)
-- ✅ **SELinux compatibility**: Proper context restoration for container directories
-- ✅ **Multi-user authentication**: Isolated credentials with proper ownership
-- ✅ **Version-specific optimizations**: Tailored for RHEL 8, 9, and 10
+- ✅ **Universal permission management**: Automatic fixes for Docker/Podman config files on all distributions
+- ✅ **RHEL-specific time synchronization**: Handles chronyd for GPG validation (RHEL 10)
+- ✅ **RHEL SELinux compatibility**: Proper context restoration for container directories
+- ✅ **Multi-user authentication**: Isolated credentials with proper ownership across all systems
+- ✅ **Distribution-specific optimizations**: Tailored for Ubuntu, Debian, and RHEL family
 
 ## 🎯 Quick Start
 

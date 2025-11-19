@@ -58,9 +58,9 @@
     - podman_rootless_users | length > 0
     - item.failed | default(false)
 
-# RedHat-specific Podman permission fixes (must run AFTER login tasks)
+# Podman permission fixes for all distributions (must run AFTER login tasks)
 # These tasks fix ownership issues when auth files are created with wrong permissions
-- name: Create .config/containers directory for rootless users (RedHat permission fix)
+- name: Create .config/containers directory for rootless users (permission fix)
   ansible.builtin.file:
     path: "/home/{{ item }}/.config/containers"
     state: directory
@@ -72,10 +72,9 @@
     - podman_enable_rootless
     - podman_rootless_users | length > 0
     - podman_registries_auth | length > 0
-    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
   tags: podman
 
-- name: Fix Podman auth file permissions for rootless users (RedHat permission fix)
+- name: Fix Podman auth file permissions for rootless users (permission fix)
   ansible.builtin.file:
     path: "/home/{{ item }}/.config/containers/auth.json"
     owner: "{{ item }}"
@@ -87,7 +86,6 @@
     - podman_enable_rootless
     - podman_rootless_users | length > 0
     - podman_registries_auth | length > 0
-    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
   failed_when: false  # Don't fail if file doesn't exist
   tags: podman
 

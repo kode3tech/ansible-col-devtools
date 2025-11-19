@@ -132,9 +132,9 @@
     - item.failed | default(false)
   tags: docker-login
 
-# RedHat-specific Docker permission fixes (must run AFTER login tasks)
+# Docker permission fixes for all distributions (must run AFTER login tasks)
 # These tasks fix ownership issues when config.json is created as root
-- name: Create .docker directory for each user (RedHat permission fix)
+- name: Create .docker directory for each user (permission fix)
   ansible.builtin.file:
     path: "/home/{{ item }}/.docker"
     state: directory
@@ -145,10 +145,9 @@
   when:
     - docker_users | length > 0
     - docker_registries_auth | length > 0
-    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
   tags: docker
 
-- name: Fix Docker config file permissions for each user (RedHat permission fix)
+- name: Fix Docker config file permissions for each user (permission fix)
   ansible.builtin.file:
     path: "/home/{{ item }}/.docker/config.json"
     owner: "{{ item }}"
@@ -159,7 +158,6 @@
   when:
     - docker_users | length > 0
     - docker_registries_auth | length > 0
-    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
   failed_when: false  # Don't fail if file doesn't exist
   tags: docker
 

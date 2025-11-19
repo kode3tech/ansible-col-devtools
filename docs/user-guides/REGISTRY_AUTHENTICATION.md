@@ -151,11 +151,11 @@ docker_registries_auth:
 2. Credentials are stored in `~/.docker/config.json`
 3. Task uses `no_log: true` to prevent credential exposure in logs
 4. Login is performed **system-wide** (affects all users)
-5. **RHEL systems**: Automatic permission fixes ensure proper file ownership
+5. **All systems**: Automatic permission fixes ensure proper file ownership
 
-### RHEL Permission Fixes
+### Docker Permission Fixes
 
-**Problem**: On RHEL systems, Docker login creates `~/.docker/config.json` as `root:root`, causing permission denied errors for regular users.
+**Problem**: On Linux systems, Docker login creates `~/.docker/config.json` as `root:root`, causing permission denied errors for regular users.
 
 **Solution**: The Docker role **automatically fixes** file ownership and permissions:
 
@@ -170,10 +170,10 @@ docker_registries_auth:
 **Features:**
 - ✅ **Automatic detection** of users needing config files
 - ✅ **Proper ownership** (`user:user`) for each user's config
-- ✅ **SELinux context restoration** if enabled
+- ✅ **SELinux context restoration** if enabled (RHEL/CentOS only)
 - ✅ **Zero configuration** - works automatically when `docker_registries_auth` is configured
 
-**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+**Applies to:** All supported distributions (Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux)
 
 ### Example Playbook
 
@@ -264,11 +264,11 @@ podman_registries_auth:
 3. Uses `become_user` to switch to target user
 4. Credentials stored in user's `$XDG_RUNTIME_DIR/containers/auth.json`
 5. Each user has isolated authentication
-6. **RHEL systems**: Automatic permission fixes ensure proper file ownership
+6. **All systems**: Automatic permission fixes ensure proper file ownership
 
-### RHEL Permission Fixes
+### Podman Permission Fixes
 
-**Problem**: On RHEL systems, Podman login may create authentication files with incorrect ownership, causing permission denied errors.
+**Problem**: On Linux systems, Podman login may create authentication files with incorrect ownership, causing permission denied errors.
 
 **Solution**: The Podman role **automatically fixes** file ownership and permissions:
 
@@ -284,10 +284,10 @@ podman_registries_auth:
 - ✅ **Per-user authentication** with isolated credentials
 - ✅ **Automatic permission fixes** for each user's auth files
 - ✅ **XDG_RUNTIME_DIR handling** in user's runtime directory
-- ✅ **SELinux context restoration** if enabled
+- ✅ **SELinux context restoration** if enabled (RHEL/CentOS only)
 - ✅ **Zero configuration** - works automatically when `podman_registries_auth` is configured
 
-**Applies to:** RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+**Applies to:** All supported distributions (Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux)
 
 ### Example Playbook
 
