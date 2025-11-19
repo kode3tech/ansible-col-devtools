@@ -22,7 +22,7 @@
 - name: Setup container registries authentication
   hosts: all
   become: true
-  
+
   vars_files:
     - vars/registry_secrets.yml  # Encrypted with ansible-vault
 
@@ -34,11 +34,11 @@
         username: "myuser"
         password: "{{ vault_dockerhub_password }}"
         email: "user@example.com"
-      
+
       - registry: "ghcr.io"  # GitHub Container Registry
         username: "github-user"
         password: "{{ vault_ghcr_token }}"
-      
+
       - registry: "registry.mycompany.com"  # Private registry (just hostname)
         username: "ci-user"
         password: "{{ vault_private_registry_password }}"
@@ -49,16 +49,16 @@
     podman_rootless_users:
       - devuser
       - jenkins
-    
+
     podman_registries_auth:
       - registry: "docker.io"  # Docker Hub for Podman
         username: "myuser"
         password: "{{ vault_dockerhub_password }}"
-      
+
       - registry: "quay.io"  # Quay.io registry
         username: "quay-user"
         password: "{{ vault_quay_password }}"
-      
+
       - registry: "registry.mycompany.com"  # Private registry (just hostname)
         username: "ci-user"
         password: "{{ vault_private_registry_password }}"
@@ -73,12 +73,12 @@
 # - name: Setup registries with password files
 #   hosts: all
 #   become: true
-#   
+#
 #   vars:
 #     docker_registries_auth:
 #       - registry: "registry.mycompany.com"
 #         username: "ci-user"
 #         password_file: "/var/lib/jenkins/secrets/registry-password"
-#   
+#
 #   roles:
 #     - kode3tech.devtools.docker

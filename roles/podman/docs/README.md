@@ -35,8 +35,6 @@ Comprehensive guide to fixing XDG_RUNTIME_DIR issues in Podman.
 
 ### Collection Documentation
 - [Registry Authentication](../../docs/user-guides/REGISTRY_AUTHENTICATION.md) - Docker & Podman registry auth
-- [LXC Troubleshooting](../../docs/troubleshooting/TROUBLESHOOTING_LXC.md) - Podman in LXC containers
-- [Known Issues](../../docs/troubleshooting/KNOWN_ISSUES.md) - Common Podman issues
 
 ---
 

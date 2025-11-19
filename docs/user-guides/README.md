@@ -1,6 +1,6 @@
 # 📘 User Guides
 
-Guides for using the kode3tech.devtools collection effectively.
+Guides for using the code3tech.devtools collection effectively.
 
 ## 📋 Available Guides
 

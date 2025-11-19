@@ -1,18 +1,24 @@
 ---
 # Tasks file for docker
 
+- name: Set OS family variable for consistency
+  ansible.builtin.set_fact:
+    docker_os_family: "{{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}"
+  tags: docker
+
 - name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ docker_os_family }}.yml"
   tags: docker
 
 - name: Include OS-specific tasks
-  ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
+  ansible.builtin.include_tasks: "setup-{{ docker_os_family }}.yml"
   tags: docker
 
-- name: Ensure Docker is installed
+- name: Install docker-ce-rootless-extras (optional)
   ansible.builtin.package:
-    name: "{{ docker_packages }}"
+    name: docker-ce-rootless-extras
     state: present
+  failed_when: false
   tags: docker
 
 - name: Install crun for better performance (optional)
@@ -82,12 +88,26 @@
   community.docker.docker_login:
     registry_url: "{{ item.registry }}"
     username: "{{ item.username }}"
-    password: "{{ item.password | default(lookup('file', item.password_file) if item.password_file is defined else omit) }}"
+    password: >
+      {{ item.password | default(
+        lookup('file', item.password_file)
+        if item.password_file is defined else omit
+      ) }}
     email: "{{ item.email | default(omit) }}"
     reauthorize: true
   loop: "{{ docker_registries_auth }}"
   when: docker_registries_auth | length > 0
   no_log: true
+  register: docker_login_result
+  tags: docker-login
+
+- name: Display Docker login warnings
+  ansible.builtin.debug:
+    msg: "Warning: Failed to login to registry {{ item.item.registry }} - check credentials"
+  loop: "{{ docker_login_result.results | default([]) }}"
+  when:
+    - docker_registries_auth | length > 0
+    - item.failed | default(false)
   tags: docker-login
 
 - name: Login to Docker registries for each user
@@ -96,7 +116,11 @@
   community.docker.docker_login:
     registry_url: "{{ item.1.registry }}"
     username: "{{ item.1.username }}"
-    password: "{{ item.1.password | default(lookup('file', item.1.password_file) if item.1.password_file is defined else omit) }}"
+    password: >
+      {{ item.1.password | default(
+        lookup('file', item.1.password_file)
+        if item.1.password_file is defined else omit
+      ) }}
     email: "{{ item.1.email | default(omit) }}"
     reauthorize: true
   loop: "{{ docker_users | product(docker_registries_auth) | list }}"
@@ -104,4 +128,15 @@
     - docker_registries_auth | length > 0
     - docker_users | length > 0
   no_log: true
+  register: docker_user_login_result
+  tags: docker-login
+
+- name: Display user Docker login warnings
+  ansible.builtin.debug:
+    msg: "Warning: Failed to login user {{ item.item.0 }} to registry {{ item.item.1.registry }} - check credentials"
+  loop: "{{ docker_user_login_result.results | default([]) }}"
+  when:
+    - docker_registries_auth | length > 0
+    - docker_users | length > 0
+    - item.failed | default(false)
   tags: docker-login

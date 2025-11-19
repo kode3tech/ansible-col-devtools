@@ -1,6 +1,6 @@
 # Frequently Asked Questions (FAQ)
 
-Common questions about using the `kode3tech.devtools` Ansible Collection.
+Common questions about using the `code3tech.devtools` Ansible Collection.
 
 ## 📋 Table of Contents
 
@@ -10,7 +10,6 @@ Common questions about using the `kode3tech.devtools` Ansible Collection.
 - [Podman Questions](#podman-questions)
 - [asdf Questions](#asdf-questions)
 - [Performance & Optimization](#performance--optimization)
-- [Troubleshooting](#troubleshooting)
 - [Migration & Upgrades](#migration--upgrades)
 
 ---
@@ -19,7 +18,7 @@ Common questions about using the `kode3tech.devtools` Ansible Collection.
 
 ### What is this collection for?
 
-The `kode3tech.devtools` collection automates the installation and configuration of essential DevOps tools (Docker, Podman, asdf) across Ubuntu, Debian, and RHEL-based systems with production-ready optimizations.
+The `code3tech.devtools` collection automates the installation and configuration of essential DevOps tools (Docker, Podman, asdf) across Ubuntu, Debian, and RHEL-based systems with production-ready optimizations.
 
 ### Which distributions are supported?
 
@@ -47,14 +46,19 @@ Yes! All roles include:
 
 ```bash
 # From Ansible Galaxy (when published)
-ansible-galaxy collection install kode3tech.devtools
+ansible-galaxy collection install code3tech.devtools
+```
+
+**From source:**
+```bash
+git clone https://github.com/kode3tech/ansible-col-devtools.git
 
 # From source
 git clone https://github.com/kode3tech/ansible-col-devtools.git
 cd ansible-col-devtools
 source activate.sh
 ansible-galaxy collection build
-ansible-galaxy collection install kode3tech-devtools-*.tar.gz
+ansible-galaxy collection install code3tech-devtools-*.tar.gz
 ```
 
 ### Do I need to install dependencies?
@@ -312,7 +316,7 @@ features: nesting=1
 lxc.apparmor.profile: unconfined
 ```
 
-See [LXC Troubleshooting](troubleshooting/TROUBLESHOOTING_LXC.md) for details.
+For more details, check the role-specific documentation.
 
 ### What is the recommended storage driver?
 
@@ -323,24 +327,7 @@ Both provide the best I/O performance on modern kernels.
 
 ---
 
-## Troubleshooting
-
-### Docker/Podman won't start in LXC - what's wrong?
-
-**Symptoms:**
-```
-Error: socket: permission denied
-Error: failed to create shim task
-```
-
-**Solution:**
-Add to LXC config and restart:
-```
-features: nesting=1
-lxc.apparmor.profile: unconfined
-```
-
-See [LXC Troubleshooting](troubleshooting/TROUBLESHOOTING_LXC.md).
+## Migration & Upgrades
 
 ### I get "apt-key is deprecated" warnings on Debian/Ubuntu
 
@@ -349,16 +336,12 @@ This is expected! The role uses modern GPG key management:
 - No more `apt-key` usage
 - Fully compatible with Debian 12+
 
-See [APT Key Deprecation](troubleshooting/APT_KEY_DEPRECATION.md).
-
 ### Podman shows DNS errors on Ubuntu 24.04
 
 Known issue with AppArmor. Workarounds:
 1. Use rootless mode
 2. Configure manually: `sudo podman login`
 3. Disable AppArmor for Podman (not recommended for production)
-
-See [Known Issues](troubleshooting/KNOWN_ISSUES.md#podman-registry-login---ubuntu-2404-dns-permission-issue).
 
 ### How do I debug role execution?
 
@@ -446,7 +429,7 @@ sudo apt remove podman buildah skopeo
 3. Update in `requirements.yml`:
    ```yaml
    collections:
-     - name: kode3tech.devtools
+     - name: code3tech.devtools
        version: ">=1.1.0"
    ```
 4. Reinstall:
@@ -459,9 +442,8 @@ sudo apt remove podman buildah skopeo
 ## Still Have Questions?
 
 - 📖 Check the [User Guides](user-guides/)
-- 🔧 Check [Troubleshooting](troubleshooting/)
-- 🐛 Search [GitHub Issues](https://github.com/kode3tech/ansible-devtools/issues)
-- 💬 Open a [Discussion](https://github.com/kode3tech/ansible-devtools/discussions)
+- 🐛 Search [GitHub Issues](https://github.com/kode3tech/ansible-col-devtools/issues)
+- 💬 Open a [Discussion](https://github.com/kode3tech/ansible-col-devtools/discussions)
 - 📧 Email: suporte@kode3.tech
 
 ---

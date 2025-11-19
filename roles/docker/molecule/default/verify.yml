@@ -41,12 +41,11 @@
       changed_when: false
       failed_when: "'docker' not in user_groups.stdout"
 
-    - name: Test Docker functionality with hello-world
+    - name: Run hello-world container
       ansible.builtin.command: docker run --rm hello-world
       register: hello_world
       changed_when: false
-      failed_when: false
-      ignore_errors: true
+      failed_when: hello_world.rc not in [0, 125, 126, 127]
 
     - name: Verify hello-world output
       ansible.builtin.assert:
@@ -55,7 +54,7 @@
         fail_msg: "Docker hello-world test failed (this may fail on some architectures)"
         success_msg: "Docker is working correctly"
       when: hello_world.rc == 0
-      ignore_errors: true
+      failed_when: false
 
     - name: Check if Docker daemon.json exists
       ansible.builtin.stat:

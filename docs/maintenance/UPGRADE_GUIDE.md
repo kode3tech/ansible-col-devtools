@@ -32,7 +32,7 @@ Misturar essas configurações causava:
 
 ```bash
 # Install collection
-ansible-galaxy collection install kode3tech.devtools
+ansible-galaxy collection install code3tech.devtools
 
 # Run playbook
 ansible-playbook -i inventory.ini playbooks/podman/install-podman.yml
@@ -191,7 +191,7 @@ ansible -i inventory.ini all -m shell \
 Se encontrar problemas durante a atualização:
 
 1. Verifique os logs: `journalctl -xeu podman`
-2. Abra uma issue: https://github.com/kode3tech/ansible-devtools/issues
+2. Abra uma issue: https://github.com/kode3tech/ansible-col-devtools/issues
 3. Email: suporte@kode3.tech
 
 ---

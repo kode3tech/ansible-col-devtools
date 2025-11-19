@@ -34,7 +34,7 @@ docker_daemon_config:
   log-opts:
     max-size: "10m"
     max-file: "3"
-  
+
   # Storage driver configuration (explicit for best performance)
   storage-driver: "overlay2"
 
@@ -42,9 +42,11 @@ docker_daemon_config:
 # Note: BuildKit cannot be enabled in daemon.json in some Docker versions
 docker_buildkit_enabled: true
 
-# Insecure registries (registries without HTTPS or with self-signed certificates)
-# WARNING: Only use this for trusted internal registries!
+# List of insecure registries (HTTP or self-signed certificates)
+# WARNING: Only use for trusted internal registries!
 docker_insecure_registries: []
+
+# Private registry authentication (optional)
   # Example:
   # - "registry.internal.company.com:5000"
   # - "192.168.1.100:5000"

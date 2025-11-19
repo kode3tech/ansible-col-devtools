@@ -1,6 +1,6 @@
 # Reference Documentation
 
-Technical reference documentation for the `kode3tech.devtools` collection.
+Technical reference documentation for the `code3tech.devtools` collection.
 
 ## 📚 Available References
 

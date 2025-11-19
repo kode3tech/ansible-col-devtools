@@ -1,6 +1,6 @@
 # 🧪 Testing Documentation
 
-Comprehensive testing documentation for the kode3tech.devtools collection.
+Comprehensive testing documentation for the code3tech.devtools collection.
 
 ## 📋 Available Guides
 

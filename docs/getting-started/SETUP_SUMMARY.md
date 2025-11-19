@@ -153,7 +153,7 @@ Todos os comandos abaixo foram testados e funcionam:
 Para dúvidas sobre este setup:
 - Consulte: `docs/QUICKSTART.md`
 - Execute: `make help`
-- Contate: Time Kode3Tech
+- Contate: Time Code3Tech
 
 ## 🎉 Conclusão
 
@@ -171,4 +171,4 @@ Todas as ferramentas principais do Ansible estão instaladas e configuradas:
 
 ---
 *Setup concluído em: 4 de novembro de 2025*  
-*Documentação gerada por: Kode3Tech DevOps Team*
+*Documentação gerada por: Code3Tech DevOps Team*

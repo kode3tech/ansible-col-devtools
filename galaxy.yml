@@ -1,11 +1,11 @@
 ---
-namespace: kode3tech
+namespace: code3tech
 name: devtools
 version: 1.0.0
 readme: README.md
 
 authors:
-  - Kode3Tech DevOps Team <suporte@kode3.tech>
+  - Code3Tech DevOps Team <suporte@kode3.tech>
 
 description: >-
   Ansible Collection for DevOps tools installation and configuration.
@@ -27,12 +27,14 @@ tags:
   - ci
   - cd
 
-dependencies: {}
+dependencies:
+  'community.docker': '>=3.4.0'
+  'containers.podman': '>=1.10.0'
 
-repository: https://github.com/kode3tech/ansible-devtools
-documentation: https://github.com/kode3tech/ansible-devtools/blob/main/README.md
-homepage: https://github.com/kode3tech/ansible-devtools
-issues: https://github.com/kode3tech/ansible-devtools/issues
+repository: https://github.com/kode3tech/ansible-col-devtools
+documentation: https://github.com/kode3tech/ansible-col-devtools/blob/main/README.md
+homepage: https://github.com/kode3tech/ansible-col-devtools
+issues: https://github.com/kode3tech/ansible-col-devtools/issues
 
 build_ignore:
   - .git

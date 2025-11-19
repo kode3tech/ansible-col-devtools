@@ -1,6 +1,6 @@
 # 🔄 Maintenance Documentation
 
-Documentation for maintaining and upgrading the kode3tech.devtools collection.
+Documentation for maintaining and upgrading the code3tech.devtools collection.
 
 ## 📋 Available Guides
 
@@ -25,12 +25,12 @@ Current versions of tools and dependencies.
 
 ### Check Current Version
 ```bash
-ansible-galaxy collection list | grep kode3tech
+ansible-galaxy collection list | grep code3tech
 ```
 
 ### Upgrade to Latest
 ```bash
-ansible-galaxy collection install kode3tech.devtools --upgrade
+ansible-galaxy collection install code3tech.devtools --upgrade
 ```
 
 ### Review Changes

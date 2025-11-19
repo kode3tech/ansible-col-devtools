@@ -174,7 +174,7 @@ features: nesting=1
 lxc.apparmor.profile: unconfined
 ```
 
-📖 **Complete guide:** [LXC Troubleshooting Guide](../../docs/troubleshooting/TROUBLESHOOTING_LXC.md)
+**Note:** These settings enable container nesting and disable AppArmor restrictions which are necessary for Podman to function properly inside LXC.
 
 ### Custom Configuration
 

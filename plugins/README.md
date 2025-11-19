@@ -1,6 +1,6 @@
 # Plugins
 
-This directory contains custom Ansible plugins for the `kode3tech.devtools` collection.
+This directory contains custom Ansible plugins for the `code3tech.devtools` collection.
 
 ## Directory Structure
 

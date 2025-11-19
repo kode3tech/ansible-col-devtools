@@ -5,14 +5,14 @@
 - name: Install Docker
   hosts: all
   become: true
-  
+
   collections:
     - kode3tech.devtools
-  
+
   vars:
     docker_users:
       - "{{ ansible_user }}"
     docker_compose_install: true
-  
+
   roles:
     - docker

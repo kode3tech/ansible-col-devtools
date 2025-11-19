@@ -1,14 +1,14 @@
 # Collection Meta Information
 
-This file provides additional metadata about the `kode3tech.devtools` collection.
+This file provides additional metadata about the `code3tech.devtools` collection.
 
-## Collection Details
+## Collection Information
 
-- **Namespace**: kode3tech
+- **Namespace**: code3tech
 - **Name**: devtools
 - **Description**: Ansible Collection for DevOps tools installation and configuration
 - **License**: MIT
-- **Repository**: https://github.com/kode3tech/ansible-devtools
+- **Repository**: https://github.com/kode3tech/ansible-col-devtools
 
 ## Roles Included
 
@@ -94,9 +94,9 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 ## Support
 
 For issues, questions, or contributions:
-- GitHub Issues: https://github.com/kode3tech/ansible-devtools/issues
-- Documentation: https://github.com/kode3tech/ansible-devtools
+- GitHub Issues: https://github.com/kode3tech/ansible-col-devtools/issues
+- Documentation: https://github.com/kode3tech/ansible-col-devtools
 
 ## Maintainers
 
-- Kode3Tech DevOps Team
+- Code3Tech DevOps Team

@@ -82,7 +82,6 @@ docker_insecure_registries:
 
 - [Docker Role README](../../roles/docker/README.md)
 - [Registry Authentication Guide](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
-- [Troubleshooting](../../docs/troubleshooting/)
 
 ---
 

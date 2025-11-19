@@ -3,8 +3,8 @@ galaxy_info:
   namespace: kode3tech
   role_name: docker
   author: Kode3Tech DevOps Team
-  description: Ansible role for installing and configuring Docker on Linux servers
-  company: Kode3Tech
+  description: Install and configure Docker Engine on Linux servers
+  company: Code3Tech
 
   issue_tracker_url: https://github.com/kode3tech/ansible-docker/issues
 

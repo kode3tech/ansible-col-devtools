@@ -177,7 +177,7 @@ pip install -r requirements.txt
 
 ## 📞 Support
 
-For questions or issues, contact the Kode3Tech team.
+For questions or issues, contact the Code3Tech team.
 
 ---
 

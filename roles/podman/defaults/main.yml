@@ -58,7 +58,7 @@ podman_storage_conf:
         mountopt: "nodev,metacopy=on"  # metacopy reduces I/O operations
         # force_mask: "0000"  # Removed: Only works with mount_program (fuse-overlayfs)
                               # Enable manually if using fuse-overlayfs in rootless mode
-  
+
   engine:
     runtime: "crun"                    # 20-30% faster than runc
     events_logger: "file"

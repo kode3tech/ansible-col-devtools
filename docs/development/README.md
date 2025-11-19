@@ -1,6 +1,6 @@
 # 👨‍💻 Development Documentation
 
-Documentation for contributors and developers working on the kode3tech.devtools collection.
+Documentation for contributors and developers working on the code3tech.devtools collection.
 
 ## 📋 Documentation Structure
 

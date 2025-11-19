@@ -15,7 +15,7 @@ MOLECULE = $(VENV_DIR)/bin/molecule
 PROJECT_DIR = $(shell pwd)
 MOLECULE_ABS = $(PROJECT_DIR)/$(VENV_DIR)/bin/molecule
 
-COLLECTION_NAMESPACE = kode3tech
+COLLECTION_NAMESPACE = code3tech
 COLLECTION_NAME = devtools
 COLLECTION_VERSION = $(shell grep '^version:' galaxy.yml | awk '{print $$2}')
 COLLECTION_FILE = $(COLLECTION_NAMESPACE)-$(COLLECTION_NAME)-$(COLLECTION_VERSION).tar.gz

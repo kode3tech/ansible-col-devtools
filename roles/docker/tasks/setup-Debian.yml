@@ -39,3 +39,9 @@
   when: docker_configure_repo
   changed_when: false
   tags: docker
+
+- name: Ensure Docker is installed
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+  tags: docker

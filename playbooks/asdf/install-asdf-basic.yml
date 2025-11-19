@@ -6,13 +6,13 @@
 - name: Install asdf with lightweight plugins
   hosts: all
   become: true
-  
+
   vars:
     asdf_version: "latest"
     asdf_install_dir: "/opt/asdf"
     asdf_install_dependencies: true
     asdf_configure_shell: true
-    
+
     # Lightweight plugins for testing (installation time: ~10-15 seconds total)
     asdf_users:
       - name: "{{ ansible_user }}"
@@ -24,14 +24,14 @@
             versions:
               - "2.32.3"
             global: "2.32.3"
-          
+
           # jq - JSON processor
           # Installation: ~3-5 seconds (pre-compiled binary download)
           - name: "jq"
             versions:
               - "1.7.1"
             global: "1.7.1"
-  
+
   roles:
     - role: asdf
       tags: asdf

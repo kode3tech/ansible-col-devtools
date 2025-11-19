@@ -11,7 +11,7 @@ We release patches for security vulnerabilities for the following versions:
 
 ## Reporting a Vulnerability
 
-The Kode3Tech team takes security vulnerabilities seriously. We appreciate your efforts to responsibly disclose your findings.
+The Code3Tech team takes security vulnerabilities seriously. We appreciate your efforts to responsibly disclose your findings.
 
 ### How to Report a Security Vulnerability?
 
@@ -143,14 +143,14 @@ We follow a **90-day disclosure timeline**:
 ## Security Advisories
 
 Security advisories are published at:
-- GitHub Security Advisories: https://github.com/kode3tech/ansible-devtools/security/advisories
+- GitHub Security Advisories: https://github.com/kode3tech/ansible-col-devtools/security/advisories
 - Collection README.md
 - CHANGELOG.md
 
 ## Contact
 
 - **Security Email**: suporte@kode3.tech
-- **General Issues**: https://github.com/kode3tech/ansible-devtools/issues
+- **General Issues**: https://github.com/kode3tech/ansible-col-devtools/issues
 - **Website**: https://github.com/kode3tech
 
 ## Hall of Fame
@@ -162,4 +162,4 @@ We would like to thank the following individuals for responsibly disclosing secu
 
 ---
 
-**Thank you for helping keep kode3tech.devtools secure!** 🔒
+**Thank you for helping keep code3tech.devtools secure!** 🔒

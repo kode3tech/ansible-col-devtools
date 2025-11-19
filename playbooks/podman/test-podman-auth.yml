@@ -5,23 +5,23 @@
 - name: Test Podman Authentication with Cleanup
   hosts: all
   become: true
-  
+
   vars:
     # Enable credential cleanup to remove old/invalid credentials
     podman_clean_credentials: true
-    
+
     # Podman registry authentication
     # IMPORTANT: Use Ansible Vault to encrypt passwords in production!
     podman_registries_auth:
-      - registry_url: "docker.io"
+      - registry: "docker.io"
         username: "your_username"  # Change this
         password: "your_password"  # Change this - use Vault in production!
-    
+
     # Optional: Rootless configuration
     podman_enable_rootless: false
     podman_rootless_users:
       - "{{ ansible_user }}"
-  
+
   roles:
     - podman
 

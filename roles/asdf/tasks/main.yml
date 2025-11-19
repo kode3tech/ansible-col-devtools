@@ -2,14 +2,21 @@
 # Main task file for asdf role
 # Orchestrates the installation and configuration of asdf
 
+- name: Set OS family variable for consistency
+  ansible.builtin.set_fact:
+    asdf_os_family: "{{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}"
+  tags:
+    - asdf
+    - configuration
+
 - name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ asdf_os_family }}.yml"
   tags:
     - asdf
     - configuration
 
 - name: Include OS-specific tasks
-  ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
+  ansible.builtin.include_tasks: "setup-{{ asdf_os_family }}.yml"
   tags:
     - asdf
     - installation

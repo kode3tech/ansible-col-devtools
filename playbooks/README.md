@@ -165,4 +165,4 @@ When creating new example playbooks:
 
 ---
 
-**Need help?** Check the [troubleshooting guide](../docs/troubleshooting/) or [open an issue](https://github.com/kode3tech/ansible-col-devtools/issues).
+**Need help?** [Open an issue](https://github.com/kode3tech/ansible-col-devtools/issues) or check the [FAQ](../docs/FAQ.md).

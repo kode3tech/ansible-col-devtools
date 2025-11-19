@@ -7,13 +7,13 @@
   vars:
     docker_users:
       - ansible
-    
+
     # Test insecure registries configuration
     docker_insecure_registries:
       - "localhost:5000"
       - "registry.test.local:5000"
       - "192.168.100.100:5000"
-    
+
     # Docker-in-Docker configuration (Molecule testing)
     # Override default storage-driver to let Docker auto-detect (usually vfs in DinD)
     docker_daemon_config:
@@ -32,7 +32,7 @@
         state: present
         create_home: true
       tags: molecule-idempotence-notest
-    
+
     - name: Include docker role
       ansible.builtin.include_role:
         name: docker

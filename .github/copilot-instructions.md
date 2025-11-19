@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions - kode3tech.devtools Ansible Collection
+# GitHub Copilot Instructions - code3tech.devtools Ansible Collection
 
 > **📐 Documentation Quality Standards**: This project follows strict documentation standards (see section "📐 Documentation Quality Standards" below).
 > When user requests to **"update documentation"**, **"improve docs"**, **"document feature"**, or similar commands, 
@@ -8,7 +8,7 @@
 
 This is an **Ansible Collection** project following official Ansible best practices and Galaxy standards.
 
-- **Collection Name**: `kode3tech.devtools`
+- **Collection Name**: `code3tech.devtools`
 - **Version**: 1.0.0
 - **Purpose**: DevOps tools installation and configuration (Docker, Podman, etc.)
 - **License**: MIT
@@ -39,7 +39,6 @@ This is an **Ansible Collection** project following official Ansible best practi
 **By Category (within `docs/`):**
 - `getting-started/` → New users
 - `user-guides/` → Using the collection
-- `troubleshooting/` → Problem solving
 - `development/` → Contributors
 - `maintenance/` → Upgrades/versions
 
@@ -93,7 +92,6 @@ ansible-col-devtools/
 ├── docs/                       # Collection-level documentation (USER-FACING)
 │   ├── getting-started/       # Quick start guides
 │   ├── user-guides/           # How-to guides
-│   ├── troubleshooting/       # Problem solving
 │   ├── development/           # Contributing & testing
 │   └── maintenance/           # Upgrades & versions
 ├── playbooks/                  # Example playbooks (organized by role)
@@ -281,10 +279,10 @@ docker_configure_repo: true
 ---
 galaxy_info:
   role_name: <role_name>
-  namespace: kode3tech
-  author: Kode3Tech DevOps Team
+  namespace: code3tech
+  author: Code3Tech DevOps Team
   description: <brief description>
-  company: Kode3Tech
+  company: Code3Tech
   license: MIT
   min_ansible_version: "2.15"
   
@@ -434,7 +432,7 @@ None (or list collection/role dependencies).
 - hosts: servers
   become: true
   roles:
-    - kode3tech.devtools.<role_name>
+    - code3tech.devtools.<role_name>
 \`\`\`
 
 ## Testing
@@ -450,7 +448,7 @@ MIT
 
 ## Author Information
 
-Kode3Tech DevOps Team <suporte@kode3.tech>
+Code3Tech DevOps Team <suporte@kode3.tech>
 ```
 
 ## 🚀 Development Workflow
@@ -621,19 +619,19 @@ dict_variable:
 
 ### galaxy.yml Requirements
 ```yaml
-namespace: kode3tech
+namespace: code3tech
 name: devtools
 version: <semver>
 readme: README.md
 authors:
-  - Kode3Tech DevOps Team <suporte@kode3.tech>
+  - Code3Tech DevOps Team <suporte@kode3.tech>
 description: >-
   Detailed description...
 license:
   - MIT
 tags:
   - <relevant_tags>
-repository: https://github.com/kode3tech/ansible-devtools
+repository: https://github.com/kode3tech/ansible-col-devtools
 ```
 
 ## 🤝 Git Commit Standards
@@ -721,9 +719,9 @@ chore(deps): update ansible to 2.16
 
 #### Metadata
 - [ ] **2.19** Create `meta/main.yml` with complete galaxy_info:
-  - [ ] `namespace: kode3tech`
+  - [ ] `namespace: code3tech`
   - [ ] `role_name: {role_name}`
-  - [ ] `author: Kode3Tech DevOps Team`
+  - [ ] `author: Code3Tech DevOps Team`
   - [ ] `license: MIT`
   - [ ] `min_ansible_version: "2.15"`
   - [ ] Complete `platforms` list:
@@ -779,7 +777,7 @@ chore(deps): update ansible to 2.16
   - [ ] Example Playbook section (multiple examples)
   - [ ] Testing instructions
   - [ ] License (MIT)
-  - [ ] Author Information (Kode3Tech DevOps Team)
+  - [ ] Author Information (Code3Tech DevOps Team)
 
 #### Role-Specific Documentation (if needed)
 - [ ] **4.2** Create `roles/{role}/docs/` for additional documentation (if role is complex)
@@ -842,7 +840,6 @@ chore(deps): update ansible to 2.16
 #### Update Documentation
 - [ ] **7.5** Update `docs/development/ROLE_STRUCTURE.md` if pattern changed
 - [ ] **7.6** Create user guide in `docs/user-guides/` if needed
-- [ ] **7.7** Create troubleshooting guide in `docs/troubleshooting/` if needed
 
 ### 🚀 Phase 8: Final Verification
 
@@ -921,7 +918,7 @@ Documentation is organized by **scope**:
 
 ### Collection Documentation (`docs/`)
 
-Documentation in `docs/` is organized into **5 categories**:
+Documentation in `docs/` is organized into **4 categories**:
 
 #### 1. `getting-started/` - Quick Start & Setup
 - Quick start guides
@@ -935,20 +932,14 @@ Documentation in `docs/` is organized into **5 categories**:
 - Configuration examples
 - **For:** Users learning to use the collection
 
-#### 3. `troubleshooting/` - Problem Solving
-- Common issues and solutions
-- Platform-specific problems
-- Error resolution
-- **For:** Users encountering problems
-
-#### 4. `development/` - Contributing & Development
+#### 3. `development/` - Contributing & Development
 - Contributing guidelines
 - Role structure documentation
 - Testing guides (in `development/testing/`)
 - Architecture documentation
 - **For:** Contributors and developers
 
-#### 5. `maintenance/` - Upgrades & Versions
+#### 4. `maintenance/` - Upgrades & Versions
 - Upgrade guides
 - Version information
 - Deprecation notices
@@ -992,13 +983,11 @@ Each role maintains its own documentation:
 ✅ Feature applies to **multiple roles** (e.g., registry authentication for Docker + Podman)  
 ✅ General collection usage  
 ✅ Cross-role integration  
-✅ Collection-wide troubleshooting  
 ✅ Development/testing/contributing  
 
 #### When to Document in `roles/{role}/` (Role-level)
 ✅ Feature is **exclusive to one role** (e.g., Podman XDG_RUNTIME_DIR fix)  
 ✅ Role-specific configuration  
-✅ Role-specific troubleshooting  
 ✅ Advanced role features  
 
 #### When in Doubt
@@ -1179,7 +1168,6 @@ docker_registries_auth:
 - LXC container configuration (Docker + Podman roles)
 - Testing procedures (if repeated across roles)
 - Security considerations (if repeated)
-- Troubleshooting steps (if repeated)
 
 **When to apply**:
 - Content appears in **2+ places**
@@ -1204,9 +1192,6 @@ docker_registries_auth:
 
 **Common patterns**:
 ```markdown
-# From docs/user-guides/ to docs/troubleshooting/
-../troubleshooting/KNOWN_ISSUES.md
-
 # From roles/docker/ to docs/user-guides/
 ../docs/user-guides/REGISTRY_AUTHENTICATION.md
 
@@ -1235,7 +1220,6 @@ docker_registries_auth:
 - Question appears in 2+ role READMEs
 - Common user question from issues/discussions
 - Conceptual questions (not role-specific)
-- Troubleshooting that applies broadly
 
 **When to add to VARIABLES.md**:
 - New role variables added
@@ -1318,7 +1302,6 @@ Brief description of what this category contains.
 **Applies to**:
 - `docs/getting-started/README.md`
 - `docs/user-guides/README.md`
-- `docs/troubleshooting/README.md`
 - `docs/development/README.md`
 - `docs/maintenance/README.md`
 - `docs/reference/README.md`
@@ -1571,7 +1554,7 @@ additional access controls with sudo policies.
    - Standards applied
    - Files modified
 
-**User Request**: "Translate PT-BR content in troubleshooting docs"
+**User Request**: "Translate PT-BR content in documentation"
 
 **Expected Agent Actions**:
 

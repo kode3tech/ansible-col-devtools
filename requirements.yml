@@ -1,5 +1,5 @@
 ---
-# Collection dependencies for kode3tech.devtools
+# Collection dependencies for code3tech.devtools
 collections:
   - name: community.docker
     version: ">=3.4.0"

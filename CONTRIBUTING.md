@@ -1,6 +1,6 @@
-# Contributing to kode3tech.devtools
+# Contributing to code3tech.devtools
 
-First off, thank you for considering contributing to kode3tech.devtools! It's people like you that make this collection better for everyone.
+First off, thank you for considering contributing to code3tech.devtools! It's people like you that make this collection better for everyone.
 
 ## 📋 Table of Contents
 
@@ -29,7 +29,7 @@ This project and everyone participating in it is governed by respect and profess
 
 ### Reporting Bugs
 
-Before creating bug reports, please check the [existing issues](https://github.com/kode3tech/ansible-devtools/issues) to avoid duplicates.
+Before creating bug reports, please check the [existing issues](https://github.com/kode3tech/ansible-col-devtools/issues) to avoid duplicates.
 
 When you create a bug report, please include as many details as possible:
 
@@ -60,7 +60,7 @@ Add any other context about the problem here (logs, screenshots, etc.).
 
 ### Suggesting Enhancements
 
-Enhancement suggestions are tracked as [GitHub issues](https://github.com/kode3tech/ansible-devtools/issues).
+Enhancement suggestions are tracked as [GitHub issues](https://github.com/kode3tech/ansible-col-devtools/issues).
 
 When creating an enhancement suggestion, please include:
 
@@ -125,7 +125,7 @@ git clone https://github.com/YOUR_USERNAME/ansible-devtools.git
 cd ansible-devtools
 
 # Add upstream remote
-git remote add upstream https://github.com/kode3tech/ansible-devtools.git
+git remote add upstream https://github.com/kode3tech/ansible-col-devtools.git
 
 # Install dependencies
 make install
@@ -375,8 +375,8 @@ Default: `[]` (empty list)
 
 ## Questions?
 
-- **Issues:** [GitHub Issues](https://github.com/kode3tech/ansible-devtools/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/kode3tech/ansible-devtools/discussions)
+- **Issues:** [GitHub Issues](https://github.com/kode3tech/ansible-col-devtools/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/kode3tech/ansible-col-devtools/discussions)
 - **Email:** suporte@kode3.tech
 
 ## Recognition
@@ -392,6 +392,6 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-**Thank you for contributing to kode3tech.devtools!** 🚀
+**Thank you for contributing to code3tech.devtools!** 🚀
 
-**Made with ❤️ by Kode3Tech DevOps Team**
+**Made with ❤️ by Code3Tech DevOps Team**

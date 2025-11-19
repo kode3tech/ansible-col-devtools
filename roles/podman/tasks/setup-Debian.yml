@@ -12,7 +12,9 @@
 
 - name: Display message when using default repositories
   ansible.builtin.debug:
-    msg: "Podman is available in {{ ansible_distribution }} {{ ansible_distribution_version }} default repositories - skipping external repo setup"
+    msg: >
+      Podman is available in {{ ansible_distribution }} {{ ansible_distribution_version }}
+      default repositories - skipping external repo setup
   when: podman_use_default_repo
   tags: podman
 

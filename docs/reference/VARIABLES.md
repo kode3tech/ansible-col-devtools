@@ -1,6 +1,6 @@
 # Variables Reference
 
-Complete reference of all variables available in the `kode3tech.devtools` collection roles.
+Complete reference of all variables available in the `code3tech.devtools` collection roles.
 
 ## 📋 Table of Contents
 
@@ -370,7 +370,7 @@ asdf_shell_profiles:
         password: "{{ vault_quay_password }}"
   
   roles:
-    - kode3tech.devtools.podman
+    - code3tech.devtools.podman
 ```
 
 ### asdf with Multiple Plugins
@@ -398,7 +398,7 @@ asdf_shell_profiles:
             global: "1.21.5"
   
   roles:
-    - kode3tech.devtools.asdf
+    - code3tech.devtools.asdf
 ```
 
 ---

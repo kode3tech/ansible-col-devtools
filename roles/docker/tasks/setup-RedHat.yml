@@ -1,21 +1,38 @@
 ---
 # RedHat/CentOS specific setup tasks
+# Following official Docker documentation: https://docs.docker.com/engine/install/rhel/
 
-- name: Install prerequisites
+- name: Ensure NTP service is running for EL10 (GPG signature validation)
+  ansible.builtin.systemd:
+    name: "{{ ntp_service }}"
+    enabled: true
+    state: restarted
+  vars:
+    ntp_service: "{{ 'chronyd' if ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8 else 'systemd-timesyncd' }}"
+  when: ansible_distribution_major_version|int >= 10
+  tags: docker
+
+- name: Wait for time synchronization (EL10 GPG fix)
+  ansible.builtin.wait_for:
+    timeout: 10
+  when: ansible_distribution_major_version|int >= 10
+  tags: docker
+
+- name: Verify system time is synchronized
+  ansible.builtin.command:
+    cmd: timedatectl show --property=NTPSynchronized --value
+  register: ntp_status
+  changed_when: false
+  when: ansible_distribution_major_version|int >= 10
+  tags: docker
+
+- name: Install dnf-plugins-core (Docker official requirement)
   ansible.builtin.dnf:
-    name: "{{ docker_prerequisites_redhat }}"
+    name: dnf-plugins-core
     state: present
   tags: docker
 
-- name: Add Docker repository
-  ansible.builtin.get_url:
-    url: "{{ docker_yum_repository }}"
-    dest: /etc/yum.repos.d/docker-ce.repo
-    mode: '0644'
-  when: docker_configure_repo
-  tags: docker
-
-- name: Remove old Docker versions
+- name: Remove old Docker versions (Docker official requirement)
   ansible.builtin.dnf:
     name:
       - docker
@@ -26,5 +43,46 @@
       - docker-latest-logrotate
       - docker-logrotate
       - docker-engine
+      - podman
+      - runc
     state: absent
+  tags: docker
+
+- name: Add Docker CE repository (official Docker repo for RHEL)
+  ansible.builtin.command:
+    cmd: dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+  args:
+    creates: /etc/yum.repos.d/docker-ce.repo
+  when: docker_configure_repo
+  tags: docker
+
+- name: Clean DNF cache after repository changes
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: false
+  when: docker_configure_repo
+  tags: docker
+
+- name: Install Docker Engine packages (official Docker packages with time sync)
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+  when: ansible_distribution_major_version|int >= 10
+  tags: docker
+
+- name: Install Docker Engine packages (official Docker packages standard)
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+  when: ansible_distribution_major_version|int < 10
   tags: docker

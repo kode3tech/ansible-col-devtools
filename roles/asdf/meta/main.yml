@@ -3,10 +3,10 @@
 
 galaxy_info:
   role_name: asdf
-  namespace: kode3tech
-  author: Kode3Tech DevOps Team
-  description: Ansible role for installing and configuring asdf version manager
-  company: Kode3Tech
+  namespace: code3tech
+  author: Code3Tech DevOps Team
+  description: Install and configure asdf version manager
+  company: Code3Tech
   license: MIT
   min_ansible_version: "2.15"
 

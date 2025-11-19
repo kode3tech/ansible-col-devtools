@@ -80,7 +80,7 @@ This role supports authentication to private container registries.
 **Quick example:**
 ```yaml
 docker_registries_auth:
-  - registry_url: "ghcr.io"
+  - registry: "ghcr.io"
     username: "myuser"
     password: "{{ vault_github_token }}"
 ```
@@ -184,7 +184,7 @@ features: nesting=1
 lxc.apparmor.profile: unconfined
 ```
 
-📖 **Complete guide:** [LXC Troubleshooting Guide](../../docs/troubleshooting/TROUBLESHOOTING_LXC.md)
+**Note:** These settings enable container nesting and disable AppArmor restrictions which are necessary for Docker to function properly inside LXC.
 
 ### Custom Configuration
 
@@ -242,10 +242,10 @@ With private registry authentication:
   become: true
   vars:
     docker_registries_auth:
-      - registry_url: "https://registry.company.com"
+      - registry: "https://registry.company.com"
         username: "ci-user"
         password: "{{ vault_registry_password }}"
-      - registry_url: "ghcr.io"
+      - registry: "ghcr.io"
         username: "github-user"
         password: "{{ vault_github_token }}"
   roles:
@@ -262,7 +262,7 @@ With insecure registry (HTTP or self-signed certificate):
       - "registry.internal.company.com:5000"
       - "192.168.1.100:5000"
     docker_registries_auth:
-      - registry_url: "http://registry.internal.company.com:5000"
+      - registry: "http://registry.internal.company.com:5000"
         username: "admin"
         password: "{{ vault_internal_registry_password }}"
   roles:

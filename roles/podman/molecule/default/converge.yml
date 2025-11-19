@@ -8,7 +8,7 @@
     podman_rootless_users:
       - ansible
       - devuser
-    
+
     # Test insecure registries configuration
     podman_insecure_registries:
       - "localhost:5000"
@@ -26,7 +26,7 @@
         - ansible
         - devuser
       tags: molecule-idempotence-notest
-    
+
     - name: Include podman role
       ansible.builtin.include_role:
         name: podman

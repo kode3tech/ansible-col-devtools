@@ -1,12 +1,17 @@
 ---
 # Tasks file for podman
 
+- name: Set OS family variable for consistency
+  ansible.builtin.set_fact:
+    podman_os_family: "{{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}"
+  tags: podman
+
 - name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ podman_os_family }}.yml"
   tags: podman
 
 - name: Include OS-specific tasks
-  ansible.builtin.include_tasks: "setup-{{ ansible_os_family }}.yml"
+  ansible.builtin.include_tasks: "setup-{{ podman_os_family }}.yml"
   tags: podman
 
 - name: Ensure Podman is installed
@@ -149,116 +154,24 @@
       loop: "{{ user_info.results }}"
       when: item.ansible_facts.getent_passwd is defined
 
-- name: Install Python requests library for podman_login
-  ansible.builtin.package:
-    name: python3-requests
-    state: present
-  when: podman_registries_auth | length > 0
+- name: Check if containers.podman collection is available
+  ansible.builtin.command: ansible-galaxy collection list containers.podman
+  register: podman_collection_check
+  failed_when: false
+  changed_when: false
   tags: podman-login
 
-- name: Clean up existing Podman credentials (root)
-  ansible.builtin.file:
-    path: /root/.config/containers/auth.json
-    state: absent
+- name: Include Podman registry authentication tasks
+  ansible.builtin.include_tasks: podman-login.yml
   when:
     - podman_registries_auth | length > 0
-    - podman_clean_credentials | bool
-    - not podman_enable_rootless or podman_rootless_users | length == 0
-  tags:
-    - podman
-    - podman-login
+    - podman_collection_check.rc == 0
+  tags: podman-login
 
-- name: Clean up existing Podman credentials (rootless users)
-  become: true
-  become_user: "{{ item }}"
-  ansible.builtin.file:
-    path: "~/.config/containers/auth.json"
-    state: absent
-  loop: "{{ podman_rootless_users }}"
+- name: Display warning if Podman login skipped
+  ansible.builtin.debug:
+    msg: "⚠️ WARNING: Podman registry authentication skipped - containers.podman collection not installed. Install with: ansible-galaxy collection install containers.podman"
   when:
     - podman_registries_auth | length > 0
-    - podman_clean_credentials | bool
-    - podman_enable_rootless
-    - podman_rootless_users | length > 0
-  tags:
-    - podman
-    - podman-login
-
-- name: Login to Podman registries (root mode) - Using podman_login module
-  containers.podman.podman_login:
-    registry: "{{ item.registry }}"
-    username: "{{ item.username }}"
-    password: "{{ item.password | default(lookup('file', item.password_file) if item.password_file is defined else omit) }}"
-  environment:
-    XDG_RUNTIME_DIR: /run/user/0
-  loop: "{{ podman_registries_auth }}"
-  when:
-    - podman_registries_auth | length > 0
-  no_log: true
-  register: podman_login_module_result
-  failed_when: false
-  tags:
-    - podman
-    - podman-login
-
-- name: Login to Podman registries (root mode) - Fallback to command
-  ansible.builtin.shell:
-    cmd: |
-      export XDG_RUNTIME_DIR=/run/user/0
-      echo "{{ item.password | default(lookup('file', item.password_file) if item.password_file is defined else '') }}" | \
-      podman login "{{ item.registry }}" -u "{{ item.username }}" --password-stdin
-  loop: "{{ podman_registries_auth }}"
-  when:
-    - podman_registries_auth | length > 0
-    - podman_login_module_result.failed is defined and podman_login_module_result.failed
-  no_log: true
-  changed_when: true
-  tags:
-    - podman
-    - podman-login
-
-- name: Ensure .config/containers directory exists for users
-  ansible.builtin.file:
-    path: "/home/{{ item }}/.config/containers"
-    state: directory
-    owner: "{{ item }}"
-    group: "{{ item }}"
-    mode: '0700'
-  loop: "{{ podman_rootless_users }}"
-  when:
-    - podman_registries_auth | length > 0
-    - podman_rootless_users | length > 0
-  tags:
-    - podman
-    - podman-login
-
-- name: Enable lingering for Podman users (eliminate systemd cgroup warnings)
-  ansible.builtin.command:
-    cmd: "loginctl enable-linger {{ item }}"
-  loop: "{{ podman_rootless_users }}"
-  when:
-    - podman_registries_auth | length > 0
-    - podman_rootless_users | length > 0
-  register: enable_linger_result
-  changed_when: enable_linger_result.rc == 0
-  failed_when: false  # Don't fail if lingering already enabled or loginctl unavailable
-  tags:
-    - podman
-    - podman-login
-
-- name: Login to Podman registries (per user) - Using command
-  become: true
-  become_user: "{{ item.0 }}"
-  ansible.builtin.shell:
-    cmd: |
-      echo "{{ item.1.password | default(lookup('file', item.1.password_file) if item.1.password_file is defined else '') }}" | \
-      podman login "{{ item.1.registry }}" -u "{{ item.1.username }}" --password-stdin
-  loop: "{{ podman_rootless_users | product(podman_registries_auth) | list }}"
-  when:
-    - podman_registries_auth | length > 0
-    - podman_rootless_users | length > 0
-  no_log: true
-  changed_when: false  # Login commands don't have idempotency detection
-  tags:
-    - podman
-    - podman-login
+    - podman_collection_check.rc != 0
+  tags: podman-login

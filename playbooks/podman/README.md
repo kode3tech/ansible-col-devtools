@@ -78,7 +78,6 @@ If authentication fails:
 - [Podman Role README](../../roles/podman/README.md)
 - [Podman XDG Runtime Fix](../../roles/podman/docs/PODMAN_XDG_RUNTIME_FIX.md)
 - [Registry Authentication Guide](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
-- [Troubleshooting](../../docs/troubleshooting/)
 
 ---
 

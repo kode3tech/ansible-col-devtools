@@ -1,6 +1,6 @@
 # 🚀 Getting Started
 
-Quick start guides to help you begin using the kode3tech.devtools collection.
+Quick start guides to help you begin using the code3tech.devtools collection.
 
 ## 📋 Available Guides
 

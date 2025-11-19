@@ -1,6 +1,6 @@
 # 📚 Documentation
 
-Welcome to the **kode3tech.devtools** Ansible Collection documentation!
+Welcome to the **code3tech.devtools** Ansible Collection documentation!
 
 ## 📖 Documentation Structure
 
@@ -20,13 +20,7 @@ Technical reference documentation.
 - [Variables Reference](reference/VARIABLES.md) - Complete list of all role variables
 
 ### ❓ [FAQ](FAQ.md)
-Frequently asked questions about installation, usage, performance, and troubleshooting.
-
-### 🔧 [Troubleshooting](troubleshooting/)
-Having issues? Check here first.
-- [LXC Containers](troubleshooting/TROUBLESHOOTING_LXC.md) - Running Docker/Podman in LXC containers
-- [APT Key Deprecation](troubleshooting/APT_KEY_DEPRECATION.md) - Modern GPG key management
-- [Known Issues](troubleshooting/KNOWN_ISSUES.md) - Common problems and solutions
+Frequently asked questions about installation, usage, and performance.
 
 ### 👨‍💻 [Development](development/)
 Contributing to the project.
@@ -53,9 +47,9 @@ Each role maintains its own documentation:
 ## 🆘 Need Help?
 
 - 📖 Check the [User Guides](user-guides/)
-- 🔧 Check [Troubleshooting](troubleshooting/)
-- 🐛 Report bugs in [GitHub Issues](https://github.com/kode3tech/ansible-devtools/issues)
-- 💬 Ask questions in [GitHub Discussions](https://github.com/kode3tech/ansible-devtools/discussions)
+- 📖 Check the [FAQ](FAQ.md)
+- 🐛 Report bugs in [GitHub Issues](https://github.com/kode3tech/ansible-col-devtools/issues)
+- 💬 Ask questions in [GitHub Discussions](https://github.com/kode3tech/ansible-col-devtools/discussions)
 - 📧 Email: suporte@kode3.tech
 
 ---
@@ -74,12 +68,6 @@ Each role maintains its own documentation:
 1. [Contributing Guide](../CONTRIBUTING.md)
 2. [Role Structure](development/ROLE_STRUCTURE.md)
 3. [Molecule Testing](development/testing/MOLECULE_TESTING.md)
-
-### For Troubleshooting
-1. [FAQ](FAQ.md)
-2. [Known Issues](troubleshooting/KNOWN_ISSUES.md)
-3. [LXC Containers](troubleshooting/TROUBLESHOOTING_LXC.md)
-4. [Registry Authentication](user-guides/REGISTRY_AUTHENTICATION.md)
 
 ### For Reference
 1. [Variables Reference](reference/VARIABLES.md)

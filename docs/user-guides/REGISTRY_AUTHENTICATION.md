@@ -184,7 +184,7 @@ docker_registries_auth:
         password: "{{ vault_registry_password }}"
   
   roles:
-    - kode3tech.devtools.docker
+    - code3tech.devtools.docker
 ```
 
 ## Podman Registry Authentication
@@ -283,7 +283,7 @@ podman_registries_auth:
         password: "{{ vault_registry_password }}"
   
   roles:
-    - kode3tech.devtools.podman
+    - code3tech.devtools.podman
 ```
 
 ## Common Use Cases

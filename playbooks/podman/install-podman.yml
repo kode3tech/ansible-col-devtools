@@ -5,13 +5,13 @@
 - name: Install Podman
   hosts: all
   become: true
-  
+
   collections:
     - kode3tech.devtools
-  
+
   vars:
     podman_rootless_users:
       - "{{ ansible_user }}"
-  
+
   roles:
     - podman

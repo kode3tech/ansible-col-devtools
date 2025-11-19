@@ -1,4 +1,4 @@
-# Ansible Collection: kode3tech.devtools
+# Ansible Collection: code3tech.devtools
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Ansible](https://img.shields.io/badge/ansible-2.15%2B-blue.svg)](https://www.ansible.com/)
@@ -49,7 +49,7 @@ ansible --version
 ### From Ansible Galaxy (when published)
 ```bash
 # After activating venv:
-ansible-galaxy collection install kode3tech.devtools
+ansible-galaxy collection install code3tech.devtools
 ```
 
 ### From Source
@@ -61,7 +61,7 @@ cd ansible-col-devtools
 source activate.sh
 
 ansible-galaxy collection build
-ansible-galaxy collection install kode3tech-devtools-*.tar.gz
+ansible-galaxy collection install code3tech-devtools-*.tar.gz
 ```
 
 ## 📋 Requirements
@@ -101,7 +101,7 @@ The `requirements.yml` includes:
   become: true
   
   collections:
-    - kode3tech.devtools
+    - code3tech.devtools
   
   roles:
     - docker
@@ -116,7 +116,7 @@ The `requirements.yml` includes:
   become: true
   
   collections:
-    - kode3tech.devtools
+    - code3tech.devtools
   
   vars:
     docker_users:
@@ -131,7 +131,7 @@ The `requirements.yml` includes:
 ```yaml
 ---
 collections:
-  - name: kode3tech.devtools
+  - name: code3tech.devtools
     version: ">=1.0.0"
 ```
 
@@ -299,7 +299,7 @@ Detailed documentation for each role is available in their respective README fil
 ## 🏗️ Collection Structure
 
 ```
-kode3tech.devtools/
+code3tech.devtools/
 ├── galaxy.yml                      # Collection metadata
 ├── README.md                       # This file
 ├── CHANGELOG.md                    # Version history
@@ -376,9 +376,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 👥 Authors
 
-**Kode3Tech DevOps Team**
-- GitHub: [@kode3tech](https://github.com/kode3tech)
-- Email: suporte@kode3.tech
+**Code3Tech DevOps Team**
+- GitHub: [@code3tech](https://github.com/code3tech)
+- Email: suporte@code3.tech
 
 ## 🐛 Issues & Support
 
@@ -388,7 +388,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## � Links
 
-- [Ansible Galaxy](https://galaxy.ansible.com/kode3tech/devtools) (when published)
+- [Ansible Galaxy](https://galaxy.ansible.com/code3tech/devtools)
 - [GitHub Repository](https://github.com/kode3tech/ansible-col-devtools)
 - [Documentation](https://github.com/kode3tech/ansible-col-devtools/blob/main/README.md)
 - [Changelog](CHANGELOG.md)
@@ -402,4 +402,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Made with ❤️ by Kode3Tech DevOps Team**
+**Made with ❤️ by Code3Tech DevOps Team**
