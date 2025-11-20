@@ -1,21 +1,26 @@
 ---
 # Molecule converge playbook for asdf role
+# Tests the new centralized group-based architecture
 
 - name: Converge
   hosts: all
   become: true
 
   vars:
-    asdf_version: "latest"
+    # New centralized plugin configuration
+    asdf_plugins:
+      # Using direnv - lightweight plugin for fast testing
+      - name: "direnv"
+        versions:
+          - "2.32.3"
+        global: "2.32.3"
+    
+    # Simple user list (new format)
     asdf_users:
-      - name: "root"  # Molecule containers use root by default
-        shell: "bash"
-        plugins:
-          # Using direnv - lightweight plugin (shell script only)
-          - name: "direnv"
-            versions:
-              - "2.32.3"
-            global: "2.32.3"
+      - "root"  # Molecule containers use root by default
+    
+    # Shell configuration
+    asdf_shell_profile: "bashrc"
 
   tasks:
     - name: Include asdf role

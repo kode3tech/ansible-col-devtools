@@ -134,12 +134,28 @@
 # =============================================================================
 # STAGE 3: USERS AND GROUP ACCESS
 # =============================================================================
-- name: Validate that users exist on the system
+- name: Get user information for home directory detection
   ansible.builtin.getent:
     database: passwd
     key: "{{ item }}"
   loop: "{{ asdf_users }}"
   when: asdf_users | length > 0
+  register: asdf_user_info
+  tags:
+    - asdf
+    - users
+    - validation
+
+- name: Validate that users exist on the system
+  ansible.builtin.assert:
+    that:
+      - item.ansible_facts.getent_passwd[item.item] is defined
+    fail_msg: "User {{ item.item }} does not exist on the system"
+    success_msg: "User {{ item.item }} exists"
+  loop: "{{ asdf_user_info.results }}"
+  when: 
+    - asdf_users | length > 0
+    - not item.skipped | default(false)
   tags:
     - asdf
     - users
@@ -158,7 +174,7 @@
 
 - name: Configure asdf in user shell profiles
   ansible.builtin.blockinfile:
-    path: "{{ ansible_user_dir if item == ansible_user else '/home/' + item }}/.{{ asdf_shell_profile }}"
+    path: "{{ item.ansible_facts.getent_passwd[item.item][4] }}/.{{ asdf_shell_profile }}"
     block: |
       # asdf version manager configuration
       export PATH="{{ asdf_install_dir }}/shims:$PATH"
@@ -167,13 +183,14 @@
       {% endif %}
     marker: "# {mark} ANSIBLE MANAGED BLOCK - asdf"
     create: true
-    owner: "{{ item }}"
-    group: "{{ item }}"
+    owner: "{{ item.item }}"
+    group: "{{ item.item }}"
     mode: '0644'
-  loop: "{{ asdf_users }}"
+  loop: "{{ asdf_user_info.results }}"
   when: 
     - asdf_users | length > 0
     - asdf_configure_shell | bool
+    - not item.skipped | default(false)
   tags:
     - asdf
     - users

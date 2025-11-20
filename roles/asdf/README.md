@@ -319,7 +319,7 @@ The role is fully idempotent:
 
 ## 🧪 Testing
 
-This role includes comprehensive Molecule tests:
+This role includes comprehensive Molecule tests for the **new v2.0 centralized architecture**:
 
 ```bash
 cd roles/asdf
@@ -328,13 +328,90 @@ molecule test
 
 ### Test Platforms
 
-- Ubuntu 22.04 (geerlingguy/docker-ubuntu2204-ansible)
-- Debian 12 (geerlingguy/docker-debian12-ansible)
-- Rocky Linux 9 (geerlingguy/docker-rockylinux9-ansible)
+- **Ubuntu 22.04** (geerlingguy/docker-ubuntu2204-ansible)
+- **Debian 12** (geerlingguy/docker-debian12-ansible)  
+- **Rocky Linux 9** (geerlingguy/docker-rockylinux9-ansible)
+
+### Test Coverage
+
+#### Ansible Tests (verify.yml)
+✅ **Basic Installation**
+- Binary installation verification
+- Directory structure and permissions
+- Version command functionality
+
+✅ **Group-Based Architecture**
+- `asdf` group creation and user assignment
+- Group-based file permissions (0775)
+- Multi-user access validation
+
+✅ **System-Wide Configuration**
+- `/etc/profile.d/asdf.sh` script creation
+- Correct PATH configuration
+- Global availability verification
+
+✅ **Centralized Plugin Management**
+- Plugin installation in shared location
+- Version installation and management
+- Global version configuration
+
+✅ **User Shell Configuration**
+- Individual user `.bashrc` setup
+- Ansible managed block verification
+- Path and environment variables
+
+✅ **Shims and Functionality**
+- Shim creation and execution
+- Functional command testing
+- Binary vs git installation verification
+
+#### Python Tests (test_default.py)
+✅ **Infrastructure Tests**
+- File system permissions and ownership
+- Directory structure validation
+- Executable bit verification
+
+✅ **Integration Tests**
+- Group membership verification
+- System-wide PATH configuration
+- Plugin functionality testing
 
 ### Test Plugin
 
-Tests use **direnv 2.32.3** (lightweight, fast installation).
+Tests use **direnv 2.32.3** - a lightweight plugin perfect for testing:
+- ⚡ **Fast installation** (~5-10 seconds)
+- 🪶 **Minimal dependencies** (shell script only)
+- 🔧 **Real functionality** (environment management)
+- ✅ **Cross-platform** (works on all test platforms)
+
+### Running Specific Tests
+
+```bash
+# Full test suite
+molecule test
+
+# Syntax check only
+molecule syntax
+
+# Converge only (apply role)
+molecule converge
+
+# Verify only (run tests)
+molecule verify
+
+# Test on specific platform
+molecule test --scenario-name default -- --limit ubuntu2204
+```
+
+### Test Architecture Validation
+
+The tests specifically validate the **v2.0 centralized approach**:
+
+1. **No per-user complexity** - Simple configuration structure
+2. **Group-based permissions** - Shared access without conflicts  
+3. **Centralized plugins** - Single installation point
+4. **System-wide availability** - Global PATH configuration
+5. **Binary installation** - Fast, reliable installation method
 
 ## 📊 Performance
 
