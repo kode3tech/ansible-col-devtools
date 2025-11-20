@@ -1,0 +1,19 @@
+#!/bin/bash
+# System-wide asdf configuration
+# This file is managed by Ansible - do not edit manually
+
+# Set asdf data directory
+export ASDF_DATA_DIR="{{ asdf_install_dir }}"
+
+# Add asdf shims to system PATH
+export PATH="{{ asdf_install_dir }}/shims:$PATH"
+
+{% if asdf_data_dir and asdf_data_dir != '' and asdf_data_dir != asdf_install_dir %}
+# Custom data directory (if different from install dir)
+export ASDF_DATA_DIR="{{ asdf_data_dir }}"
+{% endif %}
+
+# Make asdf command available system-wide
+if [ -f "{{ asdf_install_dir }}/bin/asdf" ]; then
+    alias asdf="{{ asdf_install_dir }}/bin/asdf"
+fi

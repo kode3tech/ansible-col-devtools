@@ -20,14 +20,15 @@ Ansible role for installing and configuring **asdf** - the extendable version ma
 
 - ✅ **Binary installation** - Fast, reliable installation from official releases
 - ✅ **Multi-distribution support** - Ubuntu 22+, Debian 11+, RHEL/Rocky 9+
-- ✅ **Plugin management** - Install and configure asdf plugins automatically
-- ✅ **Version management** - Install multiple versions of tools
-- ✅ **Global version configuration** - Set default versions per user
+- ✅ **Centralized plugin management** - Configure plugins once for all users
+- ✅ **Group-based permissions** - Uses `asdf` group for shared access
+- ✅ **Multi-user support** - No permission conflicts between users
+- ✅ **System-wide PATH** - Available in `/etc/profile.d/asdf.sh`
+- ✅ **User validation** - Validates users exist before configuration
 - ✅ **Shell configuration** - Automatic setup for bash, zsh, and fish
-- ✅ **Automatic home detection** - No manual home directory configuration needed
 - ✅ **Internet connectivity check** - Graceful handling of offline environments
 - ✅ **RedHat optimizations** - Handles curl-minimal conflicts and DNF cache
-- ✅ **PATH integration** - System-wide asdf availability
+- ✅ **Simplified variables** - Clean, easy-to-understand configuration
 
 ## 📋 Requirements
 
@@ -45,6 +46,29 @@ Ansible role for installing and configuring **asdf** - the extendable version ma
 | **RHEL/Rocky/Alma** | 9, 10 | ✅ Tested |
 
 ## 🔧 Role Variables
+
+### 🎯 **NEW: Simplified Group-Based Architecture**
+
+**This role now uses a centralized approach with group-based permissions - NO MORE per-user complexity!**
+
+```yaml
+# ✅ NEW: Simple centralized configuration
+asdf_plugins:
+  - name: "nodejs"
+    versions: ["20.11.0"]
+    global: "20.11.0"
+
+asdf_users:
+  - "user1"  # Simple username list
+  - "user2"  # All users get same plugins
+```
+
+**Key improvements:**
+- ✅ **Centralized plugins** - Configure once, applies to all users
+- ✅ **Group permissions** - Users added to `asdf` group for shared access
+- ✅ **System-wide installation** - Plugins installed once in `/opt/asdf`
+- ✅ **Multi-user support** - No more permission conflicts between users
+- ✅ **Simplified variables** - Just usernames, no complex per-user structures
 
 ### Basic Configuration
 
@@ -66,22 +90,26 @@ asdf_configure_shell: true
 ### User and Plugin Configuration
 
 ```yaml
-# Users who should have asdf configured in their shell
-# NOTE: 'home' is automatically detected, no need to specify
-asdf_users: []
-# Example:
-#   - name: "myuser"
-#     shell: "bash"  # Optional: bash (default), zsh, or fish
-#     plugins:       # Optional: list of plugins to install
-#       - name: "nodejs"
-#         versions:
-#           - "20.11.0"
-#           - "18.19.0"
-#         global: "20.11.0"  # Set as default version
-#       - name: "python"
-#         versions:
-#           - "3.12.1"
-#         global: "3.12.1"
+# Centralized plugin configuration (applies to all users)
+asdf_plugins:
+  - name: "nodejs"
+    versions:
+      - "20.11.0"
+      - "18.19.0"
+    global: "20.11.0"
+  - name: "python"
+    versions:
+      - "3.12.1"
+    global: "3.12.1"
+
+# Simple user list (users must exist on system)
+asdf_users:
+  - "developer"
+  - "jenkins"
+  - "deploy"
+
+# Shell configuration (applies to all users)
+asdf_shell_profile: "bashrc"  # bashrc, zshrc, or config/fish/config.fish
 ```
 
 ### Advanced Configuration
@@ -122,19 +150,20 @@ None.
 - hosts: servers
   become: true
   vars:
+    asdf_plugins:
+      # Lightweight plugins - no compilation needed
+      - name: "direnv"
+        versions:
+          - "2.32.3"
+        global: "2.32.3"
+      - name: "jq"
+        versions:
+          - "1.7.1"
+        global: "1.7.1"
+    
     asdf_users:
-      - name: "{{ ansible_user }}"
-        shell: "bash"
-        plugins:
-          # Lightweight plugins - no compilation needed
-          - name: "direnv"
-            versions:
-              - "2.32.3"
-            global: "2.32.3"
-          - name: "jq"
-            versions:
-              - "1.7.1"
-            global: "1.7.1"
+      - "{{ ansible_user }}"
+  
   roles:
     - kode3tech.devtools.asdf
 ```
@@ -145,20 +174,23 @@ None.
 - hosts: developers
   become: true
   vars:
+    asdf_plugins:
+      - name: "nodejs"
+        versions:
+          - "20.11.0"
+          - "18.19.0"
+        global: "20.11.0"
+      - name: "python"
+        versions:
+          - "3.12.1"
+          - "3.11.7"
+        global: "3.12.1"
+    
     asdf_users:
-      - name: "devuser"
-        shell: "bash"
-        plugins:
-          - name: "nodejs"
-            versions:
-              - "20.11.0"
-              - "18.19.0"
-            global: "20.11.0"
-          - name: "python"
-            versions:
-              - "3.12.1"
-              - "3.11.7"
-            global: "3.12.1"
+      - "devuser"
+    
+    asdf_shell_profile: "bashrc"  # or "zshrc"
+  
   roles:
     - kode3tech.devtools.asdf
 ```
@@ -169,27 +201,27 @@ None.
 - hosts: servers
   become: true
   vars:
+    # All users get the same plugins (centralized)
+    asdf_plugins:
+      - name: "nodejs"
+        versions: ["20.11.0"]
+        global: "20.11.0"
+      - name: "python"
+        versions: ["3.12.1"]
+        global: "3.12.1"
+      - name: "terraform"
+        versions: ["1.6.0"]
+        global: "1.6.0"
+    
+    # Simple user list
     asdf_users:
-      - name: "frontend"
-        shell: "bash"
-        plugins:
-          - name: "nodejs"
-            versions: ["20.11.0"]
-            global: "20.11.0"
-      
-      - name: "backend"
-        shell: "bash"
-        plugins:
-          - name: "python"
-            versions: ["3.12.1"]
-            global: "3.12.1"
-      
-      - name: "devops"
-        shell: "zsh"
-        plugins:
-          - name: "terraform"
-            versions: ["1.6.0"]
-            global: "1.6.0"
+      - "frontend"
+      - "backend"
+      - "devops"
+    
+    # Shell configuration applies to all users
+    asdf_shell_profile: "bashrc"  # All users get same shell config
+  
   roles:
     - kode3tech.devtools.asdf
 ```
@@ -222,20 +254,35 @@ For production environments:
 
 ## 🔍 Features in Detail
 
-### 1. Automatic Home Directory Detection
+### 1. Centralized Plugin Management
 
-No need to specify user home directories - the role automatically detects them using `getent`:
+Plugins are installed once in `/opt/asdf` and shared among all users:
 
 ```yaml
-# ✅ CORRECT - Home is auto-detected
-asdf_users:
-  - name: "myuser"
-    plugins: [...]
+# ✅ NEW: Centralized approach
+asdf_plugins:
+  - name: "nodejs"
+    versions: ["20.11.0"]
+    global: "20.11.0"
 
-# ❌ NOT NEEDED
 asdf_users:
-  - name: "myuser"
-    home: "/home/myuser"  # Don't specify this!
+  - "user1"  # Gets nodejs 20.11.0
+  - "user2"  # Also gets nodejs 20.11.0
+```
+
+### 2. Group-Based Permissions
+
+Users are added to the `asdf` group for shared access to the installation:
+
+```bash
+# Automatic group creation and user assignment
+sudo groupadd asdf
+sudo usermod -aG asdf user1
+sudo usermod -aG asdf user2
+
+# Directory permissions
+chown -R root:asdf /opt/asdf
+chmod -R 775 /opt/asdf
 ```
 
 ### 2. Internet Connectivity Check

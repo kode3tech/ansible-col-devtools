@@ -30,12 +30,13 @@ Podman installation with rootless container support.
 - **OCI-compliant**: Compatible with Docker commands
 
 ### 🔧 asdf
-asdf version manager for managing multiple runtime versions.
-- Multi-language version management
-- Support for Node.js, Python, Ruby, Golang, and many more
-- Per-user and per-project version control
-- Plugin-based architecture
-- Shell integration (bash, zsh, fish)
+asdf version manager with centralized group-based architecture.
+- **Centralized plugin management**: Configure once, applies to all users
+- **Group-based permissions**: Multi-user support with `asdf` group
+- **System-wide installation**: Plugins installed in `/opt/asdf`
+- **Multi-language support**: Node.js, Python, Ruby, Golang, and 300+ plugins
+- **Shell integration**: Automatic configuration for bash, zsh, fish
+- **User validation**: Ensures users exist before configuration
 
 ## 🚀 Installation
 

@@ -3,49 +3,42 @@
 # All variables are prefixed with 'asdf_' to avoid conflicts
 
 # asdf version to install (latest by default)
-# Use release tag like 'v0.14.1' or 'latest'
 asdf_version: "latest"
 
-# asdf installation directory
-asdf_install_dir: "/opt/asdf"
-
-# asdf binary download URL
+# asdf binary download URL base
 asdf_binary_url: "https://github.com/asdf-vm/asdf/releases/download"
+
+# asdf installation directory (system-wide)
+asdf_install_dir: "/opt/asdf"
 
 # Custom data directory (optional)
 # Set to customize where asdf stores plugins, installs, and shims
-# Default: ~/.asdf (for per-user) or /opt/asdf (for system-wide)
 asdf_data_dir: ""
 
-# Users who should have asdf configured in their shell
-# NOTE: Do not specify 'home' - it will be automatically detected from the system
-asdf_users: []
-# Example:
-#   - name: "myuser"
-#     shell: "bash"  # Optional: bash (default), zsh, or fish
-#     plugins:       # Optional: list of plugins to install
-#       - name: "nodejs"
-#         versions:
-#           - "20.11.0"
-#           - "18.19.0"
-#         global: "20.11.0"
-#       - name: "python"
-#         versions:
-#           - "3.12.1"
-#         global: "3.12.1"
-
-# Shell configurations to update (.bashrc, .zshrc, etc.)
-asdf_configure_shell: true
-
-# Shell profile files by shell type
-asdf_shell_profiles:
-  bash: ".bashrc"
-  zsh: ".zshrc"
-  fish: ".config/fish/config.fish"
-
-# System dependencies required for asdf
+# System dependencies installation
 asdf_install_dependencies: true
 
-# Service state (asdf doesn't have a service, but kept for consistency)
-asdf_service_enabled: false
-asdf_service_state: stopped
+# Shell configuration
+asdf_configure_shell: true
+asdf_shell_profile: "bashrc"  # bashrc, zshrc, or config/fish/config.fish
+
+# Plugins configuration (centralized)
+# This replaces the per-user plugin configuration for simplicity
+asdf_plugins: []
+# Example:
+#   - name: "nodejs"
+#     versions:
+#       - "20.11.0" 
+#       - "18.19.0"
+#     global: "20.11.0"
+#   - name: "python"
+#     versions:
+#       - "3.12.1"
+#     global: "3.12.1"
+
+# Users with access to asdf (will be added to 'asdf' group)
+# Users must exist on the system - role will validate
+asdf_users: []
+# Example:
+#   - "username1"
+#   - "username2"

@@ -26,14 +26,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Non-interactive authentication**: Perfect for CI/CD with proper credential handling
   - **Multi-registry support**: Docker Hub, GHCR, Quay.io, private registries
   - **Security enhancements**: Proper file ownership and SELinux contexts
-- **[asdf]** New role for asdf version manager (v1.0.0)
+- **[asdf]** MAJOR ARCHITECTURAL IMPROVEMENT - Centralized group-based approach (v2.0.0)
+  - **🚀 Breaking Change**: Complete redesign from per-user to centralized architecture
+  - **Centralized plugin management**: Configure plugins once, applies to all users
+  - **Group-based permissions**: Uses `asdf` group for shared access (no more conflicts!)
+  - **Multi-user support**: Multiple users can use same asdf installation without permission issues
+  - **System-wide PATH**: Added `/etc/profile.d/asdf.sh` for global availability
+  - **User validation**: Validates users exist on system before configuration
+  - **Simplified variables**: Clean configuration - users as simple list, centralized plugins
+  - **Improved reliability**: No more "permission denied" errors between users
+- **[asdf]** Enhanced features and capabilities (v1.0.0 → v2.0.0)
   - **Binary installation** (asdf v0.16.0+): Fast, reliable installation from official GitHub releases
   - **Multi-distribution support**: Ubuntu 22/24/25, Debian 11/12/13, RHEL/Rocky 9/10
   - **Plugin management**: Automatic installation and configuration of asdf plugins
   - **Version management**: Install multiple versions of runtime tools
   - **Global version configuration**: Set default versions per user with `asdf set` command
   - **Shell integration**: Automatic configuration for bash, zsh, and fish shells
-  - **Automatic home detection**: Uses `getent` to detect user home directories
   - **Internet connectivity check**: Graceful handling of offline environments
   - **RedHat optimizations**:
     - Automatic curl-minimal to curl replacement with `allowerasing=true`
@@ -47,6 +55,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[asdf]** Supported plugins categories:
   - **Lightweight plugins** (for testing/CI): direnv, jq, yq, kubectl, helm (~3-10s each)
   - **Heavy plugins** (for production): nodejs, python, ruby, golang, rust (~2-30min each)
+
+### Changed
+- **[asdf]** ⚠️ BREAKING CHANGE: Variable structure completely redesigned (v2.0.0)
+  - **Old** (v1.x): Complex per-user configuration with nested plugins
+  - **New** (v2.x): Simple centralized configuration with user list
+  ```yaml
+  # OLD v1.x (❌ no longer supported)
+  asdf_users:
+    - name: "user1"
+      shell: "bash"
+      plugins:
+        - name: "nodejs"
+          versions: ["20.11.0"]
+          global: "20.11.0"
+  
+  # NEW v2.x (✅ required format)
+  asdf_plugins:
+    - name: "nodejs"
+      versions: ["20.11.0"]
+      global: "20.11.0"
+  asdf_users:
+    - "user1"
+  ```
+  - **Migration required**: Update playbooks to use new variable structure
+  - **Benefits**: Eliminates permission conflicts, simplifies management, enables multi-user
 - **[Docker]** Performance optimization configuration (v1.1.0)
   - **Storage driver**: Explicit `overlay2` with kernel check override (+15-30% I/O)
   - **Logging**: Compressed, non-blocking logs (-70% disk space, +10-20% I/O)
