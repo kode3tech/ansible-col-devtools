@@ -1,5 +1,5 @@
-# Inventário de Exemplo
-# Ajuste conforme sua infraestrutura
+# Example Inventory
+# Adjust according to your infrastructure
 
 [docker_hosts]
 # host1.example.com ansible_host=192.168.1.10 ansible_user=admin

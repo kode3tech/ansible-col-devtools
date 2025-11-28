@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **[Documentation]** Docker Complete Guide (v1.4.0)
+  - **Comprehensive documentation** for Docker production deployment
+  - **Docker Architecture** overview and comparison with Podman
+  - **Detailed variable reference** with explanations and examples
+  - **Production playbook walkthrough** with line-by-line explanations
+  - **Performance optimization guide** (overlay2, BuildKit, concurrent downloads, userland-proxy)
+  - **Monitoring section** with Prometheus metrics configuration
+  - **Troubleshooting section** for common issues (permissions, DNS, storage)
+  - **Real-world examples** for development, CI/CD, and production environments
+  - Location: `docs/user-guides/DOCKER_COMPLETE_GUIDE.md`
+- **[Documentation]** Podman Complete Guide (v1.3.0)
+  - **Comprehensive documentation** for Podman Root vs Rootless mode
+  - **Detailed variable reference** with explanations and examples
+  - **Production playbook walkthrough** with line-by-line explanations
+  - **Performance optimization guide** (crun, metacopy, parallel downloads)
+  - **Troubleshooting section** for common issues (XDG_RUNTIME_DIR, storage conflicts)
+  - **Real-world examples** for development, CI/CD, and production environments
+  - Location: `docs/user-guides/PODMAN_COMPLETE_GUIDE.md`
+- **[Playbooks]** Updated Docker production playbook (v1.4.0)
+  - **Replaced basic install-docker.yml** with full production configuration
+  - **Custom data directory** (`/opt/docker-data`) for SSD optimization
+  - **High concurrency downloads** (25 parallel) for 200-300% faster pulls
+  - **Non-blocking logging** with compression and 16MB buffer
+  - **Live restore** enabled for zero-downtime daemon updates
+  - **Prometheus metrics** endpoint at 127.0.0.1:9323
+  - **DNS optimization** with Cloudflare/Google
+  - **Time synchronization** pre-tasks (critical for GPG keys)
+  - **Validation post-tasks** with container tests and metrics check
+  - Location: `playbooks/docker/install-docker.yml`
 - **[Docker]** RHEL 8+ support and enhanced features (v1.2.0)
   - **Extended platform support**: Now supports RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
   - **Automatic permission fixes**: Resolves Docker config file ownership issues on RHEL systems
@@ -21,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Multi-user support**: Isolated credentials for each user in XDG_RUNTIME_DIR
   - **SELinux context restoration**: Proper security contexts for container directories
   - **Automatic permission handling**: Resolves auth file ownership issues on RHEL systems
+  - **Storage driver conflict detection**: Automatic detection and reset of database graph driver mismatches
+  - **Improved authentication reliability**: Automatic storage reset prevents authentication failures
 - **[Registry Authentication]** Enhanced RHEL support (v1.2.0)
   - **Automatic permission fixes**: Both Docker and Podman now handle RHEL file ownership
   - **Non-interactive authentication**: Perfect for CI/CD with proper credential handling
@@ -105,7 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[Docker/Podman]** Private registry authentication support
   - New variables: `docker_registries_auth` and `podman_registries_auth`
   - Secure login with `no_log: true` to prevent credential exposure
-  - Support for password authentication (Docker) or password/password_file authentication (Podman)
+  - Support for password authentication (Docker) or password authentication (Podman)
   - Rootless-aware authentication for Podman (per-user login)
   - Automatic fallback to shell command if module fails (Podman)
   - **New**: `podman_clean_credentials` option to remove old/invalid credentials

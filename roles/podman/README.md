@@ -2,6 +2,8 @@
 
 Ansible role for installing and configuring Podman on Linux servers.
 
+> 📖 **Complete Guide**: For a comprehensive understanding of Podman with this role, including Root vs Rootless mode, detailed variable explanations, production playbooks, and troubleshooting, see the **[Podman Complete Guide](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+
 ## 📋 Table of Contents
 
 - [Requirements](#requirements)
@@ -35,6 +37,7 @@ This role includes enhanced support for RHEL-based systems:
 - ✅ **SELinux context restoration** for container directories
 - ✅ **Multi-user support** with isolated authentication
 - ✅ **XDG_RUNTIME_DIR fixes** for proper rootless operation
+- ✅ **Storage driver conflict resolution** for database graph driver mismatches
 
 ## Role Variables
 
@@ -46,6 +49,7 @@ podman_packages:
   - podman
   - buildah
   - skopeo
+  - crun  # High-performance OCI runtime
 
 # Configure Podman repository
 podman_configure_repo: true
@@ -99,7 +103,7 @@ This role supports **comprehensive** authentication to private container registr
 **Quick example:**
 ```yaml
 podman_registries_auth:
-  - registry_url: "quay.io"
+  - registry: "quay.io"
     username: "myuser"
     password: "{{ vault_quay_password }}"
 ```
@@ -140,9 +144,9 @@ podman_registries_auth:
 
 📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
-## Time Synchronization
+## Time Synchronization (Compatibility Fixes)
 
-The role includes **automatic time synchronization** to ensure proper repository access and package validation.
+The role includes **targeted time synchronization fixes** to ensure proper repository access and package validation on specific distributions.
 
 ### Ubuntu/Debian Specific Handling
 
@@ -157,62 +161,33 @@ timedatectl set-ntp true
 wait 15 seconds
 ```
 
-**Benefits:**
-- ✅ **Automatic repository validation** - release files accessible without time-related errors
-- ✅ **Distribution-specific logic** - uses systemd-timesyncd (Ubuntu/Debian standard)
-- ✅ **Immediate effect** - forces NTP sync and verification
-- ✅ **Zero configuration** - works out of the box for Ubuntu 25+ and Debian 13+
+## Configuration Examples
 
-**Error prevented:**
-```
-E:Release file for http://archive.ubuntu.com/ubuntu/dists/plucky-updates/InRelease is not valid yet (invalid for another 10d 22h 8min 48s)
-```
+### Performance Optimization (Optional)
 
-## Performance Tuning
-
-This role includes **performance-optimized defaults** that provide significant improvements over vanilla Podman installations:
-
-### Default Optimizations
-
-The role automatically configures the following performance enhancements:
+You can configure performance optimizations by overriding the `podman_storage_conf` variable. These are **not enabled by default**, but recommended for high-performance environments:
 
 ```yaml
 podman_storage_conf:
   storage:
-    driver: "overlay"               # Optimized storage driver
+    driver: "overlay"
     runroot: "/run/containers/storage"
     graphroot: "/var/lib/containers/storage"
     options:
       overlay:
-        mountopt: "nodev,metacopy=on"  # metacopy reduces I/O operations
-        # force_mask: "0000"  # Optional: only for fuse-overlayfs (rootless with older kernels)
+        mountopt: "nodev,metacopy=on"
   
   engine:
-    runtime: "crun"                    # 20-30% faster than runc
+    runtime: "crun"
     events_logger: "file"
     cgroup_manager: "systemd"
     num_locks: 2048
-    image_parallel_copies: 10          # Parallel layer copies during pull
+    image_parallel_copies: 10
 ```
-
-> **Note:** `force_mask` is commented out by default as it requires `mount_program` (fuse-overlayfs). 
-> Only needed for rootless Podman on older kernels without overlay support in user namespaces.
-
-### Performance Gains
-
-With these optimizations enabled (default), you can expect:
-
-| Metric | Improvement | Benefit |
-|--------|-------------|---------|
-| **I/O Performance** | +30-50% | Faster container operations |
-| **Container Startup** | +20-30% | Faster `podman run` with crun |
-| **Image Pull Speed** | +200-300% | Parallel layer downloads |
-| **Build Performance** | +15-25% | Faster `podman build` |
-| **Resource Efficiency** | +10-15% | Better CPU/memory usage |
 
 ### crun vs runc
 
-The role installs and configures **crun** by default (instead of runc):
+The role installs `crun` if available, but uses the system default unless configured otherwise.
 
 **crun advantages:**
 - 20-30% faster container startup
@@ -229,8 +204,6 @@ The role automatically configures `systemd-tmpfiles` to create `/run/user/0` for
 - ✅ Persists across reboots
 - ✅ Proper permissions (0700)
 - ✅ Works in LXC unprivileged containers
-
-📖 **Detailed guide:** [Podman XDG Runtime Fix](docs/PODMAN_XDG_RUNTIME_FIX.md)
 
 ### LXC Container Support
 
@@ -321,10 +294,10 @@ With private registry authentication (rootless):
       - devuser
       - jenkins
     podman_registries_auth:
-      - registry_url: "https://registry.company.com"
+      - registry: "https://registry.company.com"
         username: "ci-user"
         password: "{{ vault_registry_password }}"
-      - registry_url: "quay.io"
+      - registry: "quay.io"
         username: "quay-user"
         password: "{{ vault_quay_token }}"
   roles:
@@ -341,7 +314,7 @@ With insecure registry (HTTP or self-signed certificate):
       - "registry.internal.company.com:5000"
       - "192.168.1.100:5000"
     podman_registries_auth:
-      - registry_url: "registry.internal.company.com:5000"
+      - registry: "registry.internal.company.com:5000"
         username: "admin"
         password: "{{ vault_internal_registry_password }}"
   roles:
@@ -359,7 +332,7 @@ With credential cleanup (when changing passwords or troubleshooting):
     # Enable credential cleanup to remove old/invalid credentials
     podman_clean_credentials: true
     podman_registries_auth:
-      - registry_url: "docker.io"
+      - registry: "docker.io"
         username: "myuser"
         password: "{{ vault_new_password }}"  # Updated password
   roles:

@@ -42,8 +42,15 @@ build_ignore:
   - .gitignore
   - .venv
   - .ansible
+  - '**/.ansible'
+  - '**/.ansible/**'
   - .python-version
   - .tool-versions
+  - collections
+  - '**/collections'
+  - '**/collections/**'
+  - _temp
+  - '_temp/**'
   - '*.pyc'
   - '*.pyo'
   - '*.swp'
@@ -51,9 +58,18 @@ build_ignore:
   - '*.tmp'
   - '*~'
   - __pycache__
+  - '**/__pycache__'
+  - '**/__pycache__/**'
   - .pytest_cache
+  - '**/.pytest_cache'
+  - '**/.pytest_cache/**'
   - .molecule
+  - '**/.molecule'
+  - '**/.molecule/**'
   - .cache
+  - '**/.cache'
+  - '**/.cache/**'
   - '*.log'
+  - '**/*.log'
   - .DS_Store
-  - Thumbs.db
+  - '**/Thumbs.db'

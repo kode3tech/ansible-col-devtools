@@ -1,52 +1,6 @@
 ---
-# RedHat/CentOS specific setup tasks
+# RedHat-specific setup tasks (RHEL 9+ supported)
 # Following official Docker documentation: https://docs.docker.com/engine/install/rhel/
-
-# Time synchronization fix - CRITICAL for RHEL 10 GPG signature validation
-# RHEL 8-9: Use chronyd (default) | RHEL 10: Use chronyd with specific restart logic
-- name: Ensure NTP service is running for RHEL 10 (GPG signature validation)
-  ansible.builtin.systemd:
-    name: "{{ ntp_service }}"
-    enabled: true
-    state: restarted
-  vars:
-    ntp_service: "{{ 'chronyd' if ansible_os_family == 'RedHat' and ansible_distribution_major_version|int >= 8 else 'systemd-timesyncd' }}"
-  when: ansible_distribution_major_version|int >= 10
-  tags: docker
-
-- name: Wait for time synchronization (RHEL 10 GPG fix)
-  ansible.builtin.wait_for:
-    timeout: 10
-  when: ansible_distribution_major_version|int >= 10
-  tags: docker
-
-- name: Verify system time is synchronized (RHEL 10)
-  ansible.builtin.command:
-    cmd: timedatectl show --property=NTPSynchronized --value
-  register: ntp_status_rhel10
-  changed_when: false
-  when: ansible_distribution_major_version|int >= 10
-  tags: docker
-
-# Fallback time sync for RHEL 8-9 (certificate issues)
-- name: Ensure NTP service is running (RHEL 8-9 certificate validation fix)
-  ansible.builtin.systemd:
-    name: chronyd
-    enabled: true
-    state: started
-  when: ansible_distribution_major_version|int < 10
-  failed_when: false
-  tags: docker
-
-- name: Force time synchronization (RHEL 8-9 with chronyd)
-  ansible.builtin.command:
-    cmd: chronyc makestep
-  when:
-    - ansible_distribution_major_version|int < 10
-  changed_when: false
-  failed_when: false
-  tags: docker
-
 - name: Install dnf-plugins-core (Docker official requirement)
   ansible.builtin.dnf:
     name: dnf-plugins-core
@@ -69,18 +23,20 @@
     state: absent
   tags: docker
 
-- name: Add Docker CE repository (official Docker repo for RHEL)
-  ansible.builtin.command:
-    cmd: dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
-  args:
-    creates: /etc/yum.repos.d/docker-ce.repo
+- name: Configure Docker CE repository (official Docker repo for RHEL 9+)
+  ansible.builtin.yum_repository:
+    name: "{{ docker_yum_repo_name }}"
+    description: "{{ docker_yum_repo_description }}"
+    baseurl: "{{ docker_yum_repo_baseurl }}"
+    gpgcheck: "{{ docker_yum_repo_gpgcheck }}"
+    gpgkey: "{{ docker_yum_repo_gpgkey }}"
+    enabled: "{{ docker_yum_repo_enabled }}"
   when: docker_configure_repo
   tags: docker
 
-- name: Clean DNF cache after repository changes
-  ansible.builtin.command:
-    cmd: dnf clean all
-  changed_when: false
+- name: Refresh repository metadata
+  ansible.builtin.dnf:
+    update_cache: true
   when: docker_configure_repo
   tags: docker
 

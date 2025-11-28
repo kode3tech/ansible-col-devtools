@@ -1,6 +1,6 @@
 # Plugins
 
-This directory contains custom Ansible plugins for the `code3tech.devtools` collection.
+This directory contains custom Ansible plugins and shared tasks for the `code3tech.devtools` collection.
 
 ## Directory Structure
 
@@ -8,6 +8,13 @@ This directory contains custom Ansible plugins for the `code3tech.devtools` coll
 - `filter/` - Custom Jinja2 filter plugins
 - `inventory/` - Custom inventory plugins (when needed)
 - `lookup/` - Custom lookup plugins (when needed)
+- `shared_tasks/` - Reusable task files shared across roles
+
+## Shared Tasks
+
+The `shared_tasks/` directory contains common tasks that can be included in multiple roles to avoid code duplication.
+
+See [shared_tasks/README.md](shared_tasks/README.md) for detailed documentation.
 
 ## Usage
 

@@ -1,13 +1,13 @@
 ---
-# Configuração do ansible-lint
+# ansible-lint configuration
 profile: production
 
-# Pular regras específicas se necessário
+# Skip specific rules if needed
 # skip_list:
 #   - role-name
 #   - yaml[line-length]
 
-# Excluir diretórios do lint
+# Exclude directories from linting
 exclude_paths:
   - .venv/
   - .molecule/
@@ -23,14 +23,14 @@ exclude_paths:
   - '**/molecule/*/.cache/'
   - '**/molecule/*/.molecule/'
 
-# Usar regras progressivas
+# Use progressive rules
 progressive: true
 
-# Tratamento de warnings
+# Warning handling
 warn_list:
   - experimental
   - no-changed-when
   - command-instead-of-module
 
-# Nível de verbosidade
+# Verbosity level
 # verbosity: 1

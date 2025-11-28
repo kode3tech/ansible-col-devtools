@@ -1,48 +1,6 @@
 ---
 # Debian/Ubuntu specific setup tasks
 
-# Time synchronization fix - CRITICAL for Ubuntu 25+ and newer distributions
-# Ubuntu/Debian use systemd-timesyncd by default (vs chronyd on RHEL)
-- name: Ensure time synchronization service is running (Ubuntu/Debian time fix)
-  ansible.builtin.systemd:
-    name: systemd-timesyncd
-    enabled: true
-    state: restarted
-  when: >
-    (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 25)
-    or (ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 13)
-  failed_when: false
-  tags: docker
-
-- name: Wait for time synchronization (Ubuntu/Debian time fix)
-  ansible.builtin.wait_for:
-    timeout: 15
-  when: >
-    (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 25)
-    or (ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 13)
-  tags: docker
-
-- name: Force time synchronization (Ubuntu/Debian NTP fix)
-  ansible.builtin.command:
-    cmd: timedatectl set-ntp true
-  when: >
-    (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 25)
-    or (ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 13)
-  changed_when: false
-  failed_when: false
-  tags: docker
-
-- name: Verify system time is synchronized (Ubuntu/Debian)
-  ansible.builtin.command:
-    cmd: timedatectl show --property=NTPSynchronized --value
-  register: ntp_status_debian
-  changed_when: false
-  when: >
-    (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 25)
-    or (ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 13)
-  failed_when: false
-  tags: docker
-
 - name: Install prerequisites
   ansible.builtin.apt:
     name: "{{ docker_prerequisites_debian }}"
@@ -75,15 +33,16 @@
   when: docker_configure_repo
   tags: docker
 
-- name: Update apt cache
+- name: Update apt cache (after adding Docker repo)
   ansible.builtin.apt:
     update_cache: true
+    cache_valid_time: 0
   when: docker_configure_repo
-  changed_when: false
   tags: docker
 
 - name: Ensure Docker is installed
   ansible.builtin.apt:
     name: "{{ docker_packages }}"
     state: present
+    update_cache: false
   tags: docker

@@ -1,20 +1,37 @@
 # Ansible Role: Docker
 
-Ansible role for installing and configuring Docker Engine on Linux servers.
+**Simple, clean, and reliable** Ansible role for installing and configuring Docker Engine on Linux servers.
+
+## ✨ Key Features
+
+- 🎯 **Simple & Clean**: Focused only on Docker installation and configuration
+- 🚀 **Fast Installation**: Optimized for quick deployment without unnecessary complexity
+- 🔐 **Registry Authentication**: Built-in support for private registries with automatic permission handling
+- 🏗️ **Multi-Platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 8+
+- ✅ **Production Ready**: Battle-tested with comprehensive error handling
 
 ## 📋 Table of Contents
 
 - [Ansible Role: Docker](#ansible-role-docker)
+  - [✨ Key Features](#-key-features)
   - [📋 Table of Contents](#-table-of-contents)
   - [Requirements](#requirements)
     - [Supported Distributions](#supported-distributions)
+    - [RHEL-Specific Features](#rhel-specific-features)
   - [Role Variables](#role-variables)
-    - [Security Note](#security-note)
+    - [Registry Authentication](#registry-authentication)
+    - [Docker Permission Handling](#docker-permission-handling)
+  - [Simplified Architecture](#simplified-architecture)
   - [Performance Tuning](#performance-tuning)
     - [Default Optimizations](#default-optimizations)
     - [Performance Gains](#performance-gains)
+  - [Configuration Examples](#configuration-examples)
+    - [Default Configuration (Included)](#default-configuration-included)
+    - [Additional Performance Optimization (Optional)](#additional-performance-optimization-optional)
+- [Network optimization](#network-optimization)
+- [Build optimization](#build-optimization)
     - [Optional: crun Runtime](#optional-crun-runtime)
-    - [LXC Container Optimization](#lxc-container-optimization)
+    - [LXC Container Support](#lxc-container-support)
     - [Custom Configuration](#custom-configuration)
   - [Dependencies](#dependencies)
   - [Example Playbook](#example-playbook)
@@ -40,10 +57,8 @@ Ansible role for installing and configuring Docker Engine on Linux servers.
 This role includes enhanced support for RHEL-based systems:
 
 - ✅ **Automatic permission fixes** for user Docker config files
-- ✅ **Time synchronization handling** for GPG signature validation (RHEL 10)
-- ✅ **Certificate validation fixes** for container registries (RHEL 8-9)
 - ✅ **SELinux context restoration** for Docker configuration directories
-- ✅ **Version-specific optimizations** for each RHEL release
+- ✅ **Multi-distribution compatibility** optimized for each RHEL release
 
 ## Role Variables
 
@@ -58,26 +73,34 @@ docker_packages:
   - docker-{{ docker_edition }}
   - docker-{{ docker_edition }}-cli
   - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
 
 # Users to add to docker group
 docker_users: []
 
-# Docker daemon configuration
-docker_daemon_config: {}
+# Docker daemon configuration (with sensible defaults)
+docker_daemon_config:
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
+    max-file: "3"
+  storage-driver: "overlay2"
 
-# Enable Docker service on boot
+# Enable BuildKit via environment variable
+docker_buildkit_enabled: true
+
+# Docker service configuration
 docker_service_enabled: true
 docker_service_state: started
 
 # Configure Docker repository
 docker_configure_repo: true
 
-# Insecure registries (HTTP or self-signed certificates)
-# WARNING: Only use for trusted internal registries!
+# List of insecure registries (HTTP or self-signed certificates)
 docker_insecure_registries: []
 
 # Private registry authentication (optional)
-# See: https://github.com/kode3tech/ansible-col-devtools/blob/main/docs/user-guides/REGISTRY_AUTHENTICATION.md
 docker_registries_auth: []
 ```
 
@@ -106,6 +129,8 @@ docker_registries_auth:
 
 📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
+📖 **Production Deployment:** [Docker Complete Guide](../../docs/user-guides/DOCKER_COMPLETE_GUIDE.md) - Comprehensive documentation with performance optimization, monitoring, and troubleshooting.
+
 ### Docker Permission Handling
 
 **Problem**: On Linux systems, Docker login may create `~/.docker/config.json` as `root:root` when using sudo/become, causing permission denied errors for regular users.
@@ -129,142 +154,90 @@ docker_registries_auth:
 
 **Applies to:** All supported distributions (Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux)
 
-## Time Synchronization
+## Simplified Architecture
 
-The role includes **automatic time synchronization** to ensure proper GPG signature validation and certificate verification.
+**This role has been optimized for simplicity and reliability:**
 
-### RHEL 10 Specific Handling
-
-**Problem**: RHEL 10 systems may have clock skew issues that cause Docker repository GPG signature validation to fail.
-
-**Solution**: The role automatically handles time synchronization with version-specific logic:
-
-```yaml
-# RHEL 10: Restart chronyd for immediate sync
-systemctl restart chronyd
-wait 10 seconds
-
-# RHEL 8-9: Start chronyd + force sync
-systemctl start chronyd
-chronyc makestep
-wait 15 seconds
-```
-
-**Benefits:**
-- ✅ **Automatic GPG validation** - repositories accessible without time-related errors
-- ✅ **Version-specific logic** - optimized for each RHEL release
-- ✅ **Certificate validation** - HTTPS connections work properly
-- ✅ **Zero configuration** - works out of the box
-
-**Error prevented:**
-```
-GPG signature verification failed - system clock may be incorrect
-```
-
-### Ubuntu/Debian Specific Handling
-
-**Problem**: Ubuntu 25+ and newer Debian versions may have time synchronization issues that cause repository release files to be considered "invalid" (from the future).
-
-**Solution**: The role automatically handles time synchronization for newer Ubuntu/Debian systems:
-
-```yaml
-# Ubuntu 25+ / Debian 13+: Restart systemd-timesyncd for immediate sync
-systemctl restart systemd-timesyncd
-timedatectl set-ntp true
-wait 15 seconds
-```
-
-**Benefits:**
-- ✅ **Automatic repository validation** - release files accessible without time-related errors
-- ✅ **Distribution-specific logic** - uses systemd-timesyncd (Ubuntu/Debian standard)
-- ✅ **Immediate effect** - forces NTP sync and verification
-- ✅ **Zero configuration** - works out of the box for Ubuntu 25+ and Debian 13+
-
-**Error prevented:**
-```
-E:Release file for http://archive.ubuntu.com/ubuntu/dists/plucky-updates/InRelease is not valid yet (invalid for another 10d 22h 8min 48s)
-```
+- ❌ **No time synchronization complexity** - VMs should be properly configured
+- ❌ **No debug output clutter** - Clean execution logs
+- ❌ **No unnecessary retries** - Fast, direct installation
+- ✅ **Focus on Docker** - Only essential Docker functionality
+- ✅ **Automatic permission fixes** - Registry authentication just works
 
 ## Performance Tuning
 
-This role includes **performance-optimized defaults** that provide significant improvements over vanilla Docker installations:
-
 ### Default Optimizations
 
-The role automatically configures the following performance enhancements:
+The role includes **sensible defaults** out of the box for optimal performance:
 
 ```yaml
 docker_daemon_config:
-  # Storage optimization (+15-30% I/O performance)
-  storage-driver: "overlay2"
-  storage-opts:
-    - "overlay2.override_kernel_check=true"
-  
-  # Logging optimization (+10-20% I/O, -70% disk space)
   log-driver: "json-file"
   log-opts:
     max-size: "10m"
     max-file: "3"
-    compress: "true"          # Compress rotated logs
-    mode: "non-blocking"      # Don't block containers
-    max-buffer-size: "4m"
-  
-  # Network optimization (+10-20% throughput)
-  userland-proxy: false       # Use iptables directly
-  iptables: true
-  
-  # Build optimization (+50-200% faster builds)
-  features:
-    buildkit: true
-  
-  # Download optimization (3x faster pulls)
-  max-concurrent-downloads: 10
-  max-concurrent-uploads: 10
-  max-download-attempts: 3
-  
-  # Runtime optimization (+20-30% container startup)
-  default-runtime: "runc"
-  runtimes:
-    runc:
-      path: "/usr/bin/runc"
-  
-  # Resource limits (stability)
-  default-ulimits:
-    nofile:
-      Name: "nofile"
-      Hard: 65536
-      Soft: 65536
-    nproc:
-      Name: "nproc"
-      Hard: 32768
-      Soft: 16384
-  
-  default-shm-size: "64M"
+  storage-driver: "overlay2"
 ```
 
 ### Performance Gains
 
-With these optimizations enabled (default), you can expect:
+- **🚀 Fast Installation**: Streamlined tasks without unnecessary delays
+- **📊 Optimized Logging**: 10MB max file size with 3 file rotation
+- **💾 Efficient Storage**: overlay2 driver for best performance
+- **🔧 BuildKit Enabled**: Modern Docker build engine enabled by default
 
-| Metric | Improvement | Benefit |
-|--------|-------------|---------|
-| **I/O Performance** | +15-30% | Faster container operations |
-| **Build Speed** | +50-200% | Much faster `docker build` |
-| **Network Throughput** | +10-20% | Faster downloads/uploads |
-| **Container Startup** | +20-30% | Faster `docker run` |
-| **Disk Space** | -70% | Compressed logs save space |
-| **Pull Speed** | +200-300% | Parallel downloads |
+## Configuration Examples
 
-### Optional: crun Runtime
+### Default Configuration (Included)
 
-The role installs `crun` (a high-performance OCI runtime) if available. To use it:
+The role now includes **sensible defaults** out of the box:
 
 ```yaml
 docker_daemon_config:
-  default-runtime: "crun"  # 20-30% faster than runc
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
+    max-file: "3"
+  storage-driver: "overlay2"
+```
+
+### Additional Performance Optimization (Optional)
+
+You can add more performance optimizations by extending the configuration:
+
+```yaml
+docker_daemon_config:
+  # Keep defaults and add more
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"  # Additional compression
+  storage-driver: "overlay2"
+  # Add network optimization
+  userland-proxy: false
+  iptables: true
+  # Add build optimization
+  max-concurrent-downloads: 10
+```
+    max-file: "3"
+    compress: "true"
+    mode: "non-blocking"
+  
+  # Network optimization
+  userland-proxy: false
+  iptables: true
+  
+  # Build optimization
+  features:
+### Optional: crun Runtime
+
+To use `crun` (if installed):
+
+```yaml
+docker_daemon_config:
+  default-runtime: "crun"
   runtimes:
-    runc:
-      path: "/usr/bin/runc"
     crun:
       path: "/usr/bin/crun"
 ```
@@ -309,7 +282,7 @@ Basic installation:
 - hosts: docker_hosts
   become: true
   roles:
-    - kode3tech.docker
+    - code3tech.devtools.docker
 ```
 
 With custom configuration:
@@ -327,7 +300,7 @@ With custom configuration:
         max-size: "10m"
         max-file: "3"
   roles:
-    - kode3tech.docker
+    - code3tech.devtools.docker
 ```
 
 With private registry authentication:
@@ -344,7 +317,7 @@ With private registry authentication:
         username: "github-user"
         password: "{{ vault_github_token }}"
   roles:
-    - kode3tech.docker
+    - code3tech.devtools.docker
 ```
 
 With insecure registry (HTTP or self-signed certificate):
@@ -361,7 +334,7 @@ With insecure registry (HTTP or self-signed certificate):
         username: "admin"
         password: "{{ vault_internal_registry_password }}"
   roles:
-    - kode3tech.docker
+    - code3tech.devtools.docker
 ```
 
 **Note**: Using insecure registries disables certificate verification and allows HTTP. Only use for trusted internal networks!
@@ -380,7 +353,13 @@ MIT
 
 ## Author Information
 
-This role was created by the **Kode3Tech DevOps Team**.
+This role was created by the **Code3Tech DevOps Team**.
 
-- GitHub: [kode3tech](https://github.com/kode3tech)
-- Repository: [ansible-docker](https://github.com/kode3tech/ansible-docker)
+- GitHub: [code3tech](https://github.com/code3tech)
+- Repository: [ansible-docker](https://github.com/code3tech/ansible-docker)
+
+**Recent Improvements (v1.0+):**
+- 🧹 **Simplified codebase** - Removed unnecessary complexity and debug output
+- ⚡ **Faster execution** - Eliminated retry loops and time sync delays
+- 📝 **Cleaner configuration** - Reduced variables and simplified defaults
+- 🎯 **Production focus** - Optimized for reliability and maintainability

@@ -1,9 +1,9 @@
 # Podman XDG_RUNTIME_DIR Fix
 
-## 🐛 Problema Identificado
+## 🐛 Problem Identified
 
-### Sintoma
-Ao executar `podman login` como **root** no Ubuntu 24.04, o seguinte aviso/erro aparece:
+### Symptom
+When running `podman login` as **root** on Ubuntu 24.04, the following warning/error appears:
 
 ```
 WARN[0000] "/run/user/0" directory set by $XDG_RUNTIME_DIR does not exist. 
@@ -14,37 +14,37 @@ Authenticating with existing credentials for docker.io
 Existing credentials are invalid, please enter valid username and password
 ```
 
-### Causa Raiz
+### Root Cause
 
-O Podman (diferente do Docker) usa o padrão XDG (X Desktop Group) para gerenciar diretórios de runtime e configuração:
+Podman (unlike Docker) uses the XDG (X Desktop Group) standard for managing runtime and configuration directories:
 
-1. **XDG_RUNTIME_DIR**: Diretório temporário para arquivos de runtime
-   - Para usuários normais: `/run/user/<UID>`
-   - Para root: `/run/user/0`
+1. **XDG_RUNTIME_DIR**: Temporary directory for runtime files
+   - For regular users: `/run/user/<UID>`
+   - For root: `/run/user/0`
 
-2. **XDG_CONFIG_HOME**: Diretório para configurações persistentes
-   - Para usuários normais: `$HOME/.config`
-   - Para root: `/root/.config`
+2. **XDG_CONFIG_HOME**: Directory for persistent configurations
+   - For regular users: `$HOME/.config`
+   - For root: `/root/.config`
 
-Quando o diretório `/run/user/0` não existe, o Podman não consegue:
-- Armazenar credenciais temporárias
-- Gerenciar sockets de comunicação
-- Manter estado de sessão
+When the `/run/user/0` directory does not exist, Podman cannot:
+- Store temporary credentials
+- Manage communication sockets
+- Maintain session state
 
-### Por Que Acontece?
+### Why Does This Happen?
 
-Em distribuições modernas como Ubuntu 24.04:
-- O `systemd-logind` cria `/run/user/<UID>` apenas para **sessões de login** de usuários normais
-- Para root, esse diretório **não é criado automaticamente** em muitos cenários
-- Containers e execuções via SSH podem não ter sessão logind ativa
+In modern distributions like Ubuntu 24.04:
+- `systemd-logind` creates `/run/user/<UID>` only for **login sessions** of regular users
+- For root, this directory is **not created automatically** in many scenarios
+- Containers and SSH executions may not have an active logind session
 
 ---
 
-## ✅ Soluções Implementadas
+## ✅ Implemented Solutions
 
-### 1. Configuração Persistente com systemd-tmpfiles (SOLUÇÃO DEFINITIVA)
+### 1. Persistent Configuration with systemd-tmpfiles (DEFINITIVE SOLUTION)
 
-**Task adicionada**:
+**Task added**:
 ```yaml
 - name: Configure systemd-tmpfiles for Podman XDG_RUNTIME_DIR
   ansible.builtin.copy:
@@ -62,26 +62,26 @@ Em distribuições modernas como Ubuntu 24.04:
   tags: podman
 ```
 
-**O que faz**:
-- Cria arquivo de configuração em `/etc/tmpfiles.d/podman-xdg.conf`
-- **Persiste entre reboots** - systemd recria automaticamente no boot
-- Aplica configuração imediatamente com `systemd-tmpfiles --create`
-- Formato tmpfiles.d: `d /run/user/0 0700 root root -`
-  - `d` = diretório
-  - `/run/user/0` = caminho
-  - `0700` = permissões
-  - `root root` = owner e group
-  - `-` = sem idade máxima
+**What it does**:
+- Creates configuration file in `/etc/tmpfiles.d/podman-xdg.conf`
+- **Persists between reboots** - systemd recreates automatically on boot
+- Applies configuration immediately with `systemd-tmpfiles --create`
+- tmpfiles.d format: `d /run/user/0 0700 root root -`
+  - `d` = directory
+  - `/run/user/0` = path
+  - `0700` = permissions
+  - `root root` = owner and group
+  - `-` = no max age
 
-**Por que é melhor**:
-- ✅ Sobrevive a reboots
-- ✅ Gerenciado pelo systemd (padrão do sistema)
-- ✅ Compatível com tmpfs (/run é limpo no boot)
-- ✅ Solução oficial recomendada pela documentação do systemd
+**Why it's better**:
+- ✅ Survives reboots
+- ✅ Managed by systemd (system standard)
+- ✅ Compatible with tmpfs (/run is cleaned on boot)
+- ✅ Official solution recommended by systemd documentation
 
-### 2. Criação do Diretório de Configuração
+### 2. Configuration Directory Creation
 
-**Task adicionada**:
+**Task added**:
 ```yaml
 - name: Ensure auth directory exists for root Podman
   ansible.builtin.file:
@@ -93,14 +93,14 @@ Em distribuições modernas como Ubuntu 24.04:
   tags: podman
 ```
 
-**O que faz**:
-- Cria diretório para armazenar `auth.json` (credenciais)
-- Permite login persistente em registries
-- Seguro com permissões 0700
+**What it does**:
+- Creates directory to store `auth.json` (credentials)
+- Enables persistent login to registries
+- Secure with 0700 permissions
 
-### 3. Export XDG_RUNTIME_DIR nos Comandos
+### 3. Export XDG_RUNTIME_DIR in Commands
 
-**Atualizado no podman_login module**:
+**Updated in podman_login module**:
 ```yaml
 - name: Login to Podman registries (root mode) - Using podman_login module
   containers.podman.podman_login:
@@ -109,19 +109,19 @@ Em distribuições modernas como Ubuntu 24.04:
     XDG_RUNTIME_DIR: /run/user/0
 ```
 
-**Atualizado nos comandos shell**:
+**Updated in shell commands**:
 ```yaml
 - name: Login to Podman registries (root mode) - Fallback to command
   ansible.builtin.shell:
     cmd: |
       export XDG_RUNTIME_DIR=/run/user/0
       echo "{{ item.password }}" | \
-      podman login "{{ item.registry_url }}" -u "{{ item.username }}" --password-stdin
+      podman login "{{ item.registry }}" -u "{{ item.username }}" --password-stdin
 ```
 
-### 4. Suporte para Usuários Rootless
+### 4. Support for Rootless Users
 
-**Tasks adicionadas**:
+**Tasks added**:
 ```yaml
 - name: Get user information for XDG_RUNTIME_DIR
   ansible.builtin.getent:
@@ -141,31 +141,31 @@ Em distribuições modernas como Ubuntu 24.04:
   when: item.ansible_facts.getent_passwd is defined
 ```
 
-**O que faz**:
-- Detecta UID de cada usuário rootless
-- Cria `/run/user/<UID>` para cada usuário
-- Garante ownership correto
+**What it does**:
+- Detects UID of each rootless user
+- Creates `/run/user/<UID>` for each user
+- Ensures correct ownership
 
 ---
 
-## 🔍 Detalhes Técnicos
+## 🔍 Technical Details
 
-### Estrutura de Diretórios Podman
+### Podman Directory Structure
 
-#### Para Root
+#### For Root
 ```
-/run/user/0/                         # XDG_RUNTIME_DIR (runtime temporário)
-├── containers/                      # Sockets e runtime
-├── libpod/                          # Estado do Podman
+/run/user/0/                         # XDG_RUNTIME_DIR (temporary runtime)
+├── containers/                      # Sockets and runtime
+├── libpod/                          # Podman state
 └── ...
 
-/root/.config/containers/            # XDG_CONFIG_HOME (persistente)
-├── auth.json                        # Credenciais de registries
-├── storage.conf                     # Configuração de storage
-└── registries.conf                  # Configuração de registries
+/root/.config/containers/            # XDG_CONFIG_HOME (persistent)
+├── auth.json                        # Registry credentials
+├── storage.conf                     # Storage configuration
+└── registries.conf                  # Registry configuration
 ```
 
-#### Para Usuário Normal (ex: ansible, UID 1000)
+#### For Regular User (e.g., ansible, UID 1000)
 ```
 /run/user/1000/                      # XDG_RUNTIME_DIR
 ├── containers/
@@ -178,60 +178,60 @@ Em distribuições modernas como Ubuntu 24.04:
 └── registries.conf
 ```
 
-### Permissões Corretas
+### Correct Permissions
 
-| Diretório | Owner | Group | Mode | Descrição |
-|-----------|-------|-------|------|-----------|
-| `/run/user/0` | root | root | 0700 | Runtime root |
-| `/root/.config/containers` | root | root | 0700 | Config root |
-| `/run/user/<UID>` | user | user | 0700 | Runtime user |
-| `~/.config/containers` | user | user | 0700 | Config user |
+| Directory | Owner | Group | Mode | Description |
+|-----------|-------|-------|------|-------------|
+| `/run/user/0` | root | root | 0700 | Root runtime |
+| `/root/.config/containers` | root | root | 0700 | Root config |
+| `/run/user/<UID>` | user | user | 0700 | User runtime |
+| `~/.config/containers` | user | user | 0700 | User config |
 
 ---
 
-## 🧪 Testes e Verificação
+## 🧪 Tests and Verification
 
-### Teste Manual no Host
+### Manual Test on Host
 
 ```bash
-# Verificar se diretórios existem
+# Verify if directories exist
 ls -la /run/user/0
 ls -la /root/.config/containers
 
-# Testar login como root
+# Test login as root
 sudo podman login docker.io
-# Deve funcionar sem avisos
+# Should work without warnings
 
-# Verificar credenciais armazenadas
+# Verify stored credentials
 sudo cat /root/.config/containers/auth.json
 ```
 
-### Teste com Ansible
+### Test with Ansible
 
 ```bash
-# Executar role
+# Run role
 ansible-playbook -i inventory.ini playbook.yaml
 
-# Verificar resultado
+# Verify result
 ansible -i inventory.ini all -m shell -a "ls -la /run/user/0" --become
 ansible -i inventory.ini all -m shell -a "ls -la /root/.config/containers" --become
 ```
 
-### Verificação de Logs
+### Log Verification
 
 ```bash
-# Ver logs do Podman
+# View Podman logs
 journalctl -u podman --since "5 minutes ago"
 
-# Ver avisos específicos
+# View specific warnings
 podman --log-level=debug info 2>&1 | grep -i xdg
 ```
 
 ---
 
-## 📋 Comportamento Esperado
+## 📋 Expected Behavior
 
-### Antes da Correção
+### Before Fix
 ```bash
 root@host:~# podman login
 WARN[0000] "/run/user/0" directory set by $XDG_RUNTIME_DIR does not exist...
@@ -239,7 +239,7 @@ Authenticating with existing credentials for docker.io
 Existing credentials are invalid...
 ```
 
-### Depois da Correção
+### After Fix
 ```bash
 root@host:~# podman login docker.io
 Username: myuser
@@ -247,7 +247,7 @@ Password: ********
 Login Succeeded!
 ```
 
-### Verificação de Credenciais
+### Credentials Verification
 ```bash
 root@host:~# cat /root/.config/containers/auth.json
 {
@@ -261,141 +261,141 @@ root@host:~# cat /root/.config/containers/auth.json
 
 ---
 
-## 🔄 Persistência e Lifecycle
+## 🔄 Persistence and Lifecycle
 
-### Diretório /run/user/0 (tmpfs)
+### /run/user/0 Directory (tmpfs)
 
-**Características**:
-- Armazenado em RAM (tmpfs)
-- **Apagado a cada reboot**
-- Criado automaticamente pela role no boot
+**Characteristics**:
+- Stored in RAM (tmpfs)
+- **Deleted on every reboot**
+- Automatically created by role on boot
 
-**Solução para Persistência**:
-- Adicionar ao systemd-tmpfiles ou
-- Recriar via nossa role a cada provisionamento
+**Persistence Solution**:
+- Add to systemd-tmpfiles or
+- Recreate via our role on each provisioning
 
-### Diretório /root/.config/containers (persistente)
+### /root/.config/containers Directory (persistent)
 
-**Características**:
-- Armazenado no disco
-- **Persiste entre reboots**
-- Contém credenciais e configurações
+**Characteristics**:
+- Stored on disk
+- **Persists between reboots**
+- Contains credentials and configurations
 
 ---
 
-## 🐳 Comparação: Docker vs Podman
+## 🐳 Comparison: Docker vs Podman
 
-| Aspecto | Docker | Podman |
-|---------|--------|--------|
+| Aspect | Docker | Podman |
+|--------|--------|--------|
 | **Auth Storage (root)** | `/root/.docker/config.json` | `/root/.config/containers/auth.json` |
-| **Runtime Dir** | Não usa XDG | Usa `/run/user/0` |
-| **Daemon** | Sim (dockerd) | Não (daemonless) |
+| **Runtime Dir** | Does not use XDG | Uses `/run/user/0` |
+| **Daemon** | Yes (dockerd) | No (daemonless) |
 | **Socket** | `/var/run/docker.sock` | `/run/user/0/podman/podman.sock` |
-| **Config Standard** | Proprietário | XDG Base Directory |
+| **Config Standard** | Proprietary | XDG Base Directory |
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Problema: Diretório Some Após Reboot
+### Problem: Directory Disappears After Reboot
 
-**Sintoma**:
+**Symptom**:
 ```bash
 stat /run/user/0: no such file or directory
 ```
 
-**Solução 1 - Systemd Tmpfiles**:
+**Solution 1 - Systemd Tmpfiles**:
 ```bash
-# Criar /etc/tmpfiles.d/podman.conf
+# Create /etc/tmpfiles.d/podman.conf
 echo "d /run/user/0 0700 root root -" | sudo tee /etc/tmpfiles.d/podman.conf
 sudo systemd-tmpfiles --create
 ```
 
-**Solução 2 - Recriar Manualmente**:
+**Solution 2 - Recreate Manually**:
 ```bash
 sudo mkdir -p /run/user/0
 sudo chmod 0700 /run/user/0
 sudo chown root:root /run/user/0
 ```
 
-**Solução 3 - Nossa Role** (já implementada):
-- Role recria automaticamente a cada execução
+**Solution 3 - Our Role** (already implemented):
+- Role recreates automatically on each execution
 
-### Problema: Credenciais Não Persistem
+### Problem: Credentials Not Persisting
 
-**Sintoma**:
+**Symptom**:
 ```bash
 Authenticating with existing credentials
 Existing credentials are invalid
 ```
 
-**Verificar**:
+**Verify**:
 ```bash
-# Verificar se auth.json existe
+# Check if auth.json exists
 ls -la /root/.config/containers/auth.json
 
-# Verificar conteúdo
+# Check content
 cat /root/.config/containers/auth.json
 
-# Verificar permissões
+# Check permissions
 stat /root/.config/containers/auth.json
 ```
 
-**Solução**:
+**Solution**:
 ```bash
-# Recriar diretório
+# Recreate directory
 sudo mkdir -p /root/.config/containers
 sudo chmod 0700 /root/.config/containers
 
-# Fazer login novamente
+# Login again
 sudo podman login registry.example.com
 ```
 
-### Problema: Permissão Negada em Rootless
+### Problem: Permission Denied in Rootless
 
-**Sintoma**:
+**Symptom**:
 ```bash
 Error: creating runtime static files directory: mkdir /run/user/1000: permission denied
 ```
 
-**Verificar**:
+**Verify**:
 ```bash
-# Verificar se usuário tem sessão logind
+# Check if user has logind session
 loginctl show-user <username>
 
-# Verificar UID
+# Check UID
 id <username>
 
-# Verificar se diretório existe
+# Check if directory exists
 ls -la /run/user/$(id -u <username>)
 ```
 
-**Solução**:
+**Solution**:
 ```bash
-# Criar manualmente (nossa role já faz isso)
+# Create manually (our role already does this)
 sudo mkdir -p /run/user/$(id -u <username>)
 sudo chown <username>:<username> /run/user/$(id -u <username>)
 sudo chmod 0700 /run/user/$(id -u <username>)
 
-# Ou habilitar lingering (sessão persistente)
+# Or enable lingering (persistent session)
 sudo loginctl enable-linger <username>
 ```
 
 ---
 
-## 📚 Referências
+## 📚 References
 
-### Documentação Oficial
+### Official Documentation
 - [Podman Authentication](https://docs.podman.io/en/latest/markdown/podman-login.1.html)
 - [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
 - [systemd-logind](https://www.freedesktop.org/software/systemd/man/systemd-logind.service.html)
 
-### Padrão XDG
+### XDG Standard
 ```bash
-XDG_RUNTIME_DIR    # Arquivos runtime não-essenciais ($USER-specific)
-XDG_CONFIG_HOME    # Configurações do usuário
-XDG_DATA_HOME      # Dados específicos do usuário
-XDG_CACHE_HOME     # Cache não-essencial
+XDG_RUNTIME_DIR    # Non-essential runtime files ($USER-specific)
+XDG_CONFIG_HOME    # User configurations
+XDG_DATA_HOME      # User-specific data
+XDG_CACHE_HOME     # Non-essential cache
 ```
 
 ### Defaults
@@ -408,27 +408,27 @@ XDG_CACHE_HOME=$HOME/.cache
 
 ---
 
-## ✅ Checklist de Implementação
+## ✅ Implementation Checklist
 
-- [x] Criar `/run/user/0` para root
-- [x] Criar `/root/.config/containers` para auth
-- [x] Exportar `XDG_RUNTIME_DIR` no podman_login module
-- [x] Exportar `XDG_RUNTIME_DIR` nos comandos shell
-- [x] Criar `/run/user/<UID>` para usuários rootless
-- [x] Detectar UID automaticamente via getent
-- [x] Configurar permissões corretas (0700)
-- [x] Documentar o problema e soluções
-- [x] Atualizar role para incluir correções
-- [ ] Adicionar tests do Molecule para verificar diretórios
-- [ ] Adicionar systemd-tmpfiles config (opcional)
+- [x] Create `/run/user/0` for root
+- [x] Create `/root/.config/containers` for auth
+- [x] Export `XDG_RUNTIME_DIR` in podman_login module
+- [x] Export `XDG_RUNTIME_DIR` in shell commands
+- [x] Create `/run/user/<UID>` for rootless users
+- [x] Detect UID automatically via getent
+- [x] Configure correct permissions (0700)
+- [x] Document problem and solutions
+- [x] Update role to include fixes
+- [ ] Add Molecule tests to verify directories
+- [ ] Add systemd-tmpfiles config (optional)
 
 ---
 
-## 🚀 Próximos Passos
+## 🚀 Next Steps
 
-### Opção 1: Systemd Tmpfiles (Recomendado para Produção)
+### Option 1: Systemd Tmpfiles (Recommended for Production)
 
-Adicionar task para criar configuração persistente:
+Add task to create persistent configuration:
 
 ```yaml
 - name: Configure systemd-tmpfiles for Podman XDG_RUNTIME_DIR
@@ -441,9 +441,9 @@ Adicionar task para criar configuração persistente:
   notify: systemd tmpfiles create
 ```
 
-### Opção 2: Systemd Unit (Para Servidores)
+### Option 2: Systemd Unit (For Servers)
 
-Criar serviço que garanta diretório no boot:
+Create service that ensures directory on boot:
 
 ```yaml
 - name: Create systemd unit for Podman runtime dir
@@ -466,33 +466,37 @@ Criar serviço que garanta diretório no boot:
   notify: systemd daemon-reload
 ```
 
-### Opção 3: Manter Solução Atual (Simples e Efetiva)
+### Option 3: Keep Current Solution (Simple and Effective)
 
-Nossa role já cria os diretórios a cada execução, o que é suficiente para:
-- Provisionamento inicial
-- Re-provisionamento periódico
-- Ambientes de desenvolvimento
-
----
-
-## 📊 Impacto e Benefícios
-
-### Antes
-- ❌ Avisos XDG_RUNTIME_DIR a cada login
-- ❌ Possível falha em autenticação
-- ❌ Experiência ruim para usuários
-- ❌ Logs poluídos com warnings
-
-### Depois
-- ✅ Login limpo sem avisos
-- ✅ Autenticação confiável
-- ✅ Compatível com Docker workflows
-- ✅ Pronto para produção
-- ✅ Funciona em root e rootless
+Our role already creates the directories on each execution, which is sufficient for:
+- Initial provisioning
+- Periodic re-provisioning
+- Development environments
 
 ---
 
-**Status**: ✅ **IMPLEMENTADO**  
-**Data**: 2024-11-06  
-**Testado em**: Ubuntu 24.04, Debian 13, Rocky Linux 9  
-**Mantainer**: Kode3Tech DevOps Team
+## 📊 Impact and Benefits
+
+### Before
+- ❌ XDG_RUNTIME_DIR warnings on every login
+- ❌ Possible authentication failure
+- ❌ Poor user experience
+- ❌ Polluted logs with warnings
+
+### After
+- ✅ Clean login without warnings
+- ✅ Reliable authentication
+- ✅ Compatible with Docker workflows
+- ✅ Production ready
+- ✅ Works in root and rootless modes
+
+---
+
+**Status**: ✅ **IMPLEMENTED**  
+**Date**: 2024-11-06  
+**Tested on**: Ubuntu 24.04, Debian 13, Rocky Linux 9  
+**Maintainer**: Code3Tech DevOps Team
+
+---
+
+[← Back to Podman Documentation](../README.md)

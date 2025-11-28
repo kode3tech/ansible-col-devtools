@@ -228,6 +228,25 @@ See the [Performance Tuning](../roles/docker/README.md#performance-tuning) secti
 
 ## Podman Questions
 
+> 📖 **Complete Guide**: For comprehensive Podman documentation including Root vs Rootless mode, production playbooks, and detailed variable explanations, see the **[Podman Complete Guide](user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+
+### What's the difference between Root and Rootless Podman?
+
+This is the **most important concept** to understand:
+
+| Aspect | Root Mode | Rootless Mode |
+|--------|-----------|---------------|
+| **Security** | Lower (root access) | Higher (user namespace isolation) |
+| **Storage** | `/var/lib/containers/storage` | `~/.local/share/containers/storage` |
+| **Use Case** | System services, CI/CD | Developers, multi-tenant |
+| **Privileged Ports** | Yes (< 1024) | No (without workaround) |
+
+**When to use each:**
+- **Root Mode**: System services, maximum performance, privileged ports (80, 443)
+- **Rootless Mode**: Developer workstations, security priority, multi-user isolation
+
+📖 **Detailed explanation**: [Podman Complete Guide - Root Mode vs Rootless Mode](user-guides/PODMAN_COMPLETE_GUIDE.md#root-mode-vs-rootless-mode)
+
 ### Can I use Docker and Podman on the same host?
 
 Yes! Docker and Podman can coexist. They use different:
@@ -279,8 +298,43 @@ Error: permission denied: /run/user/1000/containers/auth.json
    podman_registries_auth:
      - registry: "quay.io"
        username: "myuser"
-       password: "{{ vault_password }}"
+       password: "{{ vault_token }}"
    ```
+
+### Why do I see "database graph driver mismatch" errors with Podman?
+
+**Symptom**: Podman commands fail with storage database errors:
+```bash
+Error: database configuration mismatch:
+option "graphdriver" has value "overlay" from database "overlay2" from containers.conf
+```
+
+**Cause**: Storage configuration inconsistency between database and configuration files.
+
+**Common triggers:**
+- Storage driver changes between role executions
+- Manual Podman usage with different storage settings
+- Corrupted storage database
+- Mixed root/rootless Podman operations
+
+**Solution**: The Podman role **automatically detects and resolves** this issue by:
+1. Testing storage consistency before authentication: `podman info --format "{{ .Store.GraphDriverName }}"`
+2. Automatically resetting Podman storage if conflicts detected: `podman system reset --force`
+3. Cleaning storage directories
+4. Proceeding with fresh authentication
+
+**⚠️ Important**: Storage reset removes ALL containers and images but ensures reliable operation.
+
+**Manual fix** (if needed):
+```bash
+# Root mode
+sudo podman system reset --force
+sudo rm -rf /var/lib/containers/storage
+
+# Rootless mode  
+podman system reset --force
+rm -rf ~/.local/share/containers/storage
+```
 
 ### What's the difference between root and rootless Podman?
 
@@ -308,12 +362,12 @@ Use `podman_registries_auth`:
 
 ```yaml
 podman_registries_auth:
-  - registry_url: "quay.io"
+  - registry: "quay.io"
     username: "myuser"
     password: "{{ vault_password }}"
 ```
 
-For rootless mode, authentication is per-user (stored in `~/.local/share/containers/auth.json`).
+For rootless mode, authentication is per-user (stored in `~/.config/containers/auth.json`).
 
 ### What is crun and why use it?
 

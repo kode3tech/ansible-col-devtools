@@ -23,7 +23,8 @@ Both `docker` and `podman` roles support authenticating to private container reg
 
 - ✅ Multiple registry support
 - ✅ Secure credential handling with `no_log: true`
-- ✅ Password or password file authentication
+- ✅ Password authentication (both Docker and Podman)
+- ✅ Password file authentication (Docker only)
 - ✅ Rootless Podman support (per-user authentication)
 - ✅ Idempotent operations
 
@@ -246,10 +247,7 @@ podman_registries_auth:
 |----------|------|----------|-------------|
 | `registry` | string | Yes | Registry hostname. Docker Hub: `docker.io`, Quay: `quay.io`, private: `registry.example.com:5000` |
 | `username` | string | Yes | Registry username |
-| `password` | string | No* | User password or token |
-| `password_file` | string | No* | Path to file containing password |
-
-**Note**: Either `password` or `password_file` must be provided.
+| `password` | string | Yes | User password or token |
 
 ### How It Works
 
@@ -444,6 +442,39 @@ Press ENTER to open your browser...
 ```bash
 docker login -u <username>
 # Then enter password when prompted
+```
+
+### Storage Driver Mismatch Errors
+
+#### Database Graph Driver Mismatch
+```
+Error: database configuration mismatch:
+option "graphdriver" has value "overlay" from database "overlay2" from containers.conf
+```
+
+**Cause**: Storage configuration inconsistency between database and configuration files.
+
+**Solution**: Role handles this automatically, but manual fix:
+```bash
+podman system reset --force
+rm -rf ~/.local/share/containers/storage  # Rootless
+rm -rf /var/lib/containers/storage        # Root
+```
+
+**Prevention**: Use consistent storage configuration across role executions.
+
+#### Storage Driver Conflicts
+```
+Error: cannot get runtime information: database configuration mismatch
+```
+
+**Cause**: Mixed usage of different storage drivers (e.g., overlay vs overlay2).
+
+**Solution**: Automatic detection and reset (handled by role), or manual:
+```bash
+podman info --format "{{ .Store.GraphDriverName }}"
+# If shows errors, reset storage
+podman system reset --force
 ```
 
 ### Rootless Podman Issues

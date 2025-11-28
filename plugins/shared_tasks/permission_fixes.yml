@@ -1,0 +1,53 @@
+---
+# Shared task: Container permission fixes
+# Purpose: Fix ownership and permissions for container config files created as root
+# Used by: docker, podman roles
+# Variables required:
+# - container_users: List of users that need permission fixes
+# - container_config_paths: List of config paths to fix (e.g., ['.docker', '.config/containers'])
+
+- name: Create container config directories for users (permission fix)
+  ansible.builtin.file:
+    path: "/home/{{ item.0 }}/{{ item.1 }}"
+    state: directory
+    owner: "{{ item.0 }}"
+    group: "{{ item.0 }}"
+    mode: '0700'
+  loop: "{{ container_users | product(container_config_paths) | list }}"
+  when:
+    - container_users is defined
+    - container_users | length > 0
+    - container_config_paths is defined
+    - container_config_paths | length > 0
+  tags: shared
+
+- name: Fix container config file permissions for users (permission fix)
+  ansible.builtin.file:
+    path: "/home/{{ item.0 }}/{{ item.1 }}"
+    owner: "{{ item.0 }}"
+    group: "{{ item.0 }}"
+    mode: '0600'
+    state: file
+  loop: "{{ container_users | product(container_config_files) | list }}"
+  when:
+    - container_users is defined
+    - container_users | length > 0
+    - container_config_files is defined
+    - container_config_files | length > 0
+  failed_when: false  # Don't fail if file doesn't exist
+  tags: shared
+
+- name: Restore SELinux context for container config directories (RedHat SELinux fix)
+  ansible.builtin.command: restorecon -R "/home/{{ item.0 }}/{{ item.1 }}/"
+  loop: "{{ container_users | product(container_config_paths) | list }}"
+  when:
+    - container_users is defined
+    - container_users | length > 0
+    - container_config_paths is defined
+    - container_config_paths | length > 0
+    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+    - ansible_selinux.status is defined
+    - ansible_selinux.status == "enabled"
+  failed_when: false  # Don't fail if SELinux is not available or directory doesn't exist
+  changed_when: false  # This is a maintenance operation
+  tags: shared

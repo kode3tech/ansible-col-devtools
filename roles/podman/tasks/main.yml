@@ -156,26 +156,26 @@
       loop: "{{ user_info.results }}"
       when: item.ansible_facts.getent_passwd is defined
 
-- name: Check if containers.podman collection is available
-  ansible.builtin.command: ansible-galaxy collection list containers.podman
-  register: podman_collection_check
-  failed_when: false
-  changed_when: false
-  tags: podman-login
+# - name: Check if containers.podman collection is available
+#   ansible.builtin.command: ansible-galaxy collection list containers.podman
+#   register: podman_collection_check
+#   failed_when: false
+#   changed_when: false
+#   tags: podman-login
 
 - name: Include Podman registry authentication tasks
   ansible.builtin.include_tasks: podman-login.yml
   when:
     - podman_registries_auth | length > 0
-    - podman_collection_check.rc == 0
+    # - podman_collection_check.rc == 0
   tags: podman-login
 
-- name: Display warning if Podman login skipped
-  ansible.builtin.debug:
-    msg: >
-      ⚠️ WARNING: Podman registry authentication skipped - containers.podman collection not installed.
-      Install with: ansible-galaxy collection install containers.podman
-  when:
-    - podman_registries_auth | length > 0
-    - podman_collection_check.rc != 0
-  tags: podman-login
+# - name: Display warning if Podman login skipped
+#   ansible.builtin.debug:
+#     msg: >
+#       ⚠️ WARNING: Podman registry authentication skipped - containers.podman collection not installed.
+#       Install with: ansible-galaxy collection install containers.podman
+#   when:
+#     - podman_registries_auth | length > 0
+#     - podman_collection_check.rc != 0
+#   tags: podman-login

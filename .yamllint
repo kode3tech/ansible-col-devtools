@@ -1,5 +1,5 @@
 ---
-# Configuração do yamllint compatível com ansible-lint
+# yamllint configuration compatible with ansible-lint
 extends: default
 
 rules:

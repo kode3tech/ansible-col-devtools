@@ -21,36 +21,29 @@ docker_apt_arch: >-
 docker_apt_gpg_key: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
 
 # Docker YUM repository (RHEL/CentOS)
-docker_yum_repository: "https://download.docker.com/linux/centos/docker-ce.repo"
+docker_yum_repo_name: "docker-ce-stable"
+docker_yum_repo_description: "Docker CE Stable - $releasever - $basearch"
+docker_yum_repo_baseurl: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/$basearch/stable"
+docker_yum_repo_gpgcheck: true
+docker_yum_repo_gpgkey: "https://download.docker.com/linux/centos/gpg"
+docker_yum_repo_enabled: true
 
 # Users to add to docker group
 docker_users: []
 
 # Docker daemon configuration
-# Performance-optimized default configuration
 docker_daemon_config:
-  # Logging configuration
   log-driver: "json-file"
   log-opts:
     max-size: "10m"
     max-file: "3"
-
-  # Storage driver configuration (explicit for best performance)
   storage-driver: "overlay2"
 
-# Enable BuildKit via environment variable (DOCKER_BUILDKIT=1)
-# Note: BuildKit cannot be enabled in daemon.json in some Docker versions
+# Enable BuildKit via environment variable
 docker_buildkit_enabled: true
 
 # List of insecure registries (HTTP or self-signed certificates)
-# WARNING: Only use for trusted internal registries!
 docker_insecure_registries: []
-
-# Private registry authentication (optional)
-  # Example:
-  # - "registry.internal.company.com:5000"
-  # - "192.168.1.100:5000"
-  # - "localhost:5000"
 
 # Docker daemon configuration file path
 docker_daemon_config_path: /etc/docker/daemon.json
@@ -76,31 +69,4 @@ docker_prerequisites_redhat:
   - lvm2
 
 # Docker registry authentication
-# Login to private registries (optional)
-# NOTE: For Docker Hub, use "https://index.docker.io/v1/" as registry URL
-# For other registries, use the full URL (e.g., "registry.example.com:5000")
-#
-# IMPORTANT: Authentication will be performed for:
-# 1. Root user (system-wide)
-# 2. Each user in docker_users list (per-user credentials)
-#
 docker_registries_auth: []
-  # Example for Docker Hub:
-  # - registry: https://index.docker.io/v1/
-  #   username: myuser
-  #   password: mypassword
-  #   email: user@example.com  # optional
-  #
-  # Example for private registry:
-  # - registry: registry.example.com:5000
-  #   username: myuser
-  #   password: mypassword
-  #
-  # Example with password from file:
-  # - registry: ghcr.io
-  #   username: github-user
-  #   password_file: /path/to/token  # Read password from file
-  #
-  # Use Ansible Vault for sensitive data!
-  # IMPORTANT: The Docker CLI "docker login" command may use web-based authentication
-  # for Docker Hub by default. This role uses the Docker API directly for non-interactive login.

@@ -134,8 +134,7 @@ playbooks/
 │   └── setup-insecure-registry.yml  # Insecure registries
 └── podman/                           # Podman role examples only
     ├── README.md                    # Index of Podman examples
-    ├── install-podman.yml           # Basic installation
-    └── test-podman-auth.yml         # Authentication testing
+    └── install-podman.yml           # Production installation with full validation
 ```
 
 This organization ensures:
@@ -1145,7 +1144,7 @@ Brief description (1-2 sentences).
 Quick example:
 ```yaml
 docker_registries_auth:
-  - registry_url: "ghcr.io"
+  - registry: "ghcr.io"
     username: "myuser"
     password: "{{ vault_token }}"
 ```

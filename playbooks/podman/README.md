@@ -2,52 +2,65 @@
 
 Example playbooks demonstrating Podman role usage.
 
+> 📖 **Complete Guide**: For comprehensive Podman documentation including Root vs Rootless mode, detailed variable explanations, and production deployment, see the **[Podman Complete Guide](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+
 ## 📋 Available Examples
 
-### [install-podman.yml](install-podman.yml)
-**Purpose:** Basic Podman installation with rootless support.
+### [install-podman.yml](install-podman.yml) ⭐ PRODUCTION READY
+**Purpose:** Complete production-ready Podman installation with performance optimizations.
 
 **What it does:**
-- Installs Podman, Buildah, and Skopeo
-- Configures rootless mode
-- Sets up user namespaces
-- Configures storage and registry settings
+- Installs Podman, Buildah, Skopeo, and crun (high-performance runtime)
+- Configures rootless mode with user namespace support
+- Creates unprivileged test user for rootless validation
+- Sets up custom storage directory (`/opt/podman-data`)
+- Applies performance optimizations:
+  - `crun` runtime (20-30% faster than runc)
+  - `metacopy=on` storage option (+30-50% I/O performance)
+  - Parallel downloads (10 concurrent layers)
+- Validates installation with container pull/run tests
+- Tests both privileged and unprivileged user rootless mode
+
+**Key Features:**
+- ✅ Time synchronization for GPG key validation
+- ✅ Custom storage directory (SSD-ready)
+- ✅ Rootless mode with unprivileged user testing
+- ✅ Performance-optimized configuration
+- ✅ Comprehensive validation tests
+- ✅ Registry authentication support (via Ansible Vault)
 
 **Usage:**
 ```bash
+# Basic usage
 ansible-playbook playbooks/podman/install-podman.yml -i inventory
+
+# With custom users
+ansible-playbook playbooks/podman/install-podman.yml -i inventory \
+  -e '{"podman_rootless_users": ["deploy", "jenkins"]}'
+
+# With registry authentication (using vault)
+ansible-playbook playbooks/podman/install-podman.yml -i inventory \
+  --ask-vault-pass
 ```
 
----
-
-### [test-podman-auth.yml](test-podman-auth.yml)
-**Purpose:** Test Podman registry authentication and troubleshoot issues.
-
-**What it does:**
-- Installs Podman
-- Configures registry authentication
-- Tests authentication with actual login attempts
-- Verifies XDG_RUNTIME_DIR configuration
-- Troubleshoots common authentication issues
-
-**Usage:**
-```bash
-ansible-playbook playbooks/podman/test-podman-auth.yml -i inventory
-```
-
-**Variables required:**
+**Variables you can customize:**
 ```yaml
+# Add users to rootless mode
+podman_rootless_users:
+  - "{{ ansible_user }}"
+  - "deploy"
+  - "jenkins"
+
+# Registry authentication (use Ansible Vault!)
 podman_registries_auth:
   - registry: "docker.io"
-    username: "myuser"
-    password: "{{ vault_password }}"  # Use Ansible Vault!
-```
+    username: "your-username"
+    password: "{{ vault_dockerhub_token }}"
 
-**What it tests:**
-- ✅ XDG_RUNTIME_DIR exists and is writable
-- ✅ Authentication credentials are stored correctly
-- ✅ Login to configured registries works
-- ✅ No XDG-related warnings appear
+# Insecure registries (internal networks only)
+podman_insecure_registries:
+  - "registry.internal.company.com:5000"
+```
 
 ---
 
@@ -55,12 +68,47 @@ podman_registries_auth:
 
 1. **Choose an example** that matches your needs
 2. **Copy the playbook** and customize variables
-3. **Run the playbook:**
+3. **Create vault file** for registry credentials (if needed):
    ```bash
-   ansible-playbook playbooks/podman/<example>.yml -i inventory
+   ansible-vault create vars/registry_secrets.yml
+   # Add: vault_dockerhub_token: "your-token"
+   ```
+4. **Run the playbook:**
+   ```bash
+   ansible-playbook playbooks/podman/install-podman.yml -i inventory
    ```
 
-## 🔧 Common Issues
+## 🔧 Common Customizations
+
+### Add Rootless Users
+```yaml
+podman_rootless_users:
+  - developer
+  - jenkins
+  - ciuser
+```
+
+### Configure Registry Authentication
+```yaml
+# vars/registry_secrets.yml (encrypted with ansible-vault)
+vault_dockerhub_token: "dckr_pat_xxxxx"
+vault_github_token: "ghp_xxxxx"
+
+# In playbook
+podman_registries_auth:
+  - registry: "docker.io"
+    username: "myuser"
+    password: "{{ vault_dockerhub_token }}"
+```
+
+### Change Storage Location
+```yaml
+podman_storage_conf:
+  storage:
+    graphroot: "/data/podman/storage"  # Your custom path
+```
+
+## 🔍 Troubleshooting
 
 ### XDG_RUNTIME_DIR Warnings
 If you see warnings about XDG_RUNTIME_DIR:
@@ -71,10 +119,16 @@ If you see warnings about XDG_RUNTIME_DIR:
 If authentication fails:
 - Verify credentials are correct
 - Check [Registry Authentication Guide](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
-- Use `test-podman-auth.yml` to diagnose issues
+- Enable `podman_clean_credentials: true` to clear old credentials
+
+### Storage Driver Conflicts
+If you see "database graph driver mismatch" errors:
+- Set `podman_reset_storage_on_driver_change: true` (⚠️ deletes containers/images)
+- See [Podman Complete Guide - Troubleshooting](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md#troubleshooting)
 
 ## 📚 Related Documentation
 
+- [Podman Complete Guide](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md) - **Comprehensive documentation**
 - [Podman Role README](../../roles/podman/README.md)
 - [Podman XDG Runtime Fix](../../roles/podman/docs/PODMAN_XDG_RUNTIME_FIX.md)
 - [Registry Authentication Guide](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)

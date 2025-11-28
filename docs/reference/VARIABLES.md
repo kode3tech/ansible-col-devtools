@@ -29,6 +29,8 @@ docker_packages:
   - docker-{{ docker_edition }}
   - docker-{{ docker_edition }}-cli
   - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
 ```
 
 ### Daemon Configuration
@@ -136,6 +138,8 @@ docker_registries_auth:
 
 ## Podman Role Variables
 
+> 📖 **Complete Guide**: For detailed explanations of each variable with examples and use cases, see the **[Podman Complete Guide](../user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+
 ### Basic Configuration
 
 | Variable | Type | Required | Default | Description |
@@ -149,6 +153,7 @@ podman_packages:
   - podman
   - buildah
   - skopeo
+  - crun  # High-performance OCI runtime (20-30% faster than runc)
 ```
 
 ### Rootless Configuration
@@ -217,6 +222,15 @@ podman_storage_conf:
 | `podman_registries_auth` | list | No | `[]` | Private registry authentication credentials |
 | `podman_clean_credentials` | boolean | No | `false` | Clean old credentials before re-authentication |
 
+**Storage Driver Conflict Detection:**
+The role automatically detects and resolves storage driver conflicts before authentication. When `podman_registries_auth` is configured, the role will:
+1. Test storage consistency with `podman info`
+2. Automatically reset storage if conflicts are detected
+3. Clean storage directories to ensure reliable authentication
+4. Proceed with fresh registry authentication
+
+⚠️ **Important:** Storage reset removes ALL containers and images but ensures reliable operation.
+
 **Example `podman_insecure_registries`:**
 ```yaml
 podman_insecure_registries:
@@ -233,7 +247,7 @@ podman_registries_auth:
   
   - registry: "registry.company.com"
     username: "ci-user"
-    password_file: "/path/to/password/file"
+    password: "{{ vault_company_password }}"
 ```
 
 ### Registry Authentication Object Properties
@@ -242,16 +256,11 @@ podman_registries_auth:
 |----------|------|----------|-------------|
 | `registry` | string | Yes | Registry hostname (Docker Hub: `docker.io`, others: hostname) |
 | `username` | string | Yes | Registry username |
-| `password` | string | No* | User password or access token |
-| `password_file` | string | No* | Path to file containing password |
-
-*Either `password` or `password_file` must be provided.
+| `password` | string | Yes | User password or access token |
 
 **⚠️ Security Note**: Always use Ansible Vault to encrypt passwords. Never store plain-text credentials.
 
 **🔧 RHEL Enhancement**: The Podman role automatically fixes file ownership for authentication files in user's `XDG_RUNTIME_DIR` on RHEL systems, ensuring proper per-user authentication with correct permissions.
-
-*Either `password` or `password_file` must be provided.
 
 ---
 
@@ -352,7 +361,7 @@ asdf_shell_profiles:
       storage-driver: "overlay2"
     
     docker_registries_auth:
-      - registry_url: "registry.company.com"
+      - registry: "registry.company.com"
         username: "ci-user"
         password: "{{ vault_registry_password }}"
   
@@ -372,7 +381,7 @@ asdf_shell_profiles:
       - tester
     
     podman_registries_auth:
-      - registry_url: "quay.io"
+      - registry: "quay.io"
         username: "myuser"
         password: "{{ vault_quay_password }}"
   
@@ -433,7 +442,7 @@ vars_files:
 
 vars:
   docker_registries_auth:
-    - registry_url: "ghcr.io"
+    - registry: "ghcr.io"
       username: "myuser"
       password: "{{ vault_github_token }}"  # ✅ Secure!
 ```

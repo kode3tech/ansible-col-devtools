@@ -9,12 +9,9 @@ Playbooks are organized by role:
 ```
 playbooks/
 ├── docker/                           # Docker role examples
-│   ├── install-docker.yml           # Basic Docker installation
-│   ├── setup-registry-auth.yml      # Private registry authentication
-│   └── setup-insecure-registry.yml  # Insecure registry configuration
+│   └── install-docker.yml           # Production Docker installation
 ├── podman/                           # Podman role examples
-│   ├── install-podman.yml           # Basic Podman installation
-│   └── test-podman-auth.yml         # Podman authentication testing
+│   └── install-podman.yml           # Production Podman installation
 └── asdf/                             # asdf role examples
     ├── install-asdf.yml             # Basic asdf installation
     ├── setup-nodejs-python.yml      # Node.js and Python configuration
@@ -30,45 +27,39 @@ playbooks/
 ### 🐳 Docker Examples (`docker/`)
 
 #### [install-docker.yml](docker/install-docker.yml)
-Basic Docker installation with minimal configuration.
+Production-ready Docker installation with performance optimizations and comprehensive configuration.
+
+**Features:**
+- Custom data directory (`/opt/docker-data`) for SSD optimization
+- overlay2 storage driver with optimized settings
+- High concurrency downloads (25 parallel)
+- Non-blocking logging with compression
+- Live restore for zero-downtime updates
+- Prometheus metrics endpoint
+- Time synchronization (critical for GPG keys)
+- BuildKit enabled for faster builds
+- Full validation and performance testing
 
 **Usage:**
 ```bash
 ansible-playbook playbooks/docker/install-docker.yml -i inventory
 ```
 
-#### [setup-registry-auth.yml](docker/setup-registry-auth.yml)
-Configure Docker with private registry authentication.
-
-**Usage:**
-```bash
-ansible-playbook playbooks/docker/setup-registry-auth.yml -i inventory
-```
-
-#### [setup-insecure-registry.yml](docker/setup-insecure-registry.yml)
-Configure Docker with insecure registries (HTTP or self-signed certificates).
-
-**Usage:**
-```bash
-ansible-playbook playbooks/docker/setup-insecure-registry.yml -i inventory
-```
-
 ### 🦭 Podman Examples (`podman/`)
 
 #### [install-podman.yml](podman/install-podman.yml)
-Basic Podman installation with rootless support.
+Production-ready Podman installation with performance optimizations, rootless support, and comprehensive validation tests.
+
+**Features:**
+- crun runtime (20-30% faster than runc)
+- Custom storage directory with metacopy optimization
+- Rootless mode with unprivileged user testing
+- Registry authentication support (via Ansible Vault)
+- Container pull/run validation tests
 
 **Usage:**
 ```bash
 ansible-playbook playbooks/podman/install-podman.yml -i inventory
-```
-
-#### [test-podman-auth.yml](podman/test-podman-auth.yml)
-Test Podman registry authentication and troubleshoot issues.
-
-**Usage:**
-```bash
-ansible-playbook playbooks/podman/test-podman-auth.yml -i inventory
 ```
 
 ### 🔧 asdf Examples (`asdf/`)
@@ -141,9 +132,9 @@ ansible-playbook playbooks/docker/install-docker.yml -i inventory -v
 
 ## 🎓 Learning Path
 
-1. **Start here:** [docker/install-docker.yml](docker/install-docker.yml) - Basic Docker setup
-2. **Then try:** [podman/install-podman.yml](podman/install-podman.yml) - Basic Podman setup
-3. **Advanced:** [docker/setup-registry-auth.yml](docker/setup-registry-auth.yml) - Private registries
+1. **Start here:** [docker/install-docker.yml](docker/install-docker.yml) - Production Docker setup
+2. **Then try:** [podman/install-podman.yml](podman/install-podman.yml) - Production Podman setup
+3. **For development tools:** [asdf/install-asdf.yml](asdf/install-asdf.yml) - Version manager setup
 
 ## 📝 Creating Your Own Playbooks
 
@@ -158,6 +149,8 @@ When creating new example playbooks:
 
 ## 🔗 Related Documentation
 
+- [Docker Complete Guide](../docs/user-guides/DOCKER_COMPLETE_GUIDE.md)
+- [Podman Complete Guide](../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)
 - [Docker Role README](../roles/docker/README.md)
 - [Podman Role README](../roles/podman/README.md)
 - [Registry Authentication Guide](../docs/user-guides/REGISTRY_AUTHENTICATION.md)

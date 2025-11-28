@@ -2,17 +2,61 @@
 # Podman registry authentication tasks
 # This file handles both root and rootless Podman authentication
 
+# Collect user information for rootless login (needed for XDG_RUNTIME_DIR)
+- name: Get user information for rootless login
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ item }}"
+  loop: "{{ podman_rootless_users }}"
+  register: podman_login_user_info
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+
+# Build a dictionary of user UIDs for easy lookup
+- name: Build user UID lookup dictionary
+  ansible.builtin.set_fact:
+    podman_user_uids: "{{ podman_user_uids | default({}) | combine({item.item: item.ansible_facts.getent_passwd[item.item][1]}) }}"
+  loop: "{{ podman_login_user_info.results | default([]) }}"
+  when:
+    - podman_enable_rootless
+    - podman_rootless_users | length > 0
+    - item.ansible_facts.getent_passwd is defined
+
+# Storage driver conflict detection and fix
+- name: Test Podman storage consistency before login
+  ansible.builtin.command: podman info --format "{{ '{{' }}.Store.GraphDriverName{{ '}}' }}"
+  register: podman_storage_test
+  failed_when: false
+  changed_when: false
+  when: not podman_enable_rootless
+
+- name: Reset Podman storage if database mismatch detected
+  ansible.builtin.shell: |
+    echo "Storage mismatch detected, resetting Podman storage..."
+    podman system reset --force
+    # Clean up any remaining storage artifacts
+    rm -rf /root/.local/share/containers/storage
+    rm -rf /var/lib/containers/storage
+  when:
+    - not podman_enable_rootless
+    - podman_storage_test.rc != 0
+    - "'database configuration mismatch' in podman_storage_test.stderr or 'graph driver' in podman_storage_test.stderr"
+
+- name: Wait a moment after storage reset
+  ansible.builtin.pause:
+    seconds: 3
+  when:
+    - not podman_enable_rootless
+    - podman_storage_test.rc != 0
+    - "'database configuration mismatch' in podman_storage_test.stderr or 'graph driver' in podman_storage_test.stderr"
+
 # Root mode authentication (when rootless is disabled)
 - name: Login to Podman registries (root mode)
   containers.podman.podman_login:
     registry: "{{ item.registry }}"
     username: "{{ item.username }}"
-    password: >
-      {{ item.password | default(
-        lookup('file', item.password_file)
-        if item.password_file is defined else omit
-      ) }}
-    reauthorize: true
+    password: "{{ item.password }}"
   loop: "{{ podman_registries_auth }}"
   when: not podman_enable_rootless
   no_log: true
@@ -25,20 +69,17 @@
   containers.podman.podman_login:
     registry: "{{ item.1.registry }}"
     username: "{{ item.1.username }}"
-    password: >
-      {{ item.1.password | default(
-        lookup('file', item.1.password_file)
-        if item.1.password_file is defined else omit
-      ) }}
-    reauthorize: true
+    password: "{{ item.1.password }}"
   loop: "{{ podman_rootless_users | product(podman_registries_auth) | list }}"
   when:
     - podman_enable_rootless
     - podman_rootless_users | length > 0
+    - podman_user_uids is defined
+    - item.0 in podman_user_uids
   no_log: true
   register: podman_rootless_login_result
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['getent_passwd'][item.0][1] }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uids[item.0] }}"
 
 # Display login results and warnings
 - name: Display Podman root login warnings

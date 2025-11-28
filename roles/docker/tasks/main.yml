@@ -1,13 +1,8 @@
 ---
 # Tasks file for docker
-
 - name: Set OS family variable for consistency
   ansible.builtin.set_fact:
     docker_os_family: "{{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}"
-  tags: docker
-
-- name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ docker_os_family }}.yml"
   tags: docker
 
 - name: Include OS-specific tasks
@@ -25,7 +20,7 @@
   ansible.builtin.package:
     name: crun
     state: present
-  failed_when: false  # Don't fail if crun is not available
+  failed_when: false
   tags: docker
 
 - name: Ensure Docker daemon configuration directory exists
@@ -94,16 +89,6 @@
   loop: "{{ docker_registries_auth }}"
   when: docker_registries_auth | length > 0
   no_log: true
-  register: docker_login_result
-  tags: docker-login
-
-- name: Display Docker login warnings
-  ansible.builtin.debug:
-    msg: "Warning: Failed to login to registry {{ item.item.registry }} - check credentials"
-  loop: "{{ docker_login_result.results | default([]) }}"
-  when:
-    - docker_registries_auth | length > 0
-    - item.failed | default(false)
   tags: docker-login
 
 - name: Login to Docker registries for each user
@@ -119,57 +104,18 @@
     - docker_registries_auth | length > 0
     - docker_users | length > 0
   no_log: true
-  register: docker_user_login_result
-  tags: docker-login
-
-- name: Display user Docker login warnings
-  ansible.builtin.debug:
-    msg: "Warning: Failed to login user {{ item.item.0 }} to registry {{ item.item.1.registry }} - check credentials"
-  loop: "{{ docker_user_login_result.results | default([]) }}"
-  when:
-    - docker_registries_auth | length > 0
-    - docker_users | length > 0
-    - item.failed | default(false)
   tags: docker-login
 
 # Docker permission fixes for all distributions (must run AFTER login tasks)
 # These tasks fix ownership issues when config.json is created as root
-- name: Create .docker directory for each user (permission fix)
-  ansible.builtin.file:
-    path: "/home/{{ item }}/.docker"
-    state: directory
-    owner: "{{ item }}"
-    group: "{{ item }}"
-    mode: '0700'
-  loop: "{{ docker_users }}"
+- name: Fix Docker config permissions for users
+  ansible.builtin.include_tasks:
+    file: "{{ role_path }}/../../plugins/shared_tasks/permission_fixes.yml"
+  vars:
+    container_users: "{{ docker_users }}"
+    container_config_paths: ['.docker']
+    container_config_files: ['.docker/config.json']
   when:
     - docker_users | length > 0
     - docker_registries_auth | length > 0
-  tags: docker
-
-- name: Fix Docker config file permissions for each user (permission fix)
-  ansible.builtin.file:
-    path: "/home/{{ item }}/.docker/config.json"
-    owner: "{{ item }}"
-    group: "{{ item }}"
-    mode: '0600'
-    state: file
-  loop: "{{ docker_users }}"
-  when:
-    - docker_users | length > 0
-    - docker_registries_auth | length > 0
-  failed_when: false  # Don't fail if file doesn't exist
-  tags: docker
-
-- name: Restore SELinux context for Docker config directories (RedHat SELinux fix)
-  ansible.builtin.command: restorecon -R "/home/{{ item }}/.docker/"
-  loop: "{{ docker_users }}"
-  when:
-    - docker_users | length > 0
-    - docker_registries_auth | length > 0
-    - ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
-    - ansible_selinux.status is defined
-    - ansible_selinux.status == "enabled"
-  failed_when: false  # Don't fail if SELinux is not available or directory doesn't exist
-  changed_when: false  # This is a maintenance operation
   tags: docker

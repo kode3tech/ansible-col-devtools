@@ -1,14 +1,14 @@
-# Versões Instaladas
+# Installed Versions
 
-## Ambiente
-- **Python**: 3.11.2 (gerenciado via asdf)
+## Environment
+- **Python**: 3.11.2 (managed via asdf)
 - **Shell**: zsh
-- **OS**: macOS
+- **OS**: macOS/Linux
 
-## Ferramentas Ansible
+## Ansible Tools
 
-| Ferramenta | Versão |
-|-----------|--------|
+| Tool | Version |
+|------|--------|
 | Ansible | 12.1.0 |
 | Ansible Core | 2.19.3 |
 | Ansible Lint | 25.9.2 |
@@ -18,10 +18,10 @@
 | Ansible Runner | 2.4.2 |
 | Ansible Builder | 3.1.1 |
 
-## Dependências Python
+## Python Dependencies
 
-| Biblioteca | Versão |
-|-----------|--------|
+| Library | Version |
+|---------|--------|
 | Jinja2 | 3.1.6 |
 | PyYAML | 6.0.3 |
 | Cryptography | 46.0.3 |
@@ -31,29 +31,32 @@
 | black | 25.9.0 |
 | docker (Python SDK) | 7.1.0 |
 
-## Comandos de Verificação
+## Verification Commands
 
 ```bash
-# Versão do Ansible
+# Ansible version
 ansible --version
 
-# Versão do Ansible Lint
+# Ansible Lint version
 ansible-lint --version
 
-# Versão do Molecule
+# Molecule version
 molecule --version
 
-# Listar todas as dependências
+# List all dependencies
 pip list
 ```
 
-## Atualização
+## Updating
 
-Para atualizar todas as dependências:
+To update all dependencies:
 
 ```bash
 pip install --upgrade -r requirements.txt
 ```
 
 ---
-*Última atualização: 4 de novembro de 2025*
+
+[← Back to Maintenance](README.md)
+
+*Last updated: November 4, 2025*

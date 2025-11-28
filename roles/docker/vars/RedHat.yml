@@ -1,6 +1,0 @@
----
-# RedHat/CentOS specific variables
-# Following official Docker documentation: https://docs.docker.com/engine/install/rhel/
-
-# Note: No additional prerequisites needed beyond dnf-plugins-core
-# The dnf-plugins-core package is installed directly in the task

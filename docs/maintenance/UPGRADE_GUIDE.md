@@ -1,34 +1,34 @@
-# Guia de Atualização - v1.0.0 para v1.1.0
+# Upgrade Guide - v1.0.0 to v1.1.0
 
-## ⚠️ AVISO IMPORTANTE - MUDANÇAS INCOMPATÍVEIS
+## ⚠️ IMPORTANT NOTICE - INCOMPATIBLE CHANGES
 
-### Podman: Separação de Arquivos de Configuração
+### Podman: Configuration Files Separation
 
-A partir da **v1.1.0**, as configurações do Podman foram reorganizadas para seguir as melhores práticas oficiais:
+Starting from **v1.1.0**, Podman configurations have been reorganized to follow official best practices:
 
-#### O Que Mudou?
+#### What Changed?
 
-**Antes (v1.0.x):**
-- Todas as configurações em `/etc/containers/storage.conf`
-- Seções `[storage]` e `[engine]` no mesmo arquivo ❌
+**Before (v1.0.x):**
+- All configurations in `/etc/containers/storage.conf`
+- `[storage]` and `[engine]` sections in the same file ❌
 
-**Agora (v1.1.0+):**
-- `/etc/containers/storage.conf`: Apenas `[storage]` e `[storage.options]` ✅
-- `/etc/containers/containers.conf`: Apenas `[engine]` ✅
+**Now (v1.1.0+):**
+- `/etc/containers/storage.conf`: Only `[storage]` and `[storage.options]` ✅
+- `/etc/containers/containers.conf`: Only `[engine]` ✅
 
-#### Por Quê Mudou?
+#### Why Did It Change?
 
-A documentação oficial do Podman especifica:
-- **`storage.conf`**: Configurações de armazenamento (driver, graphroot, mountopt)
-- **`containers.conf`**: Configurações de runtime (crun, cgroup, parallel copies)
+Official Podman documentation specifies:
+- **`storage.conf`**: Storage configurations (driver, graphroot, mountopt)
+- **`containers.conf`**: Runtime configurations (crun, cgroup, parallel copies)
 
-Misturar essas configurações causava:
+Mixing these configurations caused:
 - ⚠️ Warnings: `Failed to decode the keys ["engine" ...] from storage.conf`
-- ❌ Erros: `database graph driver mismatch`
+- ❌ Errors: `database graph driver mismatch`
 
-### 🔧 Como Atualizar
+### 🔧 How to Upgrade
 
-#### Opção 1: Atualização Automática (Recomendado)
+#### Option 1: Automatic Upgrade (Recommended)
 
 ```bash
 # Install collection
@@ -37,26 +37,26 @@ ansible-galaxy collection install code3tech.devtools
 # Run playbook
 ansible-playbook -i inventory.ini playbooks/podman/install-podman.yml
 
-# 2. Resetar storage do Podman (REMOVE containers/imagens!)
+# 2. Reset Podman storage (REMOVES containers/images!)
 ansible -i inventory.ini all -m shell \
   -a 'rm -rf /var/lib/containers/storage/* /run/containers/storage/*' \
   --become
 
-# 3. Verificar funcionamento
+# 3. Verify functionality
 ansible -i inventory.ini all -m shell \
   -a 'podman info | grep -A3 "store:"' \
   --become
 ```
 
-#### Opção 2: Atualização Manual
+#### Option 2: Manual Upgrade
 
-1. **Remover configurações `[engine]` de `storage.conf`:**
+1. **Remove `[engine]` configurations from `storage.conf`:**
 ```bash
-# Editar /etc/containers/storage.conf
-# Remover seção [engine] completa
+# Edit /etc/containers/storage.conf
+# Remove complete [engine] section
 ```
 
-2. **Criar `/etc/containers/containers.conf`:**
+2. **Create `/etc/containers/containers.conf`:**
 ```toml
 [engine]
 runtime = "crun"
@@ -66,136 +66,138 @@ num_locks = 2048
 image_parallel_copies = 10
 ```
 
-3. **Resetar storage:**
+3. **Reset storage:**
 ```bash
 rm -rf /var/lib/containers/storage/*
 rm -rf /run/containers/storage/*
 ```
 
-4. **Verificar:**
+4. **Verify:**
 ```bash
 podman info
 podman version
 ```
 
-### 🚨 Impacto da Atualização
+### 🚨 Upgrade Impact
 
-**⚠️ ATENÇÃO:** O reset do storage Podman **REMOVE**:
-- ✗ Todos os containers
-- ✗ Todas as imagens
-- ✗ Todos os volumes
-- ✗ Todas as redes personalizadas
+**⚠️ WARNING:** The Podman storage reset **REMOVES**:
+- ✗ All containers
+- ✗ All images
+- ✗ All volumes
+- ✗ All custom networks
 
-**✅ NÃO afeta:**
-- ✓ Configurações de registries
-- ✓ Credenciais de login
-- ✓ Usuários rootless configurados
-- ✓ Configurações do Docker
+**✅ NOT affected:**
+- ✓ Registry configurations
+- ✓ Login credentials
+- ✓ Configured rootless users
+- ✓ Docker configurations
 
-### 📋 Checklist Pós-Atualização
+### 📋 Post-Upgrade Checklist
 
 ```bash
-# 1. Verificar versão do Podman
+# 1. Verify Podman version
 podman version
 
-# 2. Verificar storage driver
+# 2. Verify storage driver
 podman info --format '{{.Store.GraphDriverName}}'
-# Deve retornar: overlay
+# Should return: overlay
 
-# 3. Verificar runtime
+# 3. Verify runtime
 podman info --format '{{.Host.OCIRuntime.Name}}'
-# Deve retornar: crun
+# Should return: crun
 
-# 4. Testar pull de imagem
+# 4. Test image pull
 podman pull alpine:latest
 
-# 5. Testar execução de container
-podman run --rm alpine echo "Podman funcionando!"
+# 5. Test container execution
+podman run --rm alpine echo "Podman working!"
 
-# 6. Verificar configurações
+# 6. Verify configurations
 cat /etc/containers/storage.conf
 cat /etc/containers/containers.conf
 ```
 
-### 🐛 Problemas Conhecidos e Soluções
+### 🐛 Known Issues and Solutions
 
-#### Erro: `database graph driver mismatch`
+#### Error: `database graph driver mismatch`
 
-**Causa:** Storage antigo incompatível com novo driver
+**Cause:** Old storage incompatible with new driver
 
-**Solução:**
+**Solution:**
 ```bash
-# Resetar storage
+# Reset storage
 rm -rf /var/lib/containers/storage/*
 rm -rf /run/containers/storage/*
 
-# Testar
+# Test
 podman info
 ```
 
 #### Warning: `Failed to decode the keys ["engine" ...]`
 
-**Causa:** Seção `[engine]` ainda está em `storage.conf`
+**Cause:** `[engine]` section still in `storage.conf`
 
-**Solução:**
+**Solution:**
 ```bash
-# Remover seção [engine] de storage.conf
+# Remove [engine] section from storage.conf
 sed -i '/^\[engine\]/,/^$/d' /etc/containers/storage.conf
 
-# Executar playbook para criar containers.conf correto
-ansible-playbook -i inventory.ini playbooks/install-podman.yml
+# Run playbook to create correct containers.conf
+ansible-playbook -i inventory.ini playbooks/podman/install-podman.yml
 ```
 
-#### Erro: `overlay is not supported`
+#### Error: `overlay is not supported`
 
-**Causa:** Kernel muito antigo ou sem suporte a overlay em namespaces
+**Cause:** Kernel too old or no overlay support in namespaces
 
-**Solução:**
+**Solution:**
 ```yaml
-# Usar vfs driver (mais lento mas compatível)
+# Use vfs driver (slower but compatible)
 podman_storage_conf:
   storage:
-    driver: "vfs"  # Trocar overlay por vfs
+    driver: "vfs"  # Change overlay to vfs
 ```
 
-### 📈 Melhorias de Performance (v1.1.0)
+### 📈 Performance Improvements (v1.1.0)
 
-Após a atualização, você terá:
+After the upgrade, you will have:
 
-| Recurso | Antes | Agora | Melhoria |
-|---------|-------|-------|----------|
+| Feature | Before | Now | Improvement |
+|---------|--------|-----|-------------|
 | **Storage Driver** | vfs/undefined | overlay + metacopy | +30-50% I/O |
 | **Runtime** | runc | crun | +20-30% startup |
 | **Image Pull** | serial | parallel (10 layers) | +200-300% |
-| **Configurações** | Misturadas | Separadas | ✅ Sem warnings |
+| **Configurations** | Mixed | Separated | ✅ No warnings |
 
-### 🔄 Rollback (Se Necessário)
+### 🔄 Rollback (If Needed)
 
-Se encontrar problemas, você pode voltar para v1.0.x:
+If you encounter problems, you can revert to v1.0.x:
 
 ```bash
-# 1. Checkout versão anterior
+# 1. Checkout previous version
 git checkout tags/v1.0.0
 
-# 2. Executar playbook
-ansible-playbook -i inventory.ini playbooks/podman/install-podman.ymlman.yml
+# 2. Run playbook
+ansible-playbook -i inventory.ini playbooks/podman/install-podman.yml
 
-# 3. Resetar storage (novamente)
+# 3. Reset storage (again)
 ansible -i inventory.ini all -m shell \
   -a 'rm -rf /var/lib/containers/storage/*' \
   --become
 ```
 
-### 📞 Suporte
+### 📞 Support
 
-Se encontrar problemas durante a atualização:
+If you encounter problems during the upgrade:
 
-1. Verifique os logs: `journalctl -xeu podman`
-2. Abra uma issue: https://github.com/kode3tech/ansible-col-devtools/issues
+1. Check logs: `journalctl -xeu podman`
+2. Open an issue: https://github.com/kode3tech/ansible-col-devtools/issues
 3. Email: suporte@kode3.tech
 
 ---
 
-**Última atualização:** 2025-11-06  
-**Versão alvo:** v1.1.0  
-**Impacto:** ⚠️ ALTO (requer reset de storage)
+[← Back to Maintenance](README.md)
+
+**Last updated:** 2025-11-06  
+**Target version:** v1.1.0  
+**Impact:** ⚠️ HIGH (requires storage reset)

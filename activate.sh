@@ -1,23 +1,23 @@
 #!/bin/bash
-# Script para ativar o ambiente virtual
+# Script to activate the virtual environment
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ ! -d "$SCRIPT_DIR/.venv" ]; then
-    echo "Ambiente virtual não encontrado. Criando..."
+    echo "Virtual environment not found. Creating..."
     python3 -m venv "$SCRIPT_DIR/.venv"
     
-    echo "Instalando dependências..."
+    echo "Installing dependencies..."
     "$SCRIPT_DIR/.venv/bin/pip" install --upgrade pip
     "$SCRIPT_DIR/.venv/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
 fi
 
-echo "Ativando ambiente virtual..."
+echo "Activating virtual environment..."
 source "$SCRIPT_DIR/.venv/bin/activate"
 
 echo ""
-echo "Ambiente virtual ativado!"
-echo "Versão do Ansible: $(ansible --version | head -n 1)"
-echo "Versão do Python: $(python --version)"
+echo "Virtual environment activated!"
+echo "Ansible version: $(ansible --version | head -n 1)"
+echo "Python version: $(python --version)"
 echo ""
-echo "Para desativar, execute: deactivate"
+echo "To deactivate, run: deactivate"

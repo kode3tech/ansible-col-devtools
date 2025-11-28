@@ -116,12 +116,10 @@ podman_registries_auth: []
   #   username: myuser
   #   password: mypassword
   #
-  # Example with password from file:
+  # Use Ansible Vault for sensitive data!
   # - registry: ghcr.io
   #   username: github-user
-  #   password_file: /path/to/token  # Read password from file
-  #
-  # Use Ansible Vault for sensitive data!
+  #   password: "{{ vault_github_token }}"
 
 # Clean up existing credentials before re-authentication
 # Set to true to remove old/invalid credentials before logging in

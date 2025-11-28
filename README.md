@@ -2,7 +2,6 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Ansible](https://img.shields.io/badge/ansible-2.15%2B-blue.svg)](https://www.ansible.com/)
-[![CI](https://github.com/kode3tech/ansible-col-devtools/workflows/CI/badge.svg)](https://github.com/kode3tech/ansible-col-devtools/actions)
 
 Ansible Collection for DevOps tools installation and configuration. This collection provides roles for managing containerization and development tools across Ubuntu, Debian, and RHEL-based systems.
 
@@ -14,7 +13,6 @@ Complete Docker Engine installation and configuration with Docker Compose suppor
 - **All systems**: Automatic permission fixes for user Docker config files
 - **RHEL enhancements**: Time sync, SELinux support
 - **Registry authentication**: Multi-registry support with automatic permission handling
-- **Performance optimized**: 2-5x performance improvements with optimized defaults
 - **User permissions management**: Automated Docker group configuration
 - **Comprehensive testing**: Multi-distribution Molecule tests
 
@@ -25,7 +23,8 @@ Podman installation with rootless container support.
 - **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 8+
 - **All systems**: Automatic permission fixes for user Podman auth files
 - **RHEL enhancements**: SELinux support, XDG runtime fixes
-- **Performance optimized**: crun runtime, parallel downloads, optimized storage
+- **Storage conflict resolution**: Automatic detection and reset of database graph driver mismatches
+- **Improved authentication reliability**: Automatic storage reset prevents authentication failures
 - **Complete toolchain**: Buildah and Skopeo included
 - **OCI-compliant**: Compatible with Docker commands
 
@@ -52,10 +51,16 @@ source activate.sh
 ansible --version
 ```
 
-### From Ansible Galaxy (when published)
+### From Source (Recommended)
 ```bash
-# After activating venv:
-ansible-galaxy collection install code3tech.devtools
+git clone https://github.com/kode3tech/ansible-col-devtools.git
+cd ansible-col-devtools
+
+# IMPORTANT: Activate venv first!
+source activate.sh
+
+# Build and install locally
+make install-collection
 ```
 
 ### From Source
@@ -104,6 +109,7 @@ This collection includes **comprehensive support** for all distributions with au
 - ✅ **RHEL SELinux compatibility**: Proper context restoration for container directories
 - ✅ **Multi-user authentication**: Isolated credentials with proper ownership across all systems
 - ✅ **Distribution-specific optimizations**: Tailored for Ubuntu, Debian, and RHEL family
+- ✅ **Storage conflict resolution**: Automatic detection and reset of Podman database graph driver mismatches
 
 ## 🎯 Quick Start
 
@@ -188,8 +194,7 @@ The collection includes ready-to-use example playbooks organized by role in the 
 - **[playbooks/docker/setup-insecure-registry.yml](playbooks/docker/setup-insecure-registry.yml)** - Insecure registry configuration
 
 ### Podman Examples
-- **[playbooks/podman/install-podman.yml](playbooks/podman/install-podman.yml)** - Basic Podman installation
-- **[playbooks/podman/test-podman-auth.yml](playbooks/podman/test-podman-auth.yml)** - Podman authentication testing
+- **[playbooks/podman/install-podman.yml](playbooks/podman/install-podman.yml)** - Production Podman installation with performance optimizations
 
 ### asdf Examples
 - **[playbooks/asdf/install-asdf-basic.yml](playbooks/asdf/install-asdf-basic.yml)** - Quick testing with lightweight plugins
