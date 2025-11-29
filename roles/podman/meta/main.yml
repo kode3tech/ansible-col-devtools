@@ -1,12 +1,12 @@
 ---
 galaxy_info:
-  namespace: kode3tech
+  namespace: code3tech
   role_name: podman
-  author: Kode3Tech DevOps Team
+  author: Code3Tech DevOps Team
   description: Install and configure Podman with rootless support
   company: Code3Tech
 
-  issue_tracker_url: https://github.com/kode3tech/ansible-docker/issues
+  issue_tracker_url: https://github.com/kode3tech/ansible-col-devtools/issues
 
   license: MIT
 

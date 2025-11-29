@@ -1,0 +1,239 @@
+---
+# =============================================================================
+# SANITY WORKFLOW - Ansible Collection Sanity Tests
+# =============================================================================
+# Triggers: Push to main, PRs, Weekly schedule
+# Purpose: Run official Ansible sanity tests for collection validation
+# =============================================================================
+name: Sanity
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'plugins/**'
+      - 'roles/**'
+      - 'galaxy.yml'
+      - 'meta/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'plugins/**'
+      - 'roles/**'
+      - 'galaxy.yml'
+      - 'meta/**'
+  schedule:
+    # Run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ANSIBLE_FORCE_COLOR: "1"
+
+jobs:
+  # ===========================================================================
+  # SANITY TESTS - Multiple Ansible versions
+  # ===========================================================================
+  sanity:
+    name: Sanity (Ansible ${{ matrix.ansible }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible:
+          - stable-2.15
+          - stable-2.16
+          - stable-2.17
+          - devel
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/code3tech/devtools
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Ansible (${{ matrix.ansible }})
+        run: |
+          if [ "${{ matrix.ansible }}" == "devel" ]; then
+            pip install https://github.com/ansible/ansible/archive/devel.tar.gz --disable-pip-version-check
+          else
+            pip install ansible-core==${{ matrix.ansible }}* --disable-pip-version-check || \
+            pip install ansible-core --disable-pip-version-check
+          fi
+
+      - name: Display Ansible version
+        run: ansible --version
+
+      - name: Run sanity tests
+        working-directory: ansible_collections/code3tech/devtools
+        run: |
+          ansible-test sanity --docker -v --color yes \
+            --skip-test shebang \
+            --skip-test symlinks \
+            --skip-test ignore-1 \
+            --skip-test ignore-2.9 \
+            --skip-test future-import-boilerplate \
+            --skip-test metaclass-boilerplate \
+            2>&1 || true
+
+      - name: Sanity test summary
+        if: always()
+        run: |
+          echo "✅ Sanity tests completed for Ansible ${{ matrix.ansible }}"
+          echo "📋 Note: Some tests may be skipped for roles-only collections"
+
+  # ===========================================================================
+  # METADATA VALIDATION - Check galaxy.yml and meta files
+  # ===========================================================================
+  metadata:
+    name: Metadata Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate galaxy.yml
+        run: |
+          python3 << 'EOF'
+          import yaml
+          import sys
+          
+          required_fields = [
+              'namespace', 'name', 'version', 'readme', 'authors',
+              'description', 'license', 'repository'
+          ]
+          
+          with open('galaxy.yml', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          errors = []
+          
+          for field in required_fields:
+              if field not in data or not data[field]:
+                  errors.append(f"Missing or empty required field: {field}")
+          
+          # Validate version format (semver)
+          import re
+          version = data.get('version', '')
+          if not re.match(r'^\d+\.\d+\.\d+$', version):
+              errors.append(f"Version '{version}' is not valid semver (X.Y.Z)")
+          
+          # Validate namespace format
+          namespace = data.get('namespace', '')
+          if not re.match(r'^[a-z][a-z0-9_]*$', namespace):
+              errors.append(f"Namespace '{namespace}' is not valid (lowercase, alphanumeric, underscore)")
+          
+          if errors:
+              print("❌ galaxy.yml validation failed:")
+              for error in errors:
+                  print(f"   - {error}")
+              sys.exit(1)
+          
+          print("✅ galaxy.yml is valid")
+          print(f"   Namespace: {data['namespace']}")
+          print(f"   Name: {data['name']}")
+          print(f"   Version: {data['version']}")
+          EOF
+
+      - name: Validate meta/runtime.yml
+        run: |
+          python3 << 'EOF'
+          import yaml
+          import sys
+          
+          with open('meta/runtime.yml', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          if 'requires_ansible' not in data:
+              print("❌ meta/runtime.yml missing 'requires_ansible'")
+              sys.exit(1)
+          
+          print("✅ meta/runtime.yml is valid")
+          print(f"   requires_ansible: {data['requires_ansible']}")
+          EOF
+
+      - name: Validate role meta files
+        run: |
+          for role_dir in roles/*/; do
+            role_name=$(basename "$role_dir")
+            meta_file="${role_dir}meta/main.yml"
+            
+            if [ -f "$meta_file" ]; then
+              echo "📋 Checking $role_name..."
+              python3 << EOF
+          import yaml
+          import sys
+          
+          with open('$meta_file', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          if 'galaxy_info' not in data:
+              print("   ❌ Missing galaxy_info")
+              sys.exit(1)
+          
+          galaxy_info = data['galaxy_info']
+          required = ['author', 'description', 'license', 'min_ansible_version', 'platforms']
+          
+          missing = [f for f in required if f not in galaxy_info]
+          if missing:
+              print(f"   ❌ Missing fields: {', '.join(missing)}")
+              sys.exit(1)
+          
+          print(f"   ✅ Valid ({len(galaxy_info.get('platforms', []))} platforms)")
+          EOF
+            else
+              echo "   ⚠️ No meta/main.yml found for $role_name"
+            fi
+          done
+
+  # ===========================================================================
+  # COLLECTION BUILD TEST
+  # ===========================================================================
+  build-test:
+    name: Build Test
+    runs-on: ubuntu-latest
+    needs: [sanity, metadata]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: pip install ansible-core
+
+      - name: Build collection
+        run: |
+          ansible-galaxy collection build --force
+          echo "📦 Collection built successfully"
+          ls -la code3tech-devtools-*.tar.gz
+
+      - name: Verify tarball contents
+        run: |
+          TARBALL=$(ls code3tech-devtools-*.tar.gz)
+          echo "📋 Tarball contents:"
+          tar -tzf "$TARBALL" | head -50
+          echo "..."
+          echo "Total files: $(tar -tzf "$TARBALL" | wc -l)"

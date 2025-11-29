@@ -7,6 +7,9 @@ galaxy_info:
   author: Code3Tech DevOps Team
   description: Install and configure asdf version manager
   company: Code3Tech
+
+  issue_tracker_url: https://github.com/kode3tech/ansible-col-devtools/issues
+
   license: MIT
   min_ansible_version: "2.15"
 

@@ -1,5 +1,9 @@
 # Ansible Collection: code3tech.devtools
 
+[![CI](https://github.com/kode3tech/ansible-col-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/kode3tech/ansible-col-devtools/actions/workflows/ci.yml)
+[![Sanity](https://github.com/kode3tech/ansible-col-devtools/actions/workflows/sanity.yml/badge.svg)](https://github.com/kode3tech/ansible-col-devtools/actions/workflows/sanity.yml)
+[![Release](https://github.com/kode3tech/ansible-col-devtools/actions/workflows/release.yml/badge.svg)](https://github.com/kode3tech/ansible-col-devtools/actions/workflows/release.yml)
+[![Ansible Galaxy](https://img.shields.io/badge/galaxy-code3tech.devtools-blue.svg)](https://galaxy.ansible.com/ui/repo/published/code3tech/devtools/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Ansible](https://img.shields.io/badge/ansible-2.15%2B-blue.svg)](https://www.ansible.com/)
 
