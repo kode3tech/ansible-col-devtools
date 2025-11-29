@@ -1,21 +1,24 @@
 # asdf Example Playbooks
 
-This directory contains example playbooks demonstrating how to use the `asdf` role from the `kode3tech.devtools` collection.
+This directory contains example playbooks demonstrating how to use the `asdf` role from the `code3tech.devtools` collection.
+
+📖 **Complete Guide:** [asdf Complete Guide](../../docs/user-guides/ASDF_COMPLETE_GUIDE.md) - Comprehensive documentation with architecture, performance optimization, and troubleshooting.
 
 ## Available Examples
 
 ### Quick Testing (Lightweight Plugins)
 
 #### 1. [install-asdf-basic.yml](install-asdf-basic.yml) ⚡ **RECOMMENDED FOR TESTING**
-Install asdf with lightweight plugins (direnv, jq) - **Fast installation (~10-15 seconds)**
+Install asdf with lightweight plugins (direnv, jq, yq) - **Fast installation (~15-30 seconds)**
 
 **Use case**: Quick tests, CI/CD pipelines, validation
 
 **Plugins**:
 - `direnv` - Shell environment manager (shell script only)
 - `jq` - JSON processor (pre-compiled binary)
+- `yq` - YAML processor (pre-compiled binary)
 
-**Installation time**: ~10-15 seconds total
+**Installation time**: ~15-30 seconds total
 
 ```bash
 ansible-playbook -i inventory playbooks/asdf/install-asdf-basic.yml
@@ -123,7 +126,8 @@ You can customize these playbooks by:
 
 ## Related Documentation
 
-- [asdf Role README](../../roles/asdf/README.md) - Complete role documentation
+- [asdf Complete Guide](../../docs/user-guides/ASDF_COMPLETE_GUIDE.md) - Comprehensive documentation
+- [asdf Role README](../../roles/asdf/README.md) - Role reference
 - [Collection README](../../README.md) - Main collection documentation
 - [asdf Official Documentation](https://asdf-vm.com/) - asdf project documentation
 

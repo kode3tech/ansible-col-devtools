@@ -197,9 +197,14 @@ The collection includes ready-to-use example playbooks organized by role in the 
 - **[playbooks/podman/install-podman.yml](playbooks/podman/install-podman.yml)** - Production Podman installation with performance optimizations
 
 ### asdf Examples
-- **[playbooks/asdf/install-asdf-basic.yml](playbooks/asdf/install-asdf-basic.yml)** - Quick testing with lightweight plugins
+- **[playbooks/asdf/install-asdf-basic.yml](playbooks/asdf/install-asdf-basic.yml)** - Quick testing with lightweight plugins (direnv, jq, yq)
 - **[playbooks/asdf/install-asdf-full.yml](playbooks/asdf/install-asdf-full.yml)** - Full installation with Node.js and Python
 - **[playbooks/asdf/setup-multi-user.yml](playbooks/asdf/setup-multi-user.yml)** - Multi-user configuration
+
+📖 **Complete Guides:**
+- [Docker Complete Guide](docs/user-guides/DOCKER_COMPLETE_GUIDE.md) - Comprehensive Docker documentation
+- [Podman Complete Guide](docs/user-guides/PODMAN_COMPLETE_GUIDE.md) - Comprehensive Podman documentation
+- [asdf Complete Guide](docs/user-guides/ASDF_COMPLETE_GUIDE.md) - Comprehensive asdf documentation
 
 See [playbooks/README.md](playbooks/README.md) for complete documentation of all available examples.
 

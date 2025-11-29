@@ -14,8 +14,11 @@ playbooks/
 │   └── install-podman.yml           # Production Podman installation
 └── asdf/                             # asdf role examples
     ├── install-asdf.yml             # Basic asdf installation
+    ├── install-asdf-basic.yml       # Quick testing (lightweight plugins)
+    ├── install-asdf-full.yml        # Full installation (Node.js + Python)
     ├── setup-nodejs-python.yml      # Node.js and Python configuration
-    └── setup-multi-user.yml         # Multi-user setup
+    ├── setup-multi-user.yml         # Multi-user setup
+    └── setup-multi-shell.yml        # Multi-shell configuration
 ```
 
 ## 🎯 Organization Principle
@@ -64,6 +67,33 @@ ansible-playbook playbooks/podman/install-podman.yml -i inventory
 
 ### 🔧 asdf Examples (`asdf/`)
 
+#### [install-asdf-basic.yml](asdf/install-asdf-basic.yml) ⚡ **RECOMMENDED FOR TESTING**
+Quick installation with lightweight plugins (direnv, jq, yq) - Fast installation (~15-30 seconds).
+
+**Features:**
+- Lightweight plugins (no compilation needed)
+- Fast installation for testing and CI/CD
+- Centralized group-based architecture
+- Full validation tests
+
+**Usage:**
+```bash
+ansible-playbook playbooks/asdf/install-asdf-basic.yml -i inventory
+```
+
+#### [install-asdf-full.yml](asdf/install-asdf-full.yml)
+Full installation with Node.js and Python plugins for production environments.
+
+**Features:**
+- Heavy plugins (requires compilation ~5-15 minutes)
+- Multiple versions per plugin
+- Full development stack
+
+**Usage:**
+```bash
+ansible-playbook playbooks/asdf/install-asdf-full.yml -i inventory
+```
+
 #### [install-asdf.yml](asdf/install-asdf.yml)
 Basic asdf installation without plugins.
 
@@ -81,7 +111,7 @@ ansible-playbook playbooks/asdf/setup-nodejs-python.yml -i inventory
 ```
 
 #### [setup-multi-user.yml](asdf/setup-multi-user.yml)
-Configure asdf for multiple users with different plugin requirements.
+Configure asdf for multiple users with same plugin configuration.
 
 **Usage:**
 ```bash
@@ -151,8 +181,10 @@ When creating new example playbooks:
 
 - [Docker Complete Guide](../docs/user-guides/DOCKER_COMPLETE_GUIDE.md)
 - [Podman Complete Guide](../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)
+- [asdf Complete Guide](../docs/user-guides/ASDF_COMPLETE_GUIDE.md)
 - [Docker Role README](../roles/docker/README.md)
 - [Podman Role README](../roles/podman/README.md)
+- [asdf Role README](../roles/asdf/README.md)
 - [Registry Authentication Guide](../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 - [Collection README](../README.md)
 

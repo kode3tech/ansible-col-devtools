@@ -23,6 +23,16 @@ The **comprehensive guide** to Podman with the code3tech.devtools collection.
 - Troubleshooting common issues
 - Real-world examples for development, CI/CD, and production
 
+### [asdf Complete Guide](ASDF_COMPLETE_GUIDE.md) ⭐ NEW
+The **comprehensive guide** to asdf version manager with the code3tech.devtools collection.
+- **Centralized Group-Based Architecture** - Multi-user support without conflicts
+- Complete variable reference with detailed explanations
+- Production playbook walkthrough with line-by-line explanations
+- Plugin management (lightweight vs heavy plugins)
+- Performance optimization tips
+- Troubleshooting common issues
+- Real-world examples for development, CI/CD, and DevOps
+
 ### [Registry Authentication](REGISTRY_AUTHENTICATION.md)
 Learn how to configure private container registry authentication.
 - **Applies to:** Both Docker and Podman roles
@@ -65,6 +75,18 @@ See [Docker Complete Guide - Troubleshooting](DOCKER_COMPLETE_GUIDE.md#troublesh
 
 ### Troubleshooting Podman Issues
 See [Podman Complete Guide - Troubleshooting](PODMAN_COMPLETE_GUIDE.md#troubleshooting)
+
+### Understanding asdf Architecture
+See [asdf Complete Guide - asdf Architecture](ASDF_COMPLETE_GUIDE.md#asdf-architecture)
+
+### Configuring asdf Plugins
+See [asdf Complete Guide - Plugin Configuration](ASDF_COMPLETE_GUIDE.md#plugin-configuration)
+
+### Multi-User asdf Configuration
+See [asdf Complete Guide - Multi-User Configuration](ASDF_COMPLETE_GUIDE.md#multi-user-configuration)
+
+### Troubleshooting asdf Issues
+See [asdf Complete Guide - Troubleshooting](ASDF_COMPLETE_GUIDE.md#troubleshooting)
 
 ---
 

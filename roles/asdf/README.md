@@ -2,6 +2,8 @@
 
 Ansible role for installing and configuring **asdf** - the extendable version manager for multiple runtime versions.
 
+📖 **Complete Guide:** [asdf Complete Guide](../../docs/user-guides/ASDF_COMPLETE_GUIDE.md) - Comprehensive documentation with architecture, performance optimization, and troubleshooting.
+
 ## 📋 Table of Contents
 
 - [Features](#-features)
