@@ -16,7 +16,9 @@
 # Build a dictionary of user UIDs for easy lookup
 - name: Build user UID lookup dictionary
   ansible.builtin.set_fact:
-    podman_user_uids: "{{ podman_user_uids | default({}) | combine({item.item: item.ansible_facts.getent_passwd[item.item][1]}) }}"
+    podman_user_uids: >-
+      {{ podman_user_uids | default({}) |
+         combine({item.item: item.ansible_facts.getent_passwd[item.item][1]}) }}
   loop: "{{ podman_login_user_info.results | default([]) }}"
   when:
     - podman_enable_rootless
@@ -38,6 +40,7 @@
     # Clean up any remaining storage artifacts
     rm -rf /root/.local/share/containers/storage
     rm -rf /var/lib/containers/storage
+  changed_when: true
   when:
     - not podman_enable_rootless
     - podman_storage_test.rc != 0

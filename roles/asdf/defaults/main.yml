@@ -28,7 +28,7 @@ asdf_plugins: []
 # Example:
 #   - name: "nodejs"
 #     versions:
-#       - "20.11.0" 
+#       - "20.11.0"
 #       - "18.19.0"
 #     global: "20.11.0"
 #   - name: "python"

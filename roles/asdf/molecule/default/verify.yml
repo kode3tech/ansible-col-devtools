@@ -338,4 +338,3 @@
           - "📝 Note: Tests focus on core functionality that matters in"
           - "    production. Some Docker-specific limitations are expected"
           - "    and don't affect real host deployment success."
-

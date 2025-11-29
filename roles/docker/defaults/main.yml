@@ -23,7 +23,8 @@ docker_apt_gpg_key: "https://download.docker.com/linux/{{ ansible_distribution |
 # Docker YUM repository (RHEL/CentOS)
 docker_yum_repo_name: "docker-ce-stable"
 docker_yum_repo_description: "Docker CE Stable - $releasever - $basearch"
-docker_yum_repo_baseurl: "https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/$basearch/stable"
+docker_yum_repo_baseurl: >-
+  https://download.docker.com/linux/centos/{{ ansible_distribution_major_version }}/$basearch/stable
 docker_yum_repo_gpgcheck: true
 docker_yum_repo_gpgkey: "https://download.docker.com/linux/centos/gpg"
 docker_yum_repo_enabled: true

@@ -50,7 +50,3 @@
       - docker-compose-plugin
     state: present
   tags: docker
-
-
-
-

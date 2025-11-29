@@ -125,7 +125,9 @@
           # Podman XDG_RUNTIME_DIR for rootless users
           {% for user_result in user_info.results %}
           {% if user_result.ansible_facts.getent_passwd is defined %}
-          d /run/user/{{ user_result.ansible_facts.getent_passwd[user_result.item][1] }} 0700 {{ user_result.item }} {{ user_result.ansible_facts.getent_passwd[user_result.item][2] }} -
+          {% set uid = user_result.ansible_facts.getent_passwd[user_result.item][1] %}
+          {% set gid = user_result.ansible_facts.getent_passwd[user_result.item][2] %}
+          d /run/user/{{ uid }} 0700 {{ user_result.item }} {{ gid }} -
           {% endif %}
           {% endfor %}
         dest: /etc/tmpfiles.d/podman-xdg-users.conf

@@ -3,9 +3,10 @@
 profile: production
 
 # Skip specific rules if needed
-# skip_list:
-#   - role-name
-#   - yaml[line-length]
+skip_list:
+  # var-naming in molecule verify.yml files - these are test files, not role code
+  # Variables in verify.yml don't need role prefix as they're local to tests
+  - var-naming[no-role-prefix]
 
 # Exclude directories from linting
 exclude_paths:
@@ -22,6 +23,11 @@ exclude_paths:
   - '**/.cache/'
   - '**/molecule/*/.cache/'
   - '**/molecule/*/.molecule/'
+  # Exclude non-role directories from linting (focus on roles only)
+  - .github/
+  - playbooks/
+  - plugins/
+  - docs/
 
 # Use progressive rules
 progressive: true

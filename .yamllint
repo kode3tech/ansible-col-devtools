@@ -31,3 +31,7 @@ ignore: |
   _temp/
   node_modules/
   *.tar.gz
+  .github/
+  playbooks/
+  plugins/
+  docs/

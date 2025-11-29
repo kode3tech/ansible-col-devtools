@@ -8,13 +8,15 @@
 # STAGE 1: BASE INSTALLATION
 # =============================================================================
 - name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}.yml"
+  ansible.builtin.include_vars: >-
+    {{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}.yml
   tags:
     - asdf
     - installation
 
 - name: Include OS-specific setup tasks
-  ansible.builtin.include_tasks: "setup-{{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}.yml"
+  ansible.builtin.include_tasks: >-
+    setup-{{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}.yml
   tags:
     - asdf
     - installation
@@ -106,7 +108,7 @@
     label: "{{ item.0.name }} {{ item.1 }}"
   register: asdf_version_install
   changed_when: "'already installed' not in asdf_version_install.stderr"
-  failed_when: 
+  failed_when:
     - asdf_version_install.rc != 0
     - "'already installed' not in asdf_version_install.stderr"
   when: asdf_plugins | length > 0
@@ -122,7 +124,7 @@
   loop: "{{ asdf_plugins }}"
   loop_control:
     label: "{{ item.name }} -> {{ item.global }}"
-  when: 
+  when:
     - asdf_plugins | length > 0
     - item.global is defined
   register: asdf_global_set
@@ -153,7 +155,7 @@
     fail_msg: "User {{ item.item }} does not exist on the system"
     success_msg: "User {{ item.item }} exists"
   loop: "{{ asdf_user_info.results }}"
-  when: 
+  when:
     - asdf_users | length > 0
     - not item.skipped | default(false)
   tags:
@@ -187,7 +189,7 @@
     group: "{{ item.item }}"
     mode: '0644'
   loop: "{{ asdf_user_info.results }}"
-  when: 
+  when:
     - asdf_users | length > 0
     - asdf_configure_shell | bool
     - not item.skipped | default(false)
