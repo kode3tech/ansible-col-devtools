@@ -81,8 +81,6 @@ jobs:
           ansible-test sanity --docker -v --color yes \
             --skip-test shebang \
             --skip-test symlinks \
-            --skip-test ignore-1 \
-            --skip-test ignore-2.9 \
             --skip-test future-import-boilerplate \
             --skip-test metaclass-boilerplate \
             2>&1 || true
