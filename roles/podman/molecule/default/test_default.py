@@ -1,6 +1,8 @@
 """Molecule tests for Podman role."""
 
+import json
 import os
+import re
 import pytest
 import testinfra.utils.ansible_runner
 
@@ -123,15 +125,15 @@ def test_registries_conf_contains_insecure_registries(host):
     """Verify registries.conf contains insecure registry configurations."""
     config_file = host.file("/etc/containers/registries.conf")
     assert config_file.exists
-    
+
     content = config_file.content_string
-    
+
     # Check for [[registry]] TOML sections
     assert "[[registry]]" in content, "No registry sections found in registries.conf"
-    
+
     # Check that insecure = true appears in the configuration
     assert 'insecure = true' in content, "No insecure registries configured"
-    
+
     # Count number of insecure registry entries
     insecure_count = content.count('insecure = true')
     assert insecure_count >= 3, \
@@ -142,13 +144,13 @@ def test_specific_insecure_registries_configured(host):
     """Verify specific insecure registries are configured in registries.conf."""
     config_file = host.file("/etc/containers/registries.conf")
     content = config_file.content_string
-    
+
     expected_registries = [
         "localhost:5000",
         "registry.test.local:5000",
         "192.168.100.100:5000"
     ]
-    
+
     for registry in expected_registries:
         # Check that each registry appears in a location directive
         assert f'location = "{registry}"' in content, \
@@ -157,22 +159,21 @@ def test_specific_insecure_registries_configured(host):
 
 def test_insecure_flag_for_each_registry(host):
     """Verify each configured registry has the insecure flag set."""
-    import re
-    
+
     config_file = host.file("/etc/containers/registries.conf")
     content = config_file.content_string
-    
+
     expected_registries = [
         "localhost:5000",
         "registry.test.local:5000",
         "192.168.100.100:5000"
     ]
-    
+
     for registry in expected_registries:
         # Use regex to find the registry block and check for insecure flag
         # Pattern matches [[registry]] ... location = "registry" ... insecure = true
         pattern = rf'\[\[registry\]\].*?location = "{re.escape(registry)}".*?insecure = true'
-        
+
         assert re.search(pattern, content, re.DOTALL), \
             f"Registry {registry} does not have insecure = true flag"
 
@@ -181,12 +182,16 @@ def test_registries_conf_valid_toml_syntax(host):
     """Verify registries.conf has valid TOML syntax for registry blocks."""
     config_file = host.file("/etc/containers/registries.conf")
     content = config_file.content_string
-    
+
     # Basic TOML validation for registry blocks
     registry_blocks = content.count("[[registry]]")
-    
+
     # Each registry block should have a location
     location_count = content.count('location = ')
+
+    # Verify we have matching blocks and locations
+    assert registry_blocks > 0, "No registry blocks found"
+    assert location_count >= registry_blocks, "Missing location entries"
 
 
 # =============================================================================
@@ -196,7 +201,7 @@ def test_registries_conf_valid_toml_syntax(host):
 def test_podman_storage_conf_exists(host):
     """Verify storage.conf file exists and is properly configured."""
     storage_conf = host.file("/etc/containers/storage.conf")
-    
+
     assert storage_conf.exists
     assert storage_conf.is_file
     assert storage_conf.user == "root"
@@ -207,7 +212,7 @@ def test_podman_storage_driver_optimized(host):
     """Verify Podman is configured to use overlay storage driver."""
     storage_conf = host.file("/etc/containers/storage.conf")
     content = storage_conf.content_string
-    
+
     # Check for overlay driver configuration
     assert 'driver = "overlay"' in content, \
         "Podman storage.conf should use overlay driver for optimal performance"
@@ -217,7 +222,7 @@ def test_podman_storage_metacopy_enabled(host):
     """Verify Podman overlay storage has metacopy optimization enabled."""
     storage_conf = host.file("/etc/containers/storage.conf")
     content = storage_conf.content_string
-    
+
     # Check for metacopy in mount options
     assert "metacopy=on" in content, \
         "Podman storage.conf should have metacopy=on for 30-50% I/O improvement"
@@ -227,7 +232,7 @@ def test_podman_crun_runtime_configured(host):
     """Verify Podman is configured to use crun runtime (20-30% faster than runc)."""
     storage_conf = host.file("/etc/containers/storage.conf")
     content = storage_conf.content_string
-    
+
     # Check for crun runtime in engine section
     assert 'runtime = "crun"' in content, \
         "Podman should use crun runtime for 20-30% faster container startup"
@@ -237,7 +242,7 @@ def test_podman_parallel_copies_configured(host):
     """Verify Podman is configured for parallel image layer downloads."""
     storage_conf = host.file("/etc/containers/storage.conf")
     content = storage_conf.content_string
-    
+
     # Check for image_parallel_copies setting
     assert "image_parallel_copies" in content, \
         "Podman should have parallel copies configured for faster image pulls"
@@ -247,7 +252,7 @@ def test_crun_binary_available(host):
     """Verify crun binary is available (optional but recommended)."""
     # This is an optional optimization - won't fail if missing
     cmd = host.run("which crun")
-    
+
     if cmd.rc == 0:
         # If crun is available, verify it works
         crun_version = host.run("crun --version")
@@ -258,14 +263,12 @@ def test_crun_binary_available(host):
 def test_podman_info_shows_optimizations(host):
     """Verify podman info reflects the optimization settings."""
     cmd = host.run("podman info --format json")
-    
+
     if cmd.rc == 0:
-        import json
         info = json.loads(cmd.stdout)
-        
+
         # Check storage driver
         if "store" in info:
             storage_driver = info["store"].get("graphDriverName", "")
             assert storage_driver == "overlay", \
                 f"Expected overlay storage driver, got {storage_driver}"
-

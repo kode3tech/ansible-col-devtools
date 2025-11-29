@@ -3,7 +3,6 @@ Molecule tests for asdf role (v2.0 - Centralized Architecture).
 Tests the new group-based, centralized plugin management approach.
 """
 import os
-import pytest
 import testinfra.utils.ansible_runner
 
 testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
@@ -61,7 +60,7 @@ def test_system_wide_path_configuration(host):
     assert profile_script.exists
     assert profile_script.is_file
     assert profile_script.mode & 0o644  # Should be readable
-    
+
     # Check content has correct PATH configuration
     content = profile_script.content_string
     assert 'export PATH="/opt/asdf/shims:$PATH"' in content
@@ -94,7 +93,7 @@ def test_user_shell_configuration(host):
     """Test that user shell is configured with asdf."""
     bashrc = host.file('/root/.bashrc')
     assert bashrc.exists
-    
+
     # Check for asdf configuration block
     content = bashrc.content_string
     assert 'ANSIBLE MANAGED BLOCK - asdf' in content
@@ -106,7 +105,7 @@ def test_asdf_shims_directory(host):
     shims_dir = host.file('/opt/asdf/shims')
     assert shims_dir.exists
     assert shims_dir.is_directory
-    
+
     # Should have direnv shim
     direnv_shim = host.file('/opt/asdf/shims/direnv')
     assert direnv_shim.exists
@@ -119,10 +118,10 @@ def test_centralized_data_directory(host):
     # Main directories should exist
     essential_dirs = [
         '/opt/asdf/plugins',
-        '/opt/asdf/installs', 
+        '/opt/asdf/installs',
         '/opt/asdf/shims'
     ]
-    
+
     for directory in essential_dirs:
         dir_obj = host.file(directory)
         assert dir_obj.exists, f"Directory {directory} should exist"
@@ -134,7 +133,7 @@ def test_asdf_binary_installation_method(host):
     # Should NOT have .git directory (binary installation)
     git_dir = host.file('/opt/asdf/.git')
     assert not git_dir.exists, "Binary installation should not have .git directory"
-    
+
     # Should have bin/asdf directly
     asdf_bin = host.file('/opt/asdf/bin/asdf')
     assert asdf_bin.exists

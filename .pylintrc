@@ -1,0 +1,66 @@
+[MASTER]
+ignore = .git,__pycache__,build,dist,.venv,venv,tests/integration
+ignore-patterns = ^setup\.py$
+load-plugins =
+extension-pkg-whitelist =
+
+[MESSAGES CONTROL]
+# Menos chiliquenta, mais vida real
+disable =
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    C0103,  # invalid-name (snake_case muito rígido p/ tudo)
+    W0511,  # todo notes
+    R0903,  # too-few-public-methods (muito comum em helpers simples)
+    R0913,  # too-many-arguments (modules Ansible recebem muitos args)
+    R0914,  # too-many-locals (dicts grandes de params)
+    R0915,  # too-many-statements
+    R0912,  # too-many-branches
+    R1702,  # too-many-nested-blocks
+    R0902,  # too-many-instance-attributes
+    W0703,  # broad-except (com AnsibleModule às vezes faz sentido)
+    E0401,  # import-error (para imports ansible.* fora de runtime)
+    R0801   # duplicate-code (muito agressivo com módulos parecidos)
+
+[REPORTS]
+output-format = colorized
+score = no
+
+[FORMAT]
+max-line-length = 120
+indent-string = "    "
+max-module-lines = 2000
+
+[TYPECHECK]
+# Evita falso positivo em imports ansible.* fora do ambiente completo
+ignored-modules =
+    ansible,
+    ansible.module_utils,
+    ansible.module_utils.basic,
+    ansible.module_utils.common
+
+# Métodos gerados/dinâmicos do AnsibleModule
+generated-members =
+    AnsibleModule.params,
+    AnsibleModule.check_mode,
+    AnsibleModule.fail_json,
+    AnsibleModule.exit_json
+
+[DESIGN]
+# Mais folgado pra módulos que acabam ficando grandes
+max-args = 8
+max-branches = 20
+max-statements = 60
+max-parents = 10
+max-attributes = 12
+max-locals = 25
+min-public-methods = 0
+
+[IMPORTS]
+known-standard-library =
+known-third-party =
+known-first-party =
+
+[LOGGING]
+logging-format-style = new

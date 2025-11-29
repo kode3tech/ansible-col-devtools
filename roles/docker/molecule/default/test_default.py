@@ -1,6 +1,7 @@
 """
 Molecule tests for docker role using testinfra.
 """
+import json
 import os
 import pytest
 import testinfra.utils.ansible_runner
@@ -59,7 +60,7 @@ def test_docker_daemon_config(host):
 
 def test_docker_hello_world(host):
     """Test Docker functionality with hello-world container.
-    
+
     Note: This test may fail on some architectures (e.g., ARM on x86 emulation)
     due to platform incompatibilities. This is not indicative of Docker being
     improperly installed.
@@ -82,25 +83,24 @@ def test_user_in_docker_group(host):
 
 def test_docker_daemon_json_contains_insecure_registries(host):
     """Verify Docker daemon.json contains insecure-registries configuration."""
-    import json
-    
+
     daemon_config_file = host.file("/etc/docker/daemon.json")
     assert daemon_config_file.exists
-    
+
     # Parse the JSON content
     daemon_config = json.loads(daemon_config_file.content_string)
-    
+
     # Check that insecure-registries key exists
     assert "insecure-registries" in daemon_config
     assert isinstance(daemon_config["insecure-registries"], list)
-    
+
     # Verify expected insecure registries are configured
     expected_registries = [
         "localhost:5000",
         "registry.test.local:5000",
         "192.168.100.100:5000"
     ]
-    
+
     for registry in expected_registries:
         assert registry in daemon_config["insecure-registries"], \
             f"Registry {registry} not found in insecure-registries"
@@ -108,10 +108,9 @@ def test_docker_daemon_json_contains_insecure_registries(host):
 
 def test_docker_daemon_json_valid_format(host):
     """Verify Docker daemon.json is valid JSON format."""
-    import json
-    
+
     daemon_config_file = host.file("/etc/docker/daemon.json")
-    
+
     try:
         json.loads(daemon_config_file.content_string)
     except json.JSONDecodeError as e:
@@ -127,11 +126,10 @@ def test_docker_daemon_json_valid_format(host):
 
 def test_docker_storage_driver_optimized(host):
     """Verify Docker storage driver configuration (optional in DinD)."""
-    import json
-    
+
     daemon_config_file = host.file("/etc/docker/daemon.json")
     daemon_config = json.loads(daemon_config_file.content_string)
-    
+
     # In DinD, storage-driver may not be set (auto-detect for compatibility)
     # Only validate if it's explicitly configured
     if "storage-driver" in daemon_config:
@@ -142,17 +140,14 @@ def test_docker_storage_driver_optimized(host):
 def test_docker_info_storage_driver(host):
     """Verify Docker storage driver is functional (may be vfs in DinD)."""
     docker_info = host.run("docker info --format '{{.Driver}}'")
-    
+
     assert docker_info.rc == 0
     driver = docker_info.stdout.strip()
-    
+
     # In DinD, common drivers are: vfs (slow but compatible), overlay2 (fast)
     # We just verify Docker is working, don't enforce specific driver
     assert driver in ["overlay2", "vfs", "overlay"], \
         f"Docker using unexpected storage driver: {driver}"
-    assert docker_info.rc == 0
-    assert "overlay2" in docker_info.stdout.lower(), \
-        f"Docker not using overlay2: {docker_info.stdout}"
 
 
 def test_crun_available(host):
@@ -168,20 +163,19 @@ def test_crun_available(host):
 
 def test_docker_logging_configuration(host):
     """Verify Docker logging is properly configured."""
-    import json
-    
+
     daemon_config_file = host.file("/etc/docker/daemon.json")
     daemon_config = json.loads(daemon_config_file.content_string)
-    
+
     assert "log-driver" in daemon_config
     assert daemon_config["log-driver"] == "json-file"
-    
+
     assert "log-opts" in daemon_config
     log_opts = daemon_config["log-opts"]
-    
+
     assert "max-size" in log_opts
     assert "max-file" in log_opts
-    
+
     # Verify sensible defaults
     max_size = log_opts["max-size"]
     assert max_size.endswith("m") or max_size.endswith("M"), \
