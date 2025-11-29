@@ -28,6 +28,8 @@ exclude_paths:
   - playbooks/
   - plugins/
   - docs/
+  # Exclude test files
+  - tests/
 
 # Use progressive rules
 progressive: true
