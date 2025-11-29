@@ -24,9 +24,9 @@
         cache_valid_time: 3600
       when: ansible_os_family == 'Debian'
 
-    - name: Ensure ansible user exists
+    - name: Ensure test user exists for rootless podman
       ansible.builtin.user:
-        name: ansible
+        name: testuser
         state: present
         create_home: true
         shell: /bin/bash

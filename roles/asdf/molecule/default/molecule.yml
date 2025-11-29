@@ -32,8 +32,6 @@ platforms:
     cgroupns_mode: host
     privileged: true
     pre_build_image: true
-    # Fix: Connect as root to avoid PAM/sudo authentication issues
-    ansible_user: root
 
 provisioner:
   name: ansible
@@ -41,7 +39,10 @@ provisioner:
     defaults:
       callbacks_enabled: profile_tasks
       stdout_callback: yaml
+    privilege_escalation:
+      become: false
   playbooks:
+    prepare: prepare.yml
     converge: converge.yml
     verify: verify.yml
   env:
