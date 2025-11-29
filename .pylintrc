@@ -21,7 +21,8 @@ disable =
     R0902,  # too-many-instance-attributes
     W0703,  # broad-except (com AnsibleModule às vezes faz sentido)
     E0401,  # import-error (para imports ansible.* fora de runtime)
-    R0801   # duplicate-code (muito agressivo com módulos parecidos)
+    R0801,  # duplicate-code (muito agressivo com módulos parecidos)
+    E0015
 
 [REPORTS]
 output-format = colorized
