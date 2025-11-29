@@ -9,7 +9,7 @@ Ansible Collection for DevOps tools installation and configuration. This collect
 
 ### 🐳 Docker
 Complete Docker Engine installation and configuration with Docker Compose support.
-- **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 8+
+- **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
 - **All systems**: Automatic permission fixes for user Docker config files
 - **RHEL enhancements**: Time sync, SELinux support
 - **Registry authentication**: Multi-registry support with automatic permission handling
@@ -20,7 +20,7 @@ Complete Docker Engine installation and configuration with Docker Compose suppor
 Podman installation with rootless container support.
 - **Daemonless container engine**: No Docker daemon required
 - **Enhanced rootless support**: Per-user authentication with automatic permission fixes
-- **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 8+
+- **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
 - **All systems**: Automatic permission fixes for user Podman auth files
 - **RHEL enhancements**: SELinux support, XDG runtime fixes
 - **Storage conflict resolution**: Automatic detection and reset of database graph driver mismatches
@@ -79,7 +79,7 @@ ansible-galaxy collection install code3tech-devtools-*.tar.gz
 
 - Ansible >= 2.15
 - Python >= 3.9
-- Target systems: Ubuntu 22.04+, Debian 11+, RHEL 8+
+- Target systems: Ubuntu 22.04+, Debian 11+, RHEL 9+
 - Root or sudo privileges on target hosts
 
 ### Required Collections
@@ -98,7 +98,7 @@ The `requirements.yml` includes:
 
 - **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
+- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
 
 ### Enhanced Multi-Distribution Support
 

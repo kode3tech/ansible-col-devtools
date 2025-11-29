@@ -37,15 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Time synchronization** pre-tasks (critical for GPG keys)
   - **Validation post-tasks** with container tests and metrics check
   - Location: `playbooks/docker/install-docker.yml`
-- **[Docker]** RHEL 8+ support and enhanced features (v1.2.0)
-  - **Extended platform support**: Now supports RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+- **[Docker]** RHEL 9+ support and enhanced features (v1.2.0)
+  - **Extended platform support**: Now supports RHEL 9, 10, CentOS, Rocky Linux, AlmaLinux
   - **Automatic permission fixes**: Resolves Docker config file ownership issues on RHEL systems
   - **Time synchronization**: Automatic chronyd handling for GPG signature validation
   - **Registry authentication**: Enhanced multi-registry support with automatic permission handling
   - **SELinux context restoration**: Proper security contexts for Docker directories
   - **Per-user config management**: Automated `.docker/config.json` ownership fixes
-- **[Podman]** RHEL 8+ support and enhanced rootless features (v1.2.0)
-  - **Extended platform support**: Now supports RHEL 8, 9, 10, CentOS, Rocky Linux, AlmaLinux
+- **[Podman]** RHEL 9+ support and enhanced rootless features (v1.2.0)
+  - **Extended platform support**: Now supports RHEL 9, 10, CentOS, Rocky Linux, AlmaLinux
   - **Enhanced rootless authentication**: Per-user authentication with automatic permission fixes
   - **Multi-user support**: Isolated credentials for each user in XDG_RUNTIME_DIR
   - **SELinux context restoration**: Proper security contexts for container directories

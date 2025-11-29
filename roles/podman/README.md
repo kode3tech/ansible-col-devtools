@@ -18,7 +18,7 @@ Ansible role for installing and configuring Podman on Linux servers.
 ## Requirements
 
 - Ansible >= 2.15
-- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 8+
+- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 9+
 - Root or sudo privileges on target hosts
 - **Collection**: `containers.podman` >= 1.10.0 (required for registry authentication)
 
@@ -26,7 +26,7 @@ Ansible role for installing and configuring Podman on Linux servers.
 
 - **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
+- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
 
 ### RHEL-Specific Features
 

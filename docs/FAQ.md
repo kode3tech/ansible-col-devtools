@@ -24,7 +24,7 @@ The `code3tech.devtools` collection automates the installation and configuration
 
 - **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
+- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
 
 **Enhanced RHEL support** includes automatic fixes for common issues like file permissions and time synchronization.
 
@@ -151,7 +151,7 @@ GPG signature verification failed - system clock may be incorrect
 **Solution**: The Docker role **automatically handles** time synchronization:
 - ✅ Restarts chronyd on RHEL 10
 - ✅ Waits for time sync completion
-- ✅ Version-specific logic for RHEL 8-9 vs 10
+- ✅ Version-specific logic for RHEL 9 vs 10
 
 **Manual verification**:
 ```bash

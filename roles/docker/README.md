@@ -7,7 +7,7 @@
 - 🎯 **Simple & Clean**: Focused only on Docker installation and configuration
 - 🚀 **Fast Installation**: Optimized for quick deployment without unnecessary complexity
 - 🔐 **Registry Authentication**: Built-in support for private registries with automatic permission handling
-- 🏗️ **Multi-Platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 8+
+- 🏗️ **Multi-Platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
 - ✅ **Production Ready**: Battle-tested with comprehensive error handling
 
 ## 📋 Table of Contents
@@ -42,7 +42,7 @@
 ## Requirements
 
 - Ansible >= 2.15
-- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 8+
+- Target system: Ubuntu 22.04+, Debian 11+, or RHEL 9+
 - Root or sudo privileges on target hosts
 - **Collection**: `community.docker` >= 3.4.0 (required for registry authentication)
 
@@ -50,7 +50,7 @@
 
 - **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
 - **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 8, 9, 10
+- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
 
 ### RHEL-Specific Features
 

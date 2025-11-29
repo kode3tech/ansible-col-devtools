@@ -952,7 +952,7 @@ options:
 - Reduces I/O by 30-50%
 
 **Requirements:**
-- Kernel 4.19+ (Ubuntu 20.04+, RHEL 8+)
+- Kernel 4.19+ (Ubuntu 20.04+, RHEL 9+)
 - ext4 or xfs filesystem
 - `overlay` driver
 
