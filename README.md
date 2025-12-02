@@ -7,380 +7,254 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Ansible](https://img.shields.io/badge/ansible-2.15%2B-blue.svg)](https://www.ansible.com/)
 
-Ansible Collection for DevOps tools installation and configuration. This collection provides roles for managing containerization and development tools across Ubuntu, Debian, and RHEL-based systems.
+Ansible Collection for DevOps tools installation and configuration. This collection provides production-ready roles for managing containerization and development tools across Ubuntu, Debian, and RHEL-based systems.
+
+## 📋 Table of Contents
+
+- [Included Roles](#-included-roles)
+- [Quick Start](#-quick-start)
+- [Requirements](#-requirements)
+- [Example Playbooks](#-example-playbooks)
+- [Role Documentation](#-role-documentation)
+- [Development](#-development)
+- [Contributing](#-contributing)
+
+---
 
 ## 📦 Included Roles
 
 ### 🐳 Docker
 Complete Docker Engine installation and configuration with Docker Compose support.
-- **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
-- **All systems**: Automatic permission fixes for user Docker config files
-- **RHEL enhancements**: Time sync, SELinux support
-- **Registry authentication**: Multi-registry support with automatic permission handling
-- **User permissions management**: Automated Docker group configuration
-- **Comprehensive testing**: Multi-distribution Molecule tests
+- Multi-platform: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
+- Registry authentication with automatic permission handling
+- BuildKit enabled by default for faster builds
+- Optimized logging and storage configuration
 
-### 🤭 Podman
+### 🦭 Podman
 Podman installation with rootless container support.
-- **Daemonless container engine**: No Docker daemon required
-- **Enhanced rootless support**: Per-user authentication with automatic permission fixes
-- **Multi-platform support**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
-- **All systems**: Automatic permission fixes for user Podman auth files
-- **RHEL enhancements**: SELinux support, XDG runtime fixes
-- **Storage conflict resolution**: Automatic detection and reset of database graph driver mismatches
-- **Improved authentication reliability**: Automatic storage reset prevents authentication failures
-- **Complete toolchain**: Buildah and Skopeo included
-- **OCI-compliant**: Compatible with Docker commands
+- Daemonless container engine (no Docker daemon required)
+- Enhanced rootless support with per-user authentication
+- Complete toolchain: Buildah and Skopeo included
+- OCI-compliant and Docker command compatible
 
 ### 🔧 asdf
 asdf version manager with centralized group-based architecture.
-- **Centralized plugin management**: Configure once, applies to all users
-- **Group-based permissions**: Multi-user support with `asdf` group
-- **System-wide installation**: Plugins installed in `/opt/asdf`
-- **Multi-language support**: Node.js, Python, Ruby, Golang, and 300+ plugins
-- **Shell integration**: Automatic configuration for bash, zsh, fish
-- **User validation**: Ensures users exist before configuration
+- Centralized plugin management for all users
+- Group-based permissions with `asdf` group
+- 300+ plugins: Node.js, Python, Ruby, Golang, Terraform, and more
+- Shell integration for bash, zsh, and fish
 
-## 🚀 Installation
+---
 
-### Prerequisites - Virtual Environment
+## 🚀 Quick Start
 
-**⚠️ ALWAYS activate the virtual environment before running any Ansible commands:**
+### Installation from Ansible Galaxy
 
 ```bash
-# Activate virtual environment (creates if needed)
-source activate.sh
+# Install the collection
+ansible-galaxy collection install code3tech.devtools
 
-# Verify Ansible version
-ansible --version
+# Install required dependencies
+ansible-galaxy collection install community.docker containers.podman
 ```
 
-### From Source (Recommended)
+### Installation from Source
+
 ```bash
 git clone https://github.com/kode3tech/ansible-col-devtools.git
 cd ansible-col-devtools
 
-# IMPORTANT: Activate venv first!
+# Activate virtual environment
 source activate.sh
 
 # Build and install locally
 make install-collection
 ```
 
-### From Source
-```bash
-git clone https://github.com/kode3tech/ansible-col-devtools.git
-cd ansible-col-devtools
+### Your First Playbook
 
-# IMPORTANT: Activate venv first!
-source activate.sh
+Create a playbook `setup.yml`:
 
-ansible-galaxy collection build
-ansible-galaxy collection install code3tech-devtools-*.tar.gz
+```yaml
+---
+- name: Setup container environment
+  hosts: all
+  become: true
+
+  collections:
+    - code3tech.devtools
+
+  vars:
+    docker_users:
+      - myuser
+
+  roles:
+    - docker
 ```
+
+Run it:
+
+```bash
+ansible-playbook setup.yml -i your_inventory
+```
+
+---
 
 ## 📋 Requirements
 
-- Ansible >= 2.15
-- Python >= 3.9
-- Target systems: Ubuntu 22.04+, Debian 11+, RHEL 9+
-- Root or sudo privileges on target hosts
+| Requirement | Version |
+|-------------|---------|
+| Ansible | >= 2.15 |
+| Python | >= 3.9 |
+| Target OS | Ubuntu 22.04+, Debian 11+, RHEL 9+ |
 
 ### Required Collections
 
-Install collection dependencies before using the roles:
-
 ```bash
 ansible-galaxy collection install -r requirements.yml
 ```
 
-The `requirements.yml` includes:
-- `community.docker` >= 3.4.0 (for Docker registry authentication)
-- `containers.podman` >= 1.10.0 (for Podman registry authentication)
+Dependencies:
+- `community.docker` >= 3.4.0 (Docker registry authentication)
+- `containers.podman` >= 1.10.0 (Podman registry authentication)
 
 ### Supported Distributions
 
-- **Ubuntu**: 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky)
-- **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **RHEL/CentOS/Rocky/AlmaLinux**: 9, 10
+| Distribution | Versions |
+|--------------|----------|
+| **Ubuntu** | 22.04 (Jammy), 24.04 (Noble), 25.04 (Plucky) |
+| **Debian** | 11 (Bullseye), 12 (Bookworm), 13 (Trixie) |
+| **RHEL/Rocky/Alma** | 9, 10 |
 
-### Enhanced Multi-Distribution Support
-
-This collection includes **comprehensive support** for all distributions with automatic fixes for common container issues:
-
-- ✅ **Universal permission management**: Automatic fixes for Docker/Podman config files on all distributions
-- ✅ **RHEL-specific time synchronization**: Handles chronyd for GPG validation (RHEL 10)
-- ✅ **RHEL SELinux compatibility**: Proper context restoration for container directories
-- ✅ **Multi-user authentication**: Isolated credentials with proper ownership across all systems
-- ✅ **Distribution-specific optimizations**: Tailored for Ubuntu, Debian, and RHEL family
-- ✅ **Storage conflict resolution**: Automatic detection and reset of Podman database graph driver mismatches
-
-## 🎯 Quick Start
-
-> **⚠️ Remember**: Always run `source activate.sh` before executing any Ansible commands!
-
-### Using Collection in Playbook
-```yaml
 ---
-- name: Setup development environment
-  hosts: all
-  become: true
-  
-  collections:
-    - code3tech.devtools
-  
-  roles:
-    - docker
-    - podman
-```
 
-### Using Specific Role
-```yaml
----
-- name: Install Docker only
-  hosts: all
-  become: true
-  
-  collections:
-    - code3tech.devtools
-  
-  vars:
-    docker_users:
-      - devuser
-      - jenkins
-  
-  roles:
-    - docker
-```
+## 📖 Example Playbooks
 
-### Using requirements.yml
-```yaml
----
-collections:
-  - name: code3tech.devtools
-    version: ">=1.0.0"
-```
+The collection includes ready-to-use example playbooks in the `playbooks/` directory:
 
-```bash
-ansible-galaxy collection install -r requirements.yml
-```
+### Docker
 
-## 🔌 Installing Collection Dependencies
+| Playbook | Description |
+|----------|-------------|
+| [install-docker.yml](playbooks/docker/install-docker.yml) | Production Docker installation with optimizations |
 
-**IMPORTANT**: Before using the roles, install the required collections:
+### Podman
 
-```bash
-# 1. ALWAYS activate venv first!
-source activate.sh
+| Playbook | Description |
+|----------|-------------|
+| [install-podman.yml](playbooks/podman/install-podman.yml) | Production Podman installation with rootless support |
 
-# 2. Install collection dependencies (required for registry authentication)
-ansible-galaxy collection install -r requirements.yml
-```
+### asdf
 
-This will install:
-- `community.docker` >= 3.4.0 (required by docker role for registry login)
-- `containers.podman` >= 1.10.0 (required by podman role for registry login)
-
-Alternatively, install individually:
-```bash
-# After activating venv:
-ansible-galaxy collection install community.docker
-ansible-galaxy collection install containers.podman
-```
-
-## 📋 Example Playbooks
-
-The collection includes ready-to-use example playbooks organized by role in the `playbooks/` directory:
-
-### Docker Examples
-- **[playbooks/docker/install-docker.yml](playbooks/docker/install-docker.yml)** - Basic Docker installation
-- **[playbooks/docker/setup-registry-auth.yml](playbooks/docker/setup-registry-auth.yml)** - Private registry authentication
-- **[playbooks/docker/setup-insecure-registry.yml](playbooks/docker/setup-insecure-registry.yml)** - Insecure registry configuration
-
-### Podman Examples
-- **[playbooks/podman/install-podman.yml](playbooks/podman/install-podman.yml)** - Production Podman installation with performance optimizations
-
-### asdf Examples
-- **[playbooks/asdf/install-asdf-basic.yml](playbooks/asdf/install-asdf-basic.yml)** - Quick testing with lightweight plugins (direnv, jq, yq)
-- **[playbooks/asdf/install-asdf-full.yml](playbooks/asdf/install-asdf-full.yml)** - Full installation with Node.js and Python
-- **[playbooks/asdf/setup-multi-user.yml](playbooks/asdf/setup-multi-user.yml)** - Multi-user configuration
-
-📖 **Complete Guides:**
-- [Docker Complete Guide](docs/user-guides/DOCKER_COMPLETE_GUIDE.md) - Comprehensive Docker documentation
-- [Podman Complete Guide](docs/user-guides/PODMAN_COMPLETE_GUIDE.md) - Comprehensive Podman documentation
-- [asdf Complete Guide](docs/user-guides/ASDF_COMPLETE_GUIDE.md) - Comprehensive asdf documentation
-
-See [playbooks/README.md](playbooks/README.md) for complete documentation of all available examples.
+| Playbook | Description |
+|----------|-------------|
+| [install-asdf-basic.yml](playbooks/asdf/install-asdf-basic.yml) | Quick install with lightweight plugins (direnv, jq) |
+| [install-asdf-full.yml](playbooks/asdf/install-asdf-full.yml) | Full installation with Node.js and Python |
+| [setup-multi-user.yml](playbooks/asdf/setup-multi-user.yml) | Multi-user configuration |
 
 ### Running Examples
 
-**Complete workflow:**
-
 ```bash
-# 1. Activate virtual environment
-source activate.sh
-
-# 2. Install collection dependencies
+# Install dependencies
 ansible-galaxy collection install -r requirements.yml
 
-# 3. Run playbook
-ansible-playbook playbooks/docker/install-docker.yml -i inventory
+# Run a playbook
+ansible-playbook playbooks/docker/install-docker.yml -i your_inventory
 ```
 
-## 🛠️ Development Setup
+See [playbooks/README.md](playbooks/README.md) for complete documentation.
 
-### Prerequisites
-- Python 3.11+
-- asdf (for version management)
-- Git
+---
 
-### Setup Checklist
+## 📚 Role Documentation
 
-✅ **Step-by-step setup:**
+| Role | README | Complete Guide |
+|------|--------|----------------|
+| **Docker** | [roles/docker/README.md](roles/docker/README.md) | [Docker Complete Guide](docs/user-guides/DOCKER_COMPLETE_GUIDE.md) |
+| **Podman** | [roles/podman/README.md](roles/podman/README.md) | [Podman Complete Guide](docs/user-guides/PODMAN_COMPLETE_GUIDE.md) |
+| **asdf** | [roles/asdf/README.md](roles/asdf/README.md) | [asdf Complete Guide](docs/user-guides/ASDF_COMPLETE_GUIDE.md) |
 
-```bash
-# 1. Clone repository
-git clone https://github.com/kode3tech/ansible-col-devtools.git
-cd ansible-col-devtools
+### Additional Resources
 
-# 2. Activate virtual environment (creates if needed)
-source activate.sh
+- [Registry Authentication](docs/user-guides/REGISTRY_AUTHENTICATION.md) - Configure private registry access
+- [Variables Reference](docs/reference/VARIABLES.md) - All role variables
+- [FAQ](docs/FAQ.md) - Frequently asked questions
 
-# 3. Install collection dependencies
-ansible-galaxy collection install -r requirements.yml
+---
 
-# 4. Verify installation
-ansible --version
-ansible-galaxy collection list
+## 🛠️ Development
 
-# 5. Run tests (optional)
-cd roles/docker
-molecule test
-```
+### Setup Environment
 
-### Setup Development Environment
 ```bash
 # Clone the repository
 git clone https://github.com/kode3tech/ansible-col-devtools.git
 cd ansible-col-devtools
 
-# Install Python with asdf (if using asdf)
-asdf install
-
-# Create and activate virtual environment
+# Activate virtual environment (creates if needed)
 source activate.sh
-# or manually:
-python -m venv .venv
-source .venv/bin/activate
 
 # Install dependencies
-pip install --upgrade pip
-pip install -r requirements.txt
+ansible-galaxy collection install -r requirements.yml
 
 # Verify installation
 ansible --version
 molecule --version
-ansible-lint --version
 ```
 
-### Installed Development Tools
-- **Ansible Core**: Latest stable version
-- **Molecule**: Testing framework for roles
-- **Ansible Lint**: Code quality and best practices checker
-- **pytest**: Python testing framework
-- **yamllint**: YAML syntax validator
+### Testing
 
-## 🧪 Testing
-
-Each role includes comprehensive Molecule tests with support for multiple platforms.
-
-### Test Individual Role
 ```bash
-# Test Docker role
+# Test a specific role
 cd roles/docker
 molecule test
 
-# Test Podman role
-cd roles/podman
-molecule test
+# Test all roles
+make test
+
+# Run linters
+make lint
 ```
 
-### Test All Roles
+### Makefile Commands
+
 ```bash
-make test-all
+make help              # Show available commands
+make install           # Install dependencies
+make lint              # Run yamllint and ansible-lint
+make test              # Test all roles with Molecule
+make build             # Build collection tarball
+make install-collection # Install collection locally
+make clean             # Clean build artifacts
 ```
 
-### Lint All Files
-```bash
-# Ansible lint
-ansible-lint
-
-# YAML lint
-yamllint .
-```
-
-## 📚 Role Documentation
-
-Detailed documentation for each role is available in their respective README files:
-
-- [Docker Role Documentation](roles/docker/README.md)
-- [Podman Role Documentation](roles/podman/README.md)
+---
 
 ## 🏗️ Collection Structure
 
 ```
 code3tech.devtools/
-├── galaxy.yml                      # Collection metadata
-├── README.md                       # This file
-├── CHANGELOG.md                    # Version history
-├── META.md                         # Additional metadata
+├── galaxy.yml                    # Collection metadata
+├── README.md                     # This file
+├── CHANGELOG.md                  # Version history
+├── requirements.yml              # Collection dependencies
 ├── roles/
-│   ├── docker/                     # Docker role
-│   │   ├── defaults/
-│   │   ├── tasks/
-│   │   ├── handlers/
-│   │   ├── templates/
-│   │   ├── molecule/
-│   │   └── README.md
-│   └── podman/                     # Podman role
-│       ├── defaults/
-│       ├── tasks/
-│       ├── templates/
-│       ├── molecule/
-│       └── README.md
+│   ├── docker/                   # Docker role
+│   ├── podman/                   # Podman role
+│   └── asdf/                     # asdf role
+├── playbooks/                    # Example playbooks
+│   ├── docker/
+│   ├── podman/
+│   └── asdf/
 ├── plugins/
-│   ├── modules/                    # Custom modules (future)
-│   └── filter/                     # Custom filters (future)
-├── playbooks/                      # Example playbooks
-│   ├── setup-dev-environment.yml
-│   ├── install-docker.yml
-│   └── install-podman.yml
-└── docs/                           # Additional documentation
+│   └── shared_tasks/             # Reusable tasks
+└── docs/                         # Documentation
+    ├── user-guides/
+    ├── reference/
+    └── FAQ.md
 ```
 
-## 🔄 Version Compatibility
-
-| Collection Version | Ansible Version | Python Version |
-|-------------------|-----------------|----------------|
-| 1.x               | >= 2.15         | >= 3.9         |
-
-## 🔨 Makefile Commands
-
-The project includes a Makefile with useful commands for CI/CD:
-
-```bash
-make help                 # Show all available commands
-make install              # Install dependencies
-make version              # Show installed versions
-make lint                 # Run all linters (yamllint + ansible-lint)
-make lint-yaml            # Run yamllint only
-make lint-ansible         # Run ansible-lint only
-make test                 # Test all roles with Molecule
-make build                # Build collection tarball
-make install-collection   # Install collection locally
-make publish              # Publish to Galaxy (requires GALAXY_API_KEY)
-make clean                # Clean build artifacts
-```
+---
 
 ## 🤝 Contributing
 
@@ -392,43 +266,38 @@ Contributions are welcome! Please:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-### Contribution Guidelines
-- Follow existing code style
+### Guidelines
+
+- Follow existing code style and use FQCN for all modules
 - Add tests for new features
 - Update documentation
 - Ensure all tests pass (`make test`)
 - Ensure linting passes (`make lint`)
-- Use conventional commits format
+- Use [conventional commits](https://www.conventionalcommits.org/) format
 
-## � License
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+---
+
+## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 👥 Authors
 
 **Code3Tech DevOps Team**
-- GitHub: [@code3tech](https://github.com/code3tech)
+- GitHub: [@kode3tech](https://github.com/kode3tech)
 - Email: suporte@code3.tech
 
 ## 🐛 Issues & Support
 
 - **Bug Reports**: [GitHub Issues](https://github.com/kode3tech/ansible-col-devtools/issues)
 - **Feature Requests**: [GitHub Issues](https://github.com/kode3tech/ansible-col-devtools/issues)
-- **Documentation**: [GitHub Wiki](https://github.com/kode3tech/ansible-col-devtools/wiki)
 
-## � Links
+## 🔗 Links
 
-- [Ansible Galaxy](https://galaxy.ansible.com/code3tech/devtools)
 - [GitHub Repository](https://github.com/kode3tech/ansible-col-devtools)
-- [Documentation](https://github.com/kode3tech/ansible-col-devtools/blob/main/README.md)
 - [Changelog](CHANGELOG.md)
-
-## ⭐ Acknowledgments
-
-- Ansible Community for the amazing automation platform
-- Docker Team for containerization technology
-- Podman Team for daemonless container engine
-- All contributors to this project
 
 ---
 
