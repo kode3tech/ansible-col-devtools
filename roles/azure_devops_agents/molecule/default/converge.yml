@@ -217,13 +217,16 @@
           - "Agents to keep: {{ _agents_to_keep | map(attribute='name') | list }}"
           - "Agents to remove: {{ _agents_to_remove | map(attribute='name') | list }}"
 
-    - name: Test agent removal process
-      ansible.builtin.include_tasks:
-        file: "{{ playbook_dir }}/../../tasks/remove-agent.yml"
+    # Simulate agent removal (without calling real Azure DevOps API)
+    # In real scenarios, remove-agent.yml would unregister from Azure DevOps
+    # For Molecule testing, we just remove the directory to test the flow
+    - name: Simulate agent removal (delete directory only - no API call)
+      ansible.builtin.file:
+        path: "/opt/azure-devops-agents/{{ item.name }}"
+        state: absent
       loop: "{{ _agents_to_remove }}"
       loop_control:
-        loop_var: agent
-        label: "{{ agent.name }}"
+        label: "{{ item.name }}"
       when: _agents_to_remove | length > 0
 
     - name: Display removal test summary
@@ -233,3 +236,4 @@
           - "Agents removed: {{ _agents_to_remove | map(attribute='name') | list }}"
           - "Agents kept: {{ _agents_to_keep | map(attribute='name') | list }}"
           - "Note: Actual agent unregistration requires valid Azure DevOps credentials"
+          - "      (Molecule test simulates removal by deleting directory only)"
