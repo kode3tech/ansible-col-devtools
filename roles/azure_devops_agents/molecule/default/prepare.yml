@@ -1,11 +1,23 @@
 ---
 # Prepare playbook for azure_devops_agents role testing
 # Sets up prerequisites before running the role
+# Note: Molecule docker driver runs as root by default,
+# so we don't need become for most operations
+
+- name: Prepare all hosts
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for connection
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+    - name: Gather facts
+      ansible.builtin.setup:
 
 - name: Prepare test environment
   hosts: all
   gather_facts: true
-  become: true
 
   tasks:
     - name: Update package cache (Debian/Ubuntu)

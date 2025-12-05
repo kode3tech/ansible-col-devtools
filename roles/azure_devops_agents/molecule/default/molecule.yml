@@ -40,21 +40,13 @@ provisioner:
       callbacks_enabled: profile_tasks
       stdout_callback: yaml
     privilege_escalation:
-      become: true
+      become: false
   playbooks:
     prepare: prepare.yml
     converge: converge.yml
     verify: verify.yml
   env:
     ANSIBLE_ROLES_PATH: ../../../
-  inventory:
-    host_vars:
-      ubuntu2204:
-        ansible_python_interpreter: /usr/bin/python3
-      debian12:
-        ansible_python_interpreter: /usr/bin/python3
-      rockylinux9:
-        ansible_python_interpreter: /usr/bin/python3
 
 verifier:
   name: ansible
