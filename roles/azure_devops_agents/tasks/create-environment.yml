@@ -1,0 +1,73 @@
+---
+# Create Environment in Azure DevOps if it doesn't exist
+# This task is idempotent - it will not recreate if already exists
+
+- name: Set authorization header
+  ansible.builtin.set_fact:
+    _azdo_auth_header: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Check if Environment already exists
+  ansible.builtin.uri:
+    url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments?name={{ agent.environment | urlencode }}&api-version=7.1"
+    method: GET
+    headers:
+      Authorization: "{{ _azdo_auth_header }}"
+      Content-Type: "application/json"
+    status_code: [200]
+    return_content: true
+  register: _env_check
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Extract existing Environment info
+  ansible.builtin.set_fact:
+    _env_exists: "{{ _env_check.json.count | default(0) | int > 0 }}"
+    _env_id: "{{ _env_check.json.value[0].id | default('') if _env_check.json.count | default(0) | int > 0 else '' }}"
+  tags: azure_devops_agents
+
+- name: Create Environment
+  ansible.builtin.uri:
+    url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments?api-version=7.1"
+    method: POST
+    headers:
+      Authorization: "{{ _azdo_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ agent.environment }}"
+      description: "Created by Ansible azure_devops_agents role"
+    status_code: [200, 201]
+    return_content: true
+  register: _env_create
+  when: not _env_exists
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Set environment ID from creation or existing
+  ansible.builtin.set_fact:
+    _env_id: "{{ _env_create.json.id if _env_create is changed else _env_id }}"
+  tags: azure_devops_agents
+
+# =============================================================================
+# Configure Open Access (allow all pipelines)
+# =============================================================================
+- name: Configure open access for environment
+  ansible.builtin.uri:
+    url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/pipelines/pipelinepermissions/environment/{{ _env_id }}?api-version=7.1-preview.1"
+    method: PATCH
+    headers:
+      Authorization: "{{ _azdo_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      allPipelines:
+        authorized: true
+    status_code: [200]
+    return_content: true
+  when:
+    - agent.open_access | default(false) | bool
+    - _env_id | length > 0
+  no_log: true
+  tags: azure_devops_agents

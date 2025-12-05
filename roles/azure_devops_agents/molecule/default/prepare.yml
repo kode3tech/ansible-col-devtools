@@ -1,0 +1,56 @@
+---
+# Prepare playbook for azure_devops_agents role testing
+# Sets up prerequisites before running the role
+
+- name: Prepare test environment
+  hosts: all
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Update package cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian'
+
+    # Handle curl-minimal vs curl conflict on RedHat-based systems
+    - name: Install curl with allowerasing (RedHat - replaces curl-minimal)
+      ansible.builtin.dnf:
+        name: curl
+        state: present
+        allowerasing: true
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+
+    - name: Install basic tools (Debian)
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - tar
+          - unzip
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Install basic tools (RedHat - excluding curl already installed)
+      ansible.builtin.dnf:
+        name:
+          - wget
+          - tar
+          - unzip
+        state: present
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+
+    - name: Create mock Azure DevOps environment variables
+      ansible.builtin.copy:
+        content: |
+          # Mock Azure DevOps credentials for testing
+          # In real scenarios, use Ansible Vault
+          AZURE_DEVOPS_URL=https://dev.azure.com/test-org
+          AZURE_DEVOPS_PAT=mock-pat-token-for-testing
+        dest: /etc/profile.d/azure-devops-test.sh
+        mode: '0644'
+
+    - name: Display preparation complete message
+      ansible.builtin.debug:
+        msg: "Test environment prepared successfully"

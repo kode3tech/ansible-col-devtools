@@ -1,0 +1,231 @@
+---
+# Converge playbook for azure_devops_agents role testing
+# Tests the role installation without actual Azure DevOps registration
+
+- name: Converge - Test azure_devops_agents role (Installation)
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    # Test configuration - uses mock values
+    # Real registration would require valid Azure DevOps credentials
+    azure_devops_agents_url: "https://dev.azure.com/test-organization"
+    azure_devops_agents_pat: "mock-pat-token-for-molecule-testing"
+
+    # Test with multiple agent types
+    azure_devops_agents_list:
+      - name: "test-agent-01"
+        type: "self-hosted"
+        pool: "Default"
+        replace: true
+
+      - name: "test-agent-02"
+        type: "deployment-group"
+        project: "TestProject"
+        deployment_group: "TestServers"
+        tags:
+          - "linux"
+          - "test"
+
+      - name: "test-agent-03"
+        type: "environment"
+        project: "TestProject"
+        environment: "test-env"
+        tags:
+          - "api"
+
+      # Agent to be removed in the next play
+      - name: "test-agent-to-remove"
+        type: "self-hosted"
+        pool: "Legacy"
+
+    # Disable service installation for testing (no real agent configured)
+    azure_devops_agents_run_as_service: false
+
+  tasks:
+    # Test prerequisites installation only (skip actual agent configuration)
+    - name: Set OS family variable for consistency
+      ansible.builtin.set_fact:
+        azure_devops_agents_os_family: >-
+          {{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}
+
+    - name: Include OS-specific variables
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../../vars/{{ azure_devops_agents_os_family }}.yml"
+
+    - name: Include OS-specific setup tasks
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../../tasks/setup-{{ azure_devops_agents_os_family }}.yml"
+
+    - name: Test user and group creation
+      block:
+        - name: Ensure agent group exists
+          ansible.builtin.group:
+            name: "azagent"
+            state: present
+            system: true
+
+        - name: Ensure agent user exists
+          ansible.builtin.user:
+            name: "azagent"
+            group: "azagent"
+            home: "/opt/azure-devops-agents"
+            shell: /bin/bash
+            system: true
+            create_home: true
+            state: present
+
+    - name: Create base directory for agents
+      ansible.builtin.file:
+        path: "/opt/azure-devops-agents"
+        state: directory
+        owner: "azagent"
+        group: "azagent"
+        mode: '0755'
+
+    - name: Create agent directories (simulating multi-agent)
+      ansible.builtin.file:
+        path: "/opt/azure-devops-agents/{{ item.name }}"
+        state: directory
+        owner: "azagent"
+        group: "azagent"
+        mode: '0755'
+      loop: "{{ azure_devops_agents_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Create mock config.sh for removal testing
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          # Mock config.sh for testing agent removal
+          echo "Mock config.sh called with args: $@"
+          exit 0
+        dest: "/opt/azure-devops-agents/{{ item.name }}/config.sh"
+        owner: "azagent"
+        group: "azagent"
+        mode: '0755'
+      loop: "{{ azure_devops_agents_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Create mock svc.sh for removal testing
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          # Mock svc.sh for testing service management
+          echo "Mock svc.sh called with args: $@"
+          exit 0
+        dest: "/opt/azure-devops-agents/{{ item.name }}/svc.sh"
+        owner: "azagent"
+        group: "azagent"
+        mode: '0755'
+      loop: "{{ azure_devops_agents_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Create .agent marker file (simulates configured agent)
+      ansible.builtin.copy:
+        content: |
+          {
+            "agentId": 12345,
+            "agentName": "{{ item.name }}",
+            "poolId": 1
+          }
+        dest: "/opt/azure-devops-agents/{{ item.name }}/.agent"
+        owner: "azagent"
+        group: "azagent"
+        mode: '0644'
+      loop: "{{ azure_devops_agents_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Display installation test summary
+      ansible.builtin.debug:
+        msg:
+          - "Phase 1: Installation test completed"
+          - "Tested agent directories: {{ azure_devops_agents_list | map(attribute='name') | list }}"
+
+# =============================================================================
+# Phase 2: Test agent removal functionality
+# =============================================================================
+- name: Converge - Test azure_devops_agents role (Removal)
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    azure_devops_agents_url: "https://dev.azure.com/test-organization"
+    azure_devops_agents_pat: "mock-pat-token-for-molecule-testing"
+    azure_devops_agents_run_as_service: false
+    azure_devops_agents_delete_on_remove: true
+    azure_devops_agents_base_path: "/opt/azure-devops-agents"
+    azure_devops_agents_user: "azagent"
+    azure_devops_agents_group: "azagent"
+
+    # Test per-agent state removal
+    azure_devops_agents_list:
+      - name: "test-agent-01"
+        type: "self-hosted"
+        pool: "Default"
+        state: present  # Keep this agent
+
+      - name: "test-agent-02"
+        type: "deployment-group"
+        project: "TestProject"
+        deployment_group: "TestServers"
+        state: present  # Keep this agent
+
+      - name: "test-agent-03"
+        type: "environment"
+        project: "TestProject"
+        environment: "test-env"
+        state: present  # Keep this agent
+
+      - name: "test-agent-to-remove"
+        type: "self-hosted"
+        pool: "Legacy"
+        state: absent  # REMOVE this agent
+
+  tasks:
+    - name: Set OS family variable for consistency
+      ansible.builtin.set_fact:
+        azure_devops_agents_os_family: >-
+          {{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}
+
+    - name: Include OS-specific variables
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../../vars/{{ azure_devops_agents_os_family }}.yml"
+
+    # Simulate removal by including the remove-agent tasks
+    - name: "Filter agents to remove (state: absent)"
+      ansible.builtin.set_fact:
+        _agents_to_remove: >-
+          {{ azure_devops_agents_list | selectattr('state', 'defined') | selectattr('state', 'equalto', 'absent') | list }}
+        _agents_to_keep: >-
+          {{ azure_devops_agents_list | rejectattr('state', 'defined') | list +
+             azure_devops_agents_list | selectattr('state', 'defined') | selectattr('state', 'equalto', 'present') | list }}
+
+    - name: Display agents categorization
+      ansible.builtin.debug:
+        msg:
+          - "Agents to keep: {{ _agents_to_keep | map(attribute='name') | list }}"
+          - "Agents to remove: {{ _agents_to_remove | map(attribute='name') | list }}"
+
+    - name: Test agent removal process
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/../../tasks/remove-agent.yml"
+      loop: "{{ _agents_to_remove }}"
+      loop_control:
+        loop_var: agent
+        label: "{{ agent.name }}"
+      when: _agents_to_remove | length > 0
+
+    - name: Display removal test summary
+      ansible.builtin.debug:
+        msg:
+          - "Phase 2: Removal test completed"
+          - "Agents removed: {{ _agents_to_remove | map(attribute='name') | list }}"
+          - "Agents kept: {{ _agents_to_keep | map(attribute='name') | list }}"
+          - "Note: Actual agent unregistration requires valid Azure DevOps credentials"

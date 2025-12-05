@@ -1,0 +1,40 @@
+---
+# RedHat/CentOS/Rocky/AlmaLinux specific setup tasks for azure_devops_agents role
+
+# Handle curl-minimal vs curl conflict (common on Rocky Linux minimal images)
+- name: Clean DNF cache to avoid corrupted package issues
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: false
+  tags: azure_devops_agents
+
+- name: Install curl with allowerasing (replaces curl-minimal and libcurl-minimal)
+  ansible.builtin.dnf:
+    name: curl
+    state: present
+    allowerasing: true
+  tags: azure_devops_agents
+
+- name: Install prerequisite packages
+  ansible.builtin.dnf:
+    name: "{{ azure_devops_agents_prerequisites }}"
+    state: present
+  tags: azure_devops_agents
+
+- name: Install .NET runtime dependencies
+  ansible.builtin.dnf:
+    name: "{{ azure_devops_agents_dotnet_deps }}"
+    state: present
+  failed_when: false
+  tags: azure_devops_agents
+
+- name: Ensure CA certificates are up to date
+  ansible.builtin.dnf:
+    name: "{{ azure_devops_agents_ca_certificates_package }}"
+    state: present
+  tags: azure_devops_agents
+
+- name: Update CA trust
+  ansible.builtin.command: update-ca-trust
+  changed_when: false
+  tags: azure_devops_agents

@@ -1,0 +1,41 @@
+---
+# Handlers for azure_devops_agents role
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  listen: reload systemd daemon
+
+- name: Restart all agents
+  ansible.builtin.shell: |
+    cd "{{ azure_devops_agents_base_path }}/{{ item.name }}"
+    sudo ./svc.sh stop || true
+    sudo ./svc.sh start
+  args:
+    executable: /bin/bash
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  listen: restart azure devops agents
+
+- name: Stop all agents
+  ansible.builtin.shell: |
+    cd "{{ azure_devops_agents_base_path }}/{{ item.name }}"
+    sudo ./svc.sh stop || true
+  args:
+    executable: /bin/bash
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  listen: stop azure devops agents
+
+- name: Start all agents
+  ansible.builtin.shell: |
+    cd "{{ azure_devops_agents_base_path }}/{{ item.name }}"
+    sudo ./svc.sh start
+  args:
+    executable: /bin/bash
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  listen: start azure devops agents

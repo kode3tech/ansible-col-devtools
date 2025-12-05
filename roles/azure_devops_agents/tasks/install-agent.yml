@@ -1,0 +1,111 @@
+---
+# Install Azure DevOps agent tasks
+
+- name: Set agent package filename
+  ansible.builtin.set_fact:
+    azure_devops_agents_package_name: "vsts-agent-linux-{{ azure_devops_agents_final_arch }}-{{ azure_devops_agents_resolved_version }}.tar.gz"
+  tags: azure_devops_agents
+
+- name: Set agent download URL
+  ansible.builtin.set_fact:
+    azure_devops_agents_package_url: >-
+      {{ azure_devops_agents_download_url }}/agent/{{ azure_devops_agents_resolved_version }}/{{ azure_devops_agents_package_name }}
+  tags: azure_devops_agents
+
+- name: Display download URL for debugging
+  ansible.builtin.debug:
+    msg: "Agent download URL: {{ azure_devops_agents_package_url }}"
+  tags: azure_devops_agents
+
+- name: Create downloads directory
+  ansible.builtin.file:
+    path: "{{ azure_devops_agents_base_path }}/.downloads"
+    state: directory
+    owner: "{{ azure_devops_agents_user }}"
+    group: "{{ azure_devops_agents_group }}"
+    mode: '0755'
+  tags: azure_devops_agents
+
+- name: Check if agent package already downloaded
+  ansible.builtin.stat:
+    path: "{{ azure_devops_agents_base_path }}/.downloads/{{ azure_devops_agents_package_name }}"
+  register: azure_devops_agents_package_stat
+  tags: azure_devops_agents
+
+- name: Download Azure DevOps agent package
+  ansible.builtin.get_url:
+    url: "{{ azure_devops_agents_package_url }}"
+    dest: "{{ azure_devops_agents_base_path }}/.downloads/{{ azure_devops_agents_package_name }}"
+    owner: "{{ azure_devops_agents_user }}"
+    group: "{{ azure_devops_agents_group }}"
+    mode: '0644'
+    timeout: 300
+  when: not azure_devops_agents_package_stat.stat.exists
+  register: azure_devops_agents_download
+  until: azure_devops_agents_download is succeeded
+  retries: 3
+  delay: 10
+  tags: azure_devops_agents
+
+- name: Create agent directories for each agent
+  ansible.builtin.file:
+    path: "{{ azure_devops_agents_base_path }}/{{ item.name }}"
+    state: directory
+    owner: "{{ azure_devops_agents_user }}"
+    group: "{{ azure_devops_agents_group }}"
+    mode: '0755'
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: azure_devops_agents
+
+- name: Check if agent already extracted
+  ansible.builtin.stat:
+    path: "{{ azure_devops_agents_base_path }}/{{ item.name }}/config.sh"
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: azure_devops_agents_extracted
+  tags: azure_devops_agents
+
+- name: Extract agent package to each agent directory
+  ansible.builtin.unarchive:
+    src: "{{ azure_devops_agents_base_path }}/.downloads/{{ azure_devops_agents_package_name }}"
+    dest: "{{ azure_devops_agents_base_path }}/{{ item.item.name }}"
+    owner: "{{ azure_devops_agents_user }}"
+    group: "{{ azure_devops_agents_group }}"
+    remote_src: true
+    creates: "{{ azure_devops_agents_base_path }}/{{ item.item.name }}/config.sh"
+  loop: "{{ azure_devops_agents_extracted.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: not item.stat.exists
+  tags: azure_devops_agents
+
+- name: Set correct ownership for agent directories
+  ansible.builtin.file:
+    path: "{{ azure_devops_agents_base_path }}/{{ item.name }}"
+    state: directory
+    owner: "{{ azure_devops_agents_user }}"
+    group: "{{ azure_devops_agents_group }}"
+    recurse: true
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: azure_devops_agents
+
+- name: Install agent dependencies using installdependencies.sh
+  ansible.builtin.shell: |
+    cd "{{ azure_devops_agents_base_path }}/{{ item.name }}"
+    if [ -f "./bin/installdependencies.sh" ]; then
+      ./bin/installdependencies.sh
+    fi
+  args:
+    executable: /bin/bash
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: false
+  failed_when: false
+  become: true
+  tags: azure_devops_agents

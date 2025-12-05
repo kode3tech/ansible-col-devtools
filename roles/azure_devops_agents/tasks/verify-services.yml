@@ -1,0 +1,55 @@
+---
+# Verify and ensure all agent services are enabled and running
+# Final verification step - minimal output, maximum reliability
+
+- name: Find all agent directories
+  ansible.builtin.find:
+    paths: "{{ azure_devops_agents_base_path }}"
+    patterns: "*"
+    file_type: directory
+  register: _agent_directories
+  tags: azure_devops_agents
+
+- name: Check for .service marker files
+  ansible.builtin.stat:
+    path: "{{ item.path }}/.service"
+  loop: "{{ _agent_directories.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: _service_markers
+  tags: azure_devops_agents
+
+- name: Read service names from marker files
+  ansible.builtin.slurp:
+    src: "{{ item.stat.path }}"
+  loop: "{{ _service_markers.results | selectattr('stat.exists', 'equalto', true) | list }}"
+  loop_control:
+    label: "{{ item.item.path | basename }}"
+  register: _service_contents
+  tags: azure_devops_agents
+
+- name: Build list of installed service names
+  ansible.builtin.set_fact:
+    _installed_agent_services: >-
+      {{ _service_contents.results | map(attribute='content') | map('b64decode') | map('trim') | list }}
+  tags: azure_devops_agents
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  tags: azure_devops_agents
+
+- name: Ensure agent services are enabled and running
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop: "{{ _installed_agent_services }}"
+  loop_control:
+    label: "{{ item }}"
+  tags: azure_devops_agents
+
+- name: Display verification summary
+  ansible.builtin.debug:
+    msg: "✅ {{ _installed_agent_services | length }} agent(s) verified: enabled and running"
+  tags: azure_devops_agents

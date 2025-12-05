@@ -23,6 +23,15 @@ Ansible Collection for DevOps tools installation and configuration. This collect
 
 ## 📦 Included Roles
 
+### ☁️ Azure DevOps Agents ⭐ NEW
+Deploy and manage Azure DevOps self-hosted agents on Linux servers.
+- Multi-agent support: N agents per host with isolated directories
+- Three agent types: Self-hosted, Deployment Group, Environment
+- Auto-create resources: Automatically create Deployment Groups and Environments
+- Open access: Configure pipeline permissions for environments
+- Service verification: Ensures all services are enabled and running
+- Agent removal: Clean unregistration and removal
+
 ### 🐳 Docker
 Complete Docker Engine installation and configuration with Docker Compose support.
 - Multi-platform: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
@@ -132,6 +141,14 @@ Dependencies:
 
 The collection includes ready-to-use example playbooks in the `playbooks/` directory:
 
+### Azure DevOps Agents
+
+| Playbook | Description |
+|----------|-------------|
+| [install-production.yml](playbooks/azure_devops_agents/install-production.yml) | ⭐ Production deployment with validation |
+| [install-single-agent.yml](playbooks/azure_devops_agents/install-single-agent.yml) | Basic single agent installation |
+| [install-multi-agent.yml](playbooks/azure_devops_agents/install-multi-agent.yml) | Multiple agents per host |
+
 ### Docker
 
 | Playbook | Description |
@@ -170,6 +187,7 @@ See [playbooks/README.md](playbooks/README.md) for complete documentation.
 
 | Role | README | Complete Guide |
 |------|--------|----------------|
+| **Azure DevOps Agents** | [roles/azure_devops_agents/README.md](roles/azure_devops_agents/README.md) | [Azure DevOps Agents Guide](docs/user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md) |
 | **Docker** | [roles/docker/README.md](roles/docker/README.md) | [Docker Complete Guide](docs/user-guides/DOCKER_COMPLETE_GUIDE.md) |
 | **Podman** | [roles/podman/README.md](roles/podman/README.md) | [Podman Complete Guide](docs/user-guides/PODMAN_COMPLETE_GUIDE.md) |
 | **asdf** | [roles/asdf/README.md](roles/asdf/README.md) | [asdf Complete Guide](docs/user-guides/ASDF_COMPLETE_GUIDE.md) |
@@ -239,10 +257,12 @@ code3tech.devtools/
 ├── CHANGELOG.md                  # Version history
 ├── requirements.yml              # Collection dependencies
 ├── roles/
+│   ├── azure_devops_agents/      # Azure DevOps Agents role
 │   ├── docker/                   # Docker role
 │   ├── podman/                   # Podman role
 │   └── asdf/                     # asdf role
 ├── playbooks/                    # Example playbooks
+│   ├── azure_devops_agents/
 │   ├── docker/
 │   ├── podman/
 │   └── asdf/

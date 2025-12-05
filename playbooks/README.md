@@ -8,6 +8,11 @@ Playbooks are organized by role:
 
 ```
 playbooks/
+├── azure_devops_agents/              # Azure DevOps agents examples
+│   ├── install-production.yml       # Production deployment (recommended)
+│   ├── install-single-agent.yml     # Basic single agent
+│   ├── install-multi-agent.yml      # Multiple agents per host
+│   └── install-deployment-group.yml # Deployment group agents
 ├── docker/                           # Docker role examples
 │   └── install-docker.yml           # Production Docker installation
 ├── podman/                           # Podman role examples
@@ -26,6 +31,35 @@ playbooks/
 - **Role-specific playbooks** → `playbooks/{role}/` - Examples using a single role
 
 ## 📚 Available Examples
+
+### ☁️ Azure DevOps Agents Examples (`azure_devops_agents/`)
+
+#### [install-production.yml](azure_devops_agents/install-production.yml) ⭐ **RECOMMENDED**
+Production-ready Azure DevOps agent deployment with time synchronization, vault integration, and service verification.
+
+**Features:**
+- Time synchronization verification (critical for OAuth)
+- Vault-based credential management
+- Azure DevOps connectivity validation
+- Service verification post-deployment
+- Support for all agent types (self-hosted, deployment-group, environment)
+
+**Usage:**
+```bash
+ansible-playbook playbooks/azure_devops_agents/install-production.yml \
+  -i inventory --ask-vault-pass -e "azure_org=myorganization"
+```
+
+#### [install-single-agent.yml](azure_devops_agents/install-single-agent.yml)
+Basic installation of a single self-hosted agent.
+
+#### [install-multi-agent.yml](azure_devops_agents/install-multi-agent.yml)
+Deploy multiple agents (different types) on the same host.
+
+#### [install-deployment-group.yml](azure_devops_agents/install-deployment-group.yml)
+Configure deployment group agents for Classic Release pipelines.
+
+See [Azure DevOps Agents README](azure_devops_agents/README.md) for details.
 
 ### 🐳 Docker Examples (`docker/`)
 
@@ -164,7 +198,8 @@ ansible-playbook playbooks/docker/install-docker.yml -i inventory -v
 
 1. **Start here:** [docker/install-docker.yml](docker/install-docker.yml) - Production Docker setup
 2. **Then try:** [podman/install-podman.yml](podman/install-podman.yml) - Production Podman setup
-3. **For development tools:** [asdf/install-asdf.yml](asdf/install-asdf.yml) - Version manager setup
+3. **For CI/CD agents:** [azure_devops_agents/install-production.yml](azure_devops_agents/install-production.yml) - Azure DevOps agents
+4. **For development tools:** [asdf/install-asdf.yml](asdf/install-asdf.yml) - Version manager setup
 
 ## 📝 Creating Your Own Playbooks
 
@@ -179,9 +214,11 @@ When creating new example playbooks:
 
 ## 🔗 Related Documentation
 
+- [Azure DevOps Agents Complete Guide](../docs/user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md)
 - [Docker Complete Guide](../docs/user-guides/DOCKER_COMPLETE_GUIDE.md)
 - [Podman Complete Guide](../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)
 - [asdf Complete Guide](../docs/user-guides/ASDF_COMPLETE_GUIDE.md)
+- [Azure DevOps Agents Role README](../roles/azure_devops_agents/README.md)
 - [Docker Role README](../roles/docker/README.md)
 - [Podman Role README](../roles/podman/README.md)
 - [asdf Role README](../roles/asdf/README.md)

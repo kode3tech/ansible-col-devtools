@@ -1,0 +1,43 @@
+---
+# Debian/Ubuntu specific setup tasks for azure_devops_agents role
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  tags: azure_devops_agents
+
+- name: Install prerequisite packages
+  ansible.builtin.apt:
+    name: "{{ azure_devops_agents_prerequisites }}"
+    state: present
+  failed_when: false
+  register: azure_devops_agents_prereq_result
+  tags: azure_devops_agents
+
+- name: Install fallback packages for older distributions
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ azure_devops_agents_prerequisites_fallback }}"
+  failed_when: false
+  when: azure_devops_agents_prereq_result is failed
+  tags: azure_devops_agents
+
+- name: Install .NET runtime dependencies
+  ansible.builtin.apt:
+    name: "{{ azure_devops_agents_dotnet_deps }}"
+    state: present
+  failed_when: false
+  tags: azure_devops_agents
+
+- name: Ensure CA certificates are up to date
+  ansible.builtin.apt:
+    name: "{{ azure_devops_agents_ca_certificates_package }}"
+    state: present
+  tags: azure_devops_agents
+
+- name: Update CA certificates
+  ansible.builtin.command: update-ca-certificates
+  changed_when: false
+  tags: azure_devops_agents

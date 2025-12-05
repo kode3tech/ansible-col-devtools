@@ -1,0 +1,185 @@
+---
+# Verify playbook for azure_devops_agents role testing
+# Validates the role installation, configuration, and removal
+
+- name: Verify azure_devops_agents role
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    # Agents that should exist after converge
+    agents_to_verify:
+      - name: "test-agent-01"
+      - name: "test-agent-02"
+      - name: "test-agent-03"
+
+    # Agent that should have been removed
+    agent_removed: "test-agent-to-remove"
+
+  tasks:
+    # =========================================================================
+    # Verify User and Group
+    # =========================================================================
+    - name: Verify agent user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: azagent
+      register: agent_user
+
+    - name: Assert agent user was created
+      ansible.builtin.assert:
+        that:
+          - agent_user is succeeded
+        fail_msg: "Agent user 'azagent' was not created"
+        success_msg: "✅ Agent user 'azagent' exists"
+
+    - name: Verify agent group exists
+      ansible.builtin.getent:
+        database: group
+        key: azagent
+      register: agent_group
+
+    - name: Assert agent group was created
+      ansible.builtin.assert:
+        that:
+          - agent_group is succeeded
+        fail_msg: "Agent group 'azagent' was not created"
+        success_msg: "✅ Agent group 'azagent' exists"
+
+    # =========================================================================
+    # Verify Base Directory
+    # =========================================================================
+    - name: Verify base directory exists
+      ansible.builtin.stat:
+        path: /opt/azure-devops-agents
+      register: base_dir
+
+    - name: Assert base directory was created
+      ansible.builtin.assert:
+        that:
+          - base_dir.stat.exists
+          - base_dir.stat.isdir
+          - base_dir.stat.pw_name == 'azagent'
+        fail_msg: "Base directory /opt/azure-devops-agents was not properly created"
+        success_msg: "✅ Base directory exists with correct ownership"
+
+    # =========================================================================
+    # Verify Agent Directories (should exist)
+    # =========================================================================
+    - name: Verify agent directories exist
+      ansible.builtin.stat:
+        path: "/opt/azure-devops-agents/{{ item.name }}"
+      loop: "{{ agents_to_verify }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: agent_dirs
+
+    - name: Assert all agent directories were created
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+        fail_msg: "Agent directory {{ item.item.name }} was not created"
+        success_msg: "✅ Agent directory {{ item.item.name }} exists"
+      loop: "{{ agent_dirs.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # =========================================================================
+    # Verify Agent Removal (should NOT exist)
+    # =========================================================================
+    - name: Verify removed agent directory does NOT exist
+      ansible.builtin.stat:
+        path: "/opt/azure-devops-agents/{{ agent_removed }}"
+      register: removed_agent_dir
+
+    - name: Assert removed agent directory was deleted
+      ansible.builtin.assert:
+        that:
+          - not removed_agent_dir.stat.exists
+        fail_msg: "Agent directory {{ agent_removed }} should have been removed but still exists"
+        success_msg: "✅ Agent directory {{ agent_removed }} was successfully removed"
+
+    # =========================================================================
+    # Verify Prerequisite Packages
+    # =========================================================================
+    - name: Verify prerequisite packages are installed (Debian)
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+          - tar
+          - git
+        state: present
+      check_mode: true
+      register: prereq_check_debian
+      when: ansible_os_family == 'Debian'
+
+    - name: Verify prerequisite packages are installed (RedHat)
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+          - tar
+          - git
+        state: present
+      check_mode: true
+      register: prereq_check_redhat
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+
+    - name: Assert prerequisites are installed
+      ansible.builtin.assert:
+        that:
+          - (prereq_check_debian is defined and not prereq_check_debian.changed) or
+            (prereq_check_redhat is defined and not prereq_check_redhat.changed)
+        fail_msg: "Prerequisite packages are not installed"
+        success_msg: "✅ All prerequisite packages are installed"
+
+    # =========================================================================
+    # Verify Mock Files for Remaining Agents
+    # =========================================================================
+    - name: Verify mock config.sh exists for remaining agents
+      ansible.builtin.stat:
+        path: "/opt/azure-devops-agents/{{ item.name }}/config.sh"
+      loop: "{{ agents_to_verify }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: config_scripts
+
+    - name: Assert config.sh scripts exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.executable
+        fail_msg: "config.sh not found or not executable for {{ item.item.name }}"
+        success_msg: "✅ config.sh exists and is executable for {{ item.item.name }}"
+      loop: "{{ config_scripts.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # =========================================================================
+    # Summary
+    # =========================================================================
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg:
+          - "═══════════════════════════════════════════════════════════"
+          - "           VERIFICATION COMPLETED SUCCESSFULLY             "
+          - "═══════════════════════════════════════════════════════════"
+          - ""
+          - "✅ Agent user and group created"
+          - "✅ Base directory created with correct permissions"
+          - "✅ {{ agents_to_verify | length }} agent directories created and verified"
+          - "✅ 1 agent directory removed ({{ agent_removed }})"
+          - "✅ Prerequisite packages installed"
+          - "✅ Mock config.sh scripts in place"
+          - ""
+          - "Tested scenarios:"
+          - "  - Multi-agent installation (3 agents)"
+          - "  - Agent removal with state: absent"
+          - "  - Directory cleanup on removal"
+          - ""
+          - "Note: Full agent registration/unregistration tests"
+          - "      require valid Azure DevOps credentials"
+          - "═══════════════════════════════════════════════════════════"

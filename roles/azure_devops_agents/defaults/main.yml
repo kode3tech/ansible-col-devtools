@@ -1,0 +1,211 @@
+---
+# Defaults file for azure_devops_agents role
+# All variables are prefixed with azure_devops_agents_ to avoid conflicts
+
+# =============================================================================
+# Azure DevOps Connection Settings
+# =============================================================================
+
+# Azure DevOps organization URL (required)
+# Example: https://dev.azure.com/myorganization
+azure_devops_agents_url: ""
+
+# Personal Access Token for authentication (required)
+# Use Ansible Vault for security: "{{ vault_azure_devops_pat }}"
+# PAT requires "Agent Pools (read, manage)" permission for self-hosted agents
+# PAT requires "Deployment Groups (read, manage)" permission for deployment groups
+azure_devops_agents_pat: ""
+
+# =============================================================================
+# Agent State
+# =============================================================================
+
+# State of the agents: 'present' to install, 'absent' to remove
+# When 'absent', agents in azure_devops_agents_list will be unregistered and removed
+azure_devops_agents_state: present
+
+# =============================================================================
+# Auto-Create Resources
+# =============================================================================
+# Automatically create Deployment Groups and Environments if they don't exist
+# When true, the role will use the Azure DevOps REST API to create these resources
+# before registering agents. This is idempotent - existing resources won't be recreated.
+# PAT requires additional permissions:
+#   - Deployment Groups: "Deployment Groups (Read & manage)"
+#   - Environments: "Environment (Read & manage)"
+azure_devops_agents_auto_create_resources: true
+
+# =============================================================================
+# Agent Installation Settings
+# =============================================================================
+
+# Agent version to install (empty = latest)
+# Check: https://github.com/microsoft/azure-pipelines-agent/releases
+azure_devops_agents_version: ""
+
+# Base directory for all agents on this host
+# Each agent will have its own subdirectory: {{ base_path }}/{{ agent.name }}
+azure_devops_agents_base_path: "/opt/azure-devops-agents"
+
+# User that will run the agent service
+# This user will be created if it doesn't exist
+azure_devops_agents_user: "azagent"
+
+# Group for the agent user
+azure_devops_agents_group: "azagent"
+
+# Create the agent user if it doesn't exist
+azure_devops_agents_create_user: true
+
+# Agent download URL base
+# NOTE: Microsoft retired the old CDN (vstsagentpackage.azureedge.net)
+# New official URL: https://download.agent.dev.azure.com
+# Reference: https://devblogs.microsoft.com/devops/cdn-domain-url-change-for-agents-in-pipelines/
+azure_devops_agents_download_url: "https://download.agent.dev.azure.com"
+
+# Architecture for agent package (auto-detected if empty)
+# Options: x64, arm64
+azure_devops_agents_arch: ""
+
+# =============================================================================
+# Agent Configuration
+# =============================================================================
+
+# List of agents to install and configure on this host
+# Each agent can be a different type (self-hosted, deployment-group, environment)
+#
+# Example:
+# azure_devops_agents_list:
+#   - name: "agent-01"
+#     type: "self-hosted"
+#     pool: "Default"
+#     state: present           # 'present' (default) or 'absent' to remove
+#     replace: true
+#     work_dir: "_work"
+#     tags: []
+#
+#   - name: "agent-02"
+#     type: "deployment-group"
+#     project: "MyProject"
+#     deployment_group: "Production-Servers"
+#     state: present
+#     update_tags: true        # Update tags via API without reconfiguring agent
+#     tags:
+#       - "web"
+#       - "linux"
+#
+#   - name: "agent-03"
+#     type: "environment"
+#     project: "MyProject"
+#     environment: "production"
+#     state: absent            # This agent will be removed
+#     tags:
+#       - "api"
+#       - "backend"
+#     open_access: true         # Allow all pipelines to use this environment
+#
+#   - name: "agent-04"
+#     type: "environment"
+#     project: "MyProject"
+#     environment: "staging"
+#     update_tags: true        # Only update tags, don't reconfigure
+#     tags:
+#       - "new-tag"
+#       - "updated-tag"
+#
+azure_devops_agents_list: []
+
+# =============================================================================
+# Agent Types Reference
+# =============================================================================
+#
+# TYPE: self-hosted
+# Description: Standard build/release agent in an Agent Pool
+# Required fields:
+#   - name: Agent name (unique per pool)
+#   - type: "self-hosted"
+#   - pool: Agent pool name (e.g., "Default", "Linux-Pool")
+# Optional fields:
+#   - replace: Replace existing agent with same name (default: false)
+#   - work_dir: Work directory name (default: "_work")
+#   - tags: List of capability tags
+#
+# TYPE: deployment-group
+# Description: Agent for Classic Release pipeline deployment groups
+# Required fields:
+#   - name: Agent name
+#   - type: "deployment-group"
+#   - project: Azure DevOps project name
+#   - deployment_group: Deployment group name
+# Optional fields:
+#   - replace: Replace existing agent (default: false)
+#   - work_dir: Work directory name (default: "_work")
+#   - tags: List of deployment group tags
+# Note: open_access is NOT supported for deployment-groups (Classic Release model)
+#
+# TYPE: environment
+# Description: Agent for YAML pipeline environments
+# Required fields:
+#   - name: Agent name
+#   - type: "environment"
+#   - project: Azure DevOps project name
+#   - environment: Environment name
+# Optional fields:
+#   - replace: Replace existing agent (default: false)
+#   - work_dir: Work directory name (default: "_work")
+#   - tags: List of environment resource tags
+#   - open_access: Allow all pipelines to use this environment (default: false)
+#                  When true, sets "Open access" permission on the environment
+#
+# =============================================================================
+
+# =============================================================================
+# Service Configuration
+# =============================================================================
+
+# Run agent as a systemd service
+azure_devops_agents_run_as_service: true
+
+# Enable and start the agent service immediately
+azure_devops_agents_service_enabled: true
+azure_devops_agents_service_state: started
+
+# Accept Team Explorer Everywhere EULA (required for TFVC)
+azure_devops_agents_accept_tee_eula: true
+
+# =============================================================================
+# Proxy Settings (optional)
+# =============================================================================
+
+# HTTP proxy URL (e.g., http://proxy.company.com:8080)
+azure_devops_agents_proxy_url: ""
+
+# Proxy username (if authentication required)
+azure_devops_agents_proxy_user: ""
+
+# Proxy password (if authentication required)
+# Use Ansible Vault: "{{ vault_proxy_password }}"
+azure_devops_agents_proxy_password: ""
+
+# Bypass proxy for these hosts (comma-separated)
+azure_devops_agents_proxy_bypass: ""
+
+# =============================================================================
+# SSL/TLS Settings (optional)
+# =============================================================================
+
+# Path to custom CA certificate bundle
+azure_devops_agents_ssl_ca_cert: ""
+
+# Skip SSL certificate validation (NOT recommended for production)
+azure_devops_agents_ssl_skip_cert_validation: false
+
+# =============================================================================
+# Cleanup Settings
+# =============================================================================
+
+# Remove agent from Azure DevOps when uninstalling
+azure_devops_agents_remove_on_uninstall: true
+
+# Force removal even if agent is running jobs
+azure_devops_agents_force_remove: false

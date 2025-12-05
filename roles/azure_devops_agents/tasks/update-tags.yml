@@ -1,0 +1,195 @@
+---
+# Update Azure DevOps agent tags without reconfiguring
+# This uses the Azure DevOps REST API to update tags
+# Only works for deployment-group and environment agents (self-hosted uses capabilities)
+
+- name: Set agent directory path for tag update
+  ansible.builtin.set_fact:
+    _agent_dir: "{{ azure_devops_agents_base_path }}/{{ agent.name }}"
+  tags: azure_devops_agents
+
+- name: Check if agent is configured
+  ansible.builtin.stat:
+    path: "{{ _agent_dir }}/.agent"
+  register: _agent_file
+  tags: azure_devops_agents
+
+- name: Read agent configuration
+  ansible.builtin.slurp:
+    src: "{{ _agent_dir }}/.agent"
+  register: _agent_config_raw
+  when: _agent_file.stat.exists
+  tags: azure_devops_agents
+
+- name: Parse agent configuration
+  ansible.builtin.set_fact:
+    _agent_config: "{{ _agent_config_raw.content | b64decode | from_json }}"
+  when:
+    - _agent_file.stat.exists
+    - _agent_config_raw is defined
+  tags: azure_devops_agents
+
+- name: Skip tag update if agent not configured
+  ansible.builtin.debug:
+    msg: "Agent '{{ agent.name }}' is not configured. Skipping tag update."
+  when: not _agent_file.stat.exists
+  tags: azure_devops_agents
+
+# =============================================================================
+# Update tags for Deployment Group agents via REST API
+# =============================================================================
+- name: Update deployment group agent tags
+  when:
+    - _agent_file.stat.exists
+    - agent.type == 'deployment-group'
+    - agent.tags | default([]) | length > 0
+    - agent.update_tags | default(false)
+  tags: azure_devops_agents
+  block:
+    - name: Get deployment group target info
+      ansible.builtin.uri:
+        url: >-
+          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups?name={{ agent.deployment_group | urlencode }}&api-version=7.1
+        method: GET
+        headers:
+          Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+          Content-Type: "application/json"
+        return_content: true
+        status_code: [200]
+      register: _deployment_group_info
+      no_log: true
+
+    - name: Extract deployment group ID
+      ansible.builtin.set_fact:
+        _deployment_group_id: "{{ _deployment_group_info.json.value[0].id }}"
+      when: _deployment_group_info.json.value | length > 0
+
+    - name: Get target machine info
+      ansible.builtin.uri:
+        url: >-
+          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups/{{ _deployment_group_id }}/targets?name={{ agent.name | urlencode }}&api-version=7.1
+        method: GET
+        headers:
+          Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+          Content-Type: "application/json"
+        return_content: true
+        status_code: [200]
+      register: _target_info
+      when: _deployment_group_id is defined
+      no_log: true
+
+    - name: Extract target ID
+      ansible.builtin.set_fact:
+        _target_id: "{{ _target_info.json.value[0].id }}"
+      when:
+        - _target_info is defined
+        - _target_info.json.value | length > 0
+
+    - name: Update deployment group target tags
+      ansible.builtin.uri:
+        url: >-
+          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups/{{ _deployment_group_id }}/targets/{{ _target_id }}?api-version=7.1
+        method: PATCH
+        headers:
+          Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          tags: "{{ agent.tags }}"
+        status_code: [200]
+      register: _update_tags_result
+      when:
+        - _target_id is defined
+      no_log: true
+
+    - name: Display deployment group tag update result
+      ansible.builtin.debug:
+        msg: "Tags updated for deployment group agent '{{ agent.name }}': {{ agent.tags | join(', ') }}"
+      when: _update_tags_result is changed
+
+# =============================================================================
+# Update tags for Environment agents via REST API
+# =============================================================================
+- name: Update environment agent tags
+  when:
+    - _agent_file.stat.exists
+    - agent.type == 'environment'
+    - agent.tags | default([]) | length > 0
+    - agent.update_tags | default(false)
+  tags: azure_devops_agents
+  block:
+    - name: Get environment info
+      ansible.builtin.uri:
+        url: >-
+          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments?name={{ agent.environment | urlencode }}&api-version=7.1
+        method: GET
+        headers:
+          Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+          Content-Type: "application/json"
+        return_content: true
+        status_code: [200]
+      register: _environment_info
+      no_log: true
+
+    - name: Extract environment ID
+      ansible.builtin.set_fact:
+        _environment_id: "{{ _environment_info.json.value[0].id }}"
+      when: _environment_info.json.value | length > 0
+
+    - name: Get environment resource (VM) info
+      ansible.builtin.uri:
+        url: >-
+          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments/{{ _environment_id }}/providers/virtualmachines?name={{ agent.name | urlencode }}&api-version=7.1
+        method: GET
+        headers:
+          Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+          Content-Type: "application/json"
+        return_content: true
+        status_code: [200]
+      register: _vm_resource_info
+      when: _environment_id is defined
+      no_log: true
+
+    - name: Extract VM resource ID
+      ansible.builtin.set_fact:
+        _vm_resource_id: "{{ _vm_resource_info.json.value[0].id }}"
+      when:
+        - _vm_resource_info is defined
+        - _vm_resource_info.json.value | length > 0
+
+    - name: Update environment VM resource tags
+      ansible.builtin.uri:
+        url: >-
+          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments/{{ _environment_id }}/providers/virtualmachines/{{ _vm_resource_id }}?api-version=7.1
+        method: PATCH
+        headers:
+          Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          tags: "{{ agent.tags }}"
+        status_code: [200]
+      register: _update_env_tags_result
+      when:
+        - _vm_resource_id is defined
+      no_log: true
+
+    - name: Display environment tag update result
+      ansible.builtin.debug:
+        msg: "Tags updated for environment agent '{{ agent.name }}': {{ agent.tags | join(', ') }}"
+      when: _update_env_tags_result is changed
+
+# =============================================================================
+# Self-hosted agents: Tags are capabilities, updated differently
+# =============================================================================
+- name: Note about self-hosted agent tags
+  ansible.builtin.debug:
+    msg: >-
+      Self-hosted agent '{{ agent.name }}' uses capabilities instead of tags.
+      To update capabilities, use 'replace: true' to reconfigure the agent,
+      or update capabilities manually in Azure DevOps UI.
+  when:
+    - _agent_file.stat.exists
+    - agent.type == 'self-hosted'
+    - agent.update_tags | default(false)
+  tags: azure_devops_agents

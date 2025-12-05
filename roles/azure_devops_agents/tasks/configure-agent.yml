@@ -1,0 +1,122 @@
+---
+# Configure Azure DevOps agent tasks
+# This file is included in a loop with 'agent' as the loop variable
+
+- name: Set agent directory path
+  ansible.builtin.set_fact:
+    _agent_dir: "{{ azure_devops_agents_base_path }}/{{ agent.name }}"
+  tags: azure_devops_agents
+
+- name: Check if agent is already configured
+  ansible.builtin.stat:
+    path: "{{ _agent_dir }}/.credentials"
+  register: _agent_configured
+  tags: azure_devops_agents
+
+- name: Build configuration command for self-hosted agent
+  ansible.builtin.set_fact:
+    _agent_config_cmd: >-
+      ./config.sh
+      --unattended
+      --url "{{ azure_devops_agents_url }}"
+      --auth pat
+      --token "{{ azure_devops_agents_pat }}"
+      --pool "{{ agent.pool | default('Default') }}"
+      --agent "{{ agent.name }}"
+      --work "{{ agent.work_dir | default('_work') }}"
+      {{ '--replace' if agent.replace | default(false) else '' }}
+      {{ '--acceptTeeEula' if azure_devops_agents_accept_tee_eula else '' }}
+  when:
+    - agent.type == 'self-hosted'
+    - not _agent_configured.stat.exists or agent.replace | default(false)
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Build configuration command for deployment-group agent
+  ansible.builtin.set_fact:
+    _agent_config_cmd: >-
+      ./config.sh
+      --unattended
+      --url "{{ azure_devops_agents_url }}"
+      --auth pat
+      --token "{{ azure_devops_agents_pat }}"
+      --deploymentGroup
+      --deploymentGroupName "{{ agent.deployment_group }}"
+      --projectName "{{ agent.project }}"
+      --agent "{{ agent.name }}"
+      --work "{{ agent.work_dir | default('_work') }}"
+      {{ '--replace' if agent.replace | default(false) else '' }}
+      {{ '--addDeploymentGroupTags' if agent.tags | default([]) | length > 0 else '' }}
+      {{ '--deploymentGroupTags "' + (agent.tags | join(',')) + '"' if agent.tags | default([]) | length > 0 else '' }}
+      {{ '--acceptTeeEula' if azure_devops_agents_accept_tee_eula else '' }}
+  when:
+    - agent.type == 'deployment-group'
+    - not _agent_configured.stat.exists or agent.replace | default(false)
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Build configuration command for environment agent
+  ansible.builtin.set_fact:
+    _agent_config_cmd: >-
+      ./config.sh
+      --unattended
+      --url "{{ azure_devops_agents_url }}"
+      --auth pat
+      --token "{{ azure_devops_agents_pat }}"
+      --environment
+      --environmentName "{{ agent.environment }}"
+      --projectName "{{ agent.project }}"
+      --agent "{{ agent.name }}"
+      --work "{{ agent.work_dir | default('_work') }}"
+      {{ '--replace' if agent.replace | default(false) else '' }}
+      {{ '--addvirtualmachineresourcetags' if agent.tags | default([]) | length > 0 else '' }}
+      {{ '--virtualmachineresourcetags "' + (agent.tags | join(',')) + '"' if agent.tags | default([]) | length > 0 else '' }}
+      {{ '--acceptTeeEula' if azure_devops_agents_accept_tee_eula else '' }}
+  when:
+    - agent.type == 'environment'
+    - not _agent_configured.stat.exists or agent.replace | default(false)
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Add proxy configuration to command
+  ansible.builtin.set_fact:
+    _agent_config_cmd: >-
+      {{ _agent_config_cmd }}
+      --proxyurl "{{ azure_devops_agents_proxy_url }}"
+      {{ '--proxyusername "' + azure_devops_agents_proxy_user + '"' if azure_devops_agents_proxy_user | length > 0 else '' }}
+      {{ '--proxypassword "' + azure_devops_agents_proxy_password + '"' if azure_devops_agents_proxy_password | length > 0 else '' }}
+  when:
+    - _agent_config_cmd is defined
+    - azure_devops_agents_proxy_url | length > 0
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Configure agent
+  ansible.builtin.shell: |
+    cd "{{ _agent_dir }}"
+    {{ _agent_config_cmd }}
+  args:
+    executable: /bin/bash
+    creates: "{{ _agent_dir }}/.credentials"
+  become: true
+  become_user: "{{ azure_devops_agents_user }}"
+  when:
+    - _agent_config_cmd is defined
+    - not _agent_configured.stat.exists or agent.replace | default(false)
+  no_log: true
+  register: _agent_config_result
+  tags: azure_devops_agents
+
+- name: Display agent configuration result
+  ansible.builtin.debug:
+    msg: "Agent '{{ agent.name }}' configured successfully as {{ agent.type }}"
+  when: _agent_config_result is changed
+  tags: azure_devops_agents
+
+- name: Skip already configured agent
+  ansible.builtin.debug:
+    msg: "Agent '{{ agent.name }}' is already configured. Use 'replace: true' to reconfigure."
+  when:
+    - _agent_configured.stat.exists
+    - not agent.replace | default(false)
+  tags: azure_devops_agents

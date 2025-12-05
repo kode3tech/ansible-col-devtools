@@ -1,0 +1,142 @@
+---
+# Remove/Unregister Azure DevOps agent tasks
+# This file is included when azure_devops_agents_state is 'absent'
+
+- name: Set agent directory path for removal
+  ansible.builtin.set_fact:
+    _agent_dir: "{{ azure_devops_agents_base_path }}/{{ agent.name }}"
+  tags: azure_devops_agents
+
+- name: Check if agent exists
+  ansible.builtin.stat:
+    path: "{{ _agent_dir }}/config.sh"
+  register: _agent_exists
+  tags: azure_devops_agents
+
+# Check for .service marker file (created by svc.sh install)
+- name: Check if agent service marker exists
+  ansible.builtin.stat:
+    path: "{{ _agent_dir }}/.service"
+  register: _agent_service_marker
+  when: _agent_exists.stat.exists
+  tags: azure_devops_agents
+
+# Read actual service name from .service file
+- name: Read service name from marker file
+  ansible.builtin.slurp:
+    src: "{{ _agent_dir }}/.service"
+  register: _service_name_content
+  when:
+    - _agent_exists.stat.exists
+    - _agent_service_marker.stat.exists | default(false)
+  tags: azure_devops_agents
+
+- name: Set service name fact
+  ansible.builtin.set_fact:
+    _agent_service_name: "{{ (_service_name_content.content | b64decode | trim) if _service_name_content is not skipped else '' }}"
+  when: _agent_exists.stat.exists
+  tags: azure_devops_agents
+
+- name: Debug service detection
+  ansible.builtin.debug:
+    msg: |
+      === Service Detection Debug ===
+      Agent dir: {{ _agent_dir }}
+      Agent exists: {{ _agent_exists.stat.exists }}
+      Service marker exists: {{ _agent_service_marker.stat.exists | default(false) }}
+      Service name: {{ _agent_service_name | default('NOT FOUND') }}
+  when: _agent_exists.stat.exists
+  tags: azure_devops_agents
+
+# Stop and uninstall service BEFORE unregistering
+- name: Stop and uninstall agent service before removal
+  when:
+    - _agent_exists.stat.exists
+    - _agent_service_marker.stat.exists | default(false)
+  tags: azure_devops_agents
+  block:
+    - name: Stop the agent service
+      ansible.builtin.shell: |
+        cd "{{ _agent_dir }}"
+        sudo ./svc.sh stop 2>&1 || echo "Service stop returned non-zero (may already be stopped)"
+      args:
+        executable: /bin/bash
+      become: true
+      register: _svc_stop_result
+      changed_when: true
+
+    - name: Debug service stop result
+      ansible.builtin.debug:
+        msg: "Service stop output: {{ _svc_stop_result.stdout }}"
+
+    - name: Uninstall the agent service
+      ansible.builtin.shell: |
+        cd "{{ _agent_dir }}"
+        sudo ./svc.sh uninstall 2>&1 || echo "Service uninstall returned non-zero"
+      args:
+        executable: /bin/bash
+      become: true
+      register: _svc_uninstall_result
+      changed_when: true
+
+    - name: Debug service uninstall result
+      ansible.builtin.debug:
+        msg: "Service uninstall output: {{ _svc_uninstall_result.stdout }}"
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+      become: true
+
+    - name: Wait for service to be fully removed
+      ansible.builtin.pause:
+        seconds: 2
+
+- name: Unregister agent from Azure DevOps
+  ansible.builtin.shell: |
+    cd "{{ _agent_dir }}"
+    ./config.sh remove --unattended --auth pat --token "{{ azure_devops_agents_pat }}"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ azure_devops_agents_user }}"
+  when:
+    - _agent_exists.stat.exists
+    - azure_devops_agents_remove_on_uninstall | default(true)
+  no_log: true
+  register: _agent_remove_result
+  failed_when:
+    - _agent_remove_result.rc != 0
+    - not azure_devops_agents_force_remove | default(false)
+  tags: azure_devops_agents
+
+- name: Display agent removal debug info
+  ansible.builtin.debug:
+    msg: |
+      === Agent Removal Debug ===
+      Return Code: {{ _agent_remove_result.rc | default('N/A') }}
+      Stdout: {{ _agent_remove_result.stdout | default('N/A') }}
+      Stderr: {{ _agent_remove_result.stderr | default('N/A') }}
+  when:
+    - _agent_remove_result is defined
+    - _agent_remove_result.rc is defined
+  tags: azure_devops_agents
+
+- name: Remove agent directory
+  ansible.builtin.file:
+    path: "{{ _agent_dir }}"
+    state: absent
+  when: _agent_exists.stat.exists
+  tags: azure_devops_agents
+
+- name: Display agent removal result
+  ansible.builtin.debug:
+    msg: "Agent '{{ agent.name }}' has been removed successfully"
+  when: _agent_exists.stat.exists
+  tags: azure_devops_agents
+
+- name: Agent does not exist
+  ansible.builtin.debug:
+    msg: "Agent '{{ agent.name }}' does not exist, nothing to remove"
+  when: not _agent_exists.stat.exists
+  tags: azure_devops_agents

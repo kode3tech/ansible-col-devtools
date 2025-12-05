@@ -1,0 +1,32 @@
+---
+# RedHat/CentOS/Rocky/AlmaLinux specific variables for azure_devops_agents role
+
+# Package manager
+azure_devops_agents_package_manager: dnf
+
+# Prerequisites packages for Azure DevOps agent
+# Note: curl is installed separately with allowerasing to handle curl-minimal conflict
+# Note: libcurl is excluded - comes with curl and conflicts with libcurl-minimal
+azure_devops_agents_prerequisites:
+  - wget
+  - tar
+  - unzip
+  - openssl-libs
+  - libicu
+  - git
+  - jq
+
+# Additional packages for .NET runtime (if needed)
+azure_devops_agents_dotnet_deps:
+  - lttng-ust
+  - krb5-libs
+  - zlib
+
+# CA certificates package
+azure_devops_agents_ca_certificates_package: ca-certificates
+
+# User shell
+azure_devops_agents_user_shell: /bin/bash
+
+# Systemd service directory
+azure_devops_agents_systemd_dir: /etc/systemd/system

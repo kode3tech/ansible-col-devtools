@@ -4,9 +4,109 @@ Complete reference of all variables available in the `code3tech.devtools` collec
 
 ## 📋 Table of Contents
 
+- [Azure DevOps Agents Role Variables](#azure-devops-agents-role-variables)
 - [Docker Role Variables](#docker-role-variables)
 - [Podman Role Variables](#podman-role-variables)
 - [asdf Role Variables](#asdf-role-variables)
+
+---
+
+## Azure DevOps Agents Role Variables
+
+> 📖 **Complete Guide**: For detailed explanations and production examples, see the **[Azure DevOps Agents Complete Guide](../user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md)**.
+
+### Required Variables
+
+| Variable | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `azure_devops_agents_url` | string | **Yes** | - | Azure DevOps organization URL (e.g., `https://dev.azure.com/myorg`) |
+| `azure_devops_agents_pat` | string | **Yes** | - | Personal Access Token (use Ansible Vault!) |
+| `azure_devops_agents_list` | list | **Yes** | - | List of agents to configure |
+
+### Optional Variables
+
+| Variable | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `azure_devops_agents_state` | string | No | `"present"` | Global state: `present` or `absent` (remove all agents) |
+| `azure_devops_agents_version` | string | No | `""` | Agent version (empty = latest) |
+| `azure_devops_agents_base_path` | string | No | `/opt/azure-devops-agents` | Base directory for all agents |
+| `azure_devops_agents_user` | string | No | `"azagent"` | User for running agents |
+| `azure_devops_agents_group` | string | No | `"azagent"` | Group for running agents |
+| `azure_devops_agents_create_user` | boolean | No | `true` | Create user if doesn't exist |
+| `azure_devops_agents_run_as_service` | boolean | No | `true` | Install as systemd service |
+| `azure_devops_agents_service_enabled` | boolean | No | `true` | Enable service on boot |
+| `azure_devops_agents_service_state` | string | No | `"started"` | Service state |
+| `azure_devops_agents_accept_tee_eula` | boolean | No | `true` | Accept TEE EULA (for TFVC) |
+| `azure_devops_agents_delete_on_remove` | boolean | No | `true` | Delete directory when removing agent |
+
+### Proxy Settings (Optional)
+
+| Variable | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `azure_devops_agents_proxy_url` | string | No | - | Proxy URL (e.g., `http://proxy:8080`) |
+| `azure_devops_agents_proxy_user` | string | No | - | Proxy username |
+| `azure_devops_agents_proxy_password` | string | No | - | Proxy password |
+| `azure_devops_agents_proxy_bypass` | string | No | - | Proxy bypass list |
+
+### Agent List Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | string | **Yes** | Agent name (must be unique) |
+| `type` | string | **Yes** | Agent type: `self-hosted`, `deployment-group`, `environment` |
+| `state` | string | No | `present` (default) or `absent` |
+| `pool` | string | For self-hosted | Agent pool name |
+| `project` | string | For DG/Env | Azure DevOps project name |
+| `deployment_group` | string | For DG | Deployment group name |
+| `environment` | string | For Env | Environment name |
+| `auto_create` | boolean | No | Create resource if missing (DG/Env only) |
+| `open_access` | boolean | No | Allow all pipelines (Env only) |
+| `replace` | boolean | No | Replace existing agent |
+| `update_tags` | boolean | No | Update tags via API (DG/Env only) |
+| `work_dir` | string | No | Work directory name |
+| `tags` | list | No | Agent tags/capabilities |
+
+**Example `azure_devops_agents_list`:**
+```yaml
+azure_devops_agents_list:
+  # Self-hosted agent
+  - name: "build-agent"
+    type: "self-hosted"
+    pool: "Linux-Pool"
+    replace: true
+    tags:
+      - "docker"
+      - "linux"
+
+  # Deployment group agent
+  - name: "deploy-agent"
+    type: "deployment-group"
+    project: "WebApp"
+    deployment_group: "Production"
+    auto_create: true
+    tags:
+      - "web"
+
+  # Environment agent with open access
+  - name: "env-agent"
+    type: "environment"
+    project: "WebApp"
+    environment: "development"
+    auto_create: true
+    open_access: true
+    tags:
+      - "dev"
+```
+
+### PAT Required Scopes
+
+| Agent Type | Required Scope |
+|------------|----------------|
+| Self-hosted | Agent Pools (Read & manage) |
+| Deployment Group | Deployment Groups (Read & manage) |
+| Environment | Environment (Read & manage) |
+
+⚠️ **Security Note**: Always use Ansible Vault for the PAT token. Never store plain-text credentials.
 
 ---
 

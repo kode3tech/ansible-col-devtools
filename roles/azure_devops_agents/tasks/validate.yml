@@ -1,0 +1,310 @@
+---
+# Validate role inputs with clear error messages
+# This task should be the first one included in main.yml
+
+# =============================================================================
+# STEP 1: Validate Required Connection Variables
+# =============================================================================
+- name: "Validate required connection variables"
+  ansible.builtin.assert:
+    that:
+      - azure_devops_agents_url is defined
+      - azure_devops_agents_url | length > 0
+      - azure_devops_agents_url is regex('^https?://')
+      - azure_devops_agents_pat is defined
+      - azure_devops_agents_pat | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Connection                       ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Missing or invalid connection variables:                              ║
+      ║                                                                        ║
+      ║ ❌ azure_devops_agents_url                                            ║
+      ║    Current: {{ azure_devops_agents_url | default('NOT DEFINED') }}
+      ║    Required: HTTPS URL (e.g., https://dev.azure.com/myorg)            ║
+      ║                                                                        ║
+      ║ ❌ azure_devops_agents_pat                                            ║
+      ║    Current: {{ '***DEFINED***' if azure_devops_agents_pat | default('') | length > 0 else 'NOT DEFINED' }}
+      ║    Required: Personal Access Token (use Ansible Vault!)               ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 2: Validate Agents List Structure
+# =============================================================================
+- name: "Validate agents list is defined and non-empty"
+  ansible.builtin.assert:
+    that:
+      - azure_devops_agents_list is defined
+      - azure_devops_agents_list is iterable
+      - azure_devops_agents_list | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Agents List                      ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ azure_devops_agents_list must be a non-empty list.                    ║
+      ║                                                                        ║
+      ║ Example:                                                               ║
+      ║   azure_devops_agents_list:                                           ║
+      ║     - name: "my-agent-01"                                             ║
+      ║       type: "self-hosted"                                             ║
+      ║       pool: "Default"                                                 ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 3: Validate Global State
+# =============================================================================
+- name: "Validate global state value"
+  ansible.builtin.assert:
+    that:
+      - azure_devops_agents_state in ['present', 'absent']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: State                            ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ azure_devops_agents_state: "{{ azure_devops_agents_state }}"
+      ║                                                                        ║
+      ║ Valid values: 'present' or 'absent'                                   ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 4: Validate Each Agent Configuration
+# =============================================================================
+- name: "Validate agent name - required and format"
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name is string
+      - item.name | length > 0
+      - item.name | length < 128
+      - item.name is regex('^[a-zA-Z0-9_-]+$')
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Agent Name                       ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Agent: {{ item.name | default('UNDEFINED') }}
+      ║                                                                        ║
+      ║ Invalid agent name. Requirements:                                     ║
+      ║   ✓ Must be defined and non-empty                                     ║
+      ║   ✓ Length: 1-127 characters                                          ║
+      ║   ✓ Allowed: letters, numbers, underscore (_), hyphen (-)             ║
+      ║   ✗ NOT allowed: . , " / \ [ ] : | < > + = ; ? *                      ║
+      ║                                                                        ║
+      ║ Tip: If using IP address, replace dots with hyphens:                  ║
+      ║      "{{ inventory_hostname | replace('.', '-') }}-agent"
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  tags: azure_devops_agents
+
+- name: "Validate agent type - required and valid value"
+  ansible.builtin.assert:
+    that:
+      - item.type is defined
+      - item.type in ['self-hosted', 'deployment-group', 'environment']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Agent Type                       ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Agent: {{ item.name | default('UNDEFINED') }}
+      ║ Type: {{ item.type | default('UNDEFINED') }}
+      ║                                                                        ║
+      ║ Valid types:                                                          ║
+      ║   • self-hosted      - Standard agent in Agent Pool                   ║
+      ║   • deployment-group - For Classic Release pipelines                  ║
+      ║   • environment      - For YAML pipeline environments                 ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  tags: azure_devops_agents
+
+- name: "Validate agent state value (if defined)"
+  ansible.builtin.assert:
+    that:
+      - item.state | default('present') in ['present', 'absent']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Agent State                      ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Agent: {{ item.name }}
+      ║ State: {{ item.state | default('UNDEFINED') }}
+      ║                                                                        ║
+      ║ Valid values: 'present' (default) or 'absent'                         ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when: item.state is defined
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 5: Validate Type-Specific Requirements
+# =============================================================================
+- name: "Validate self-hosted agent - pool is required"
+  ansible.builtin.assert:
+    that:
+      - item.pool is defined
+      - item.pool | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Self-Hosted Agent                ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Agent: {{ item.name }}
+      ║ Type: self-hosted                                                     ║
+      ║                                                                        ║
+      ║ Missing required field: 'pool'                                        ║
+      ║                                                                        ║
+      ║ Example:                                                               ║
+      ║   - name: "{{ item.name }}"
+      ║     type: "self-hosted"                                               ║
+      ║     pool: "Default"        # ← Required!                              ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when: item.type == 'self-hosted'
+  tags: azure_devops_agents
+
+- name: "Validate deployment-group agent - project and deployment_group required"
+  ansible.builtin.assert:
+    that:
+      - item.project is defined
+      - item.project | length > 0
+      - item.deployment_group is defined
+      - item.deployment_group | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Deployment Group Agent           ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Agent: {{ item.name }}
+      ║ Type: deployment-group                                                ║
+      ║                                                                        ║
+      ║ Missing required fields:                                              ║
+      ║   • project: {{ item.project | default('NOT DEFINED') }}
+      ║   • deployment_group: {{ item.deployment_group | default('NOT DEFINED') }}
+      ║                                                                        ║
+      ║ Example:                                                               ║
+      ║   - name: "{{ item.name }}"
+      ║     type: "deployment-group"                                          ║
+      ║     project: "MyProject"           # ← Required!                      ║
+      ║     deployment_group: "Production" # ← Required!                      ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when: item.type == 'deployment-group'
+  tags: azure_devops_agents
+
+- name: "Validate environment agent - project and environment required"
+  ansible.builtin.assert:
+    that:
+      - item.project is defined
+      - item.project | length > 0
+      - item.environment is defined
+      - item.environment | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Environment Agent                ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Agent: {{ item.name }}
+      ║ Type: environment                                                     ║
+      ║                                                                        ║
+      ║ Missing required fields:                                              ║
+      ║   • project: {{ item.project | default('NOT DEFINED') }}
+      ║   • environment: {{ item.environment | default('NOT DEFINED') }}
+      ║                                                                        ║
+      ║ Example:                                                               ║
+      ║   - name: "{{ item.name }}"
+      ║     type: "environment"                                               ║
+      ║     project: "MyProject"      # ← Required!                           ║
+      ║     environment: "production" # ← Required!                           ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ azure_devops_agents_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when: item.type == 'environment'
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 6: Validate Optional Settings
+# =============================================================================
+- name: "Validate service state value"
+  ansible.builtin.assert:
+    that:
+      - azure_devops_agents_service_state in ['started', 'stopped']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Service State                    ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ azure_devops_agents_service_state: "{{ azure_devops_agents_service_state }}"
+      ║                                                                        ║
+      ║ Valid values: 'started' or 'stopped'                                  ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  when: azure_devops_agents_run_as_service | bool
+  tags: azure_devops_agents
+
+- name: "Validate proxy URL format (if defined)"
+  ansible.builtin.assert:
+    that:
+      - azure_devops_agents_proxy_url is regex('^https?://')
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Proxy URL                        ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ azure_devops_agents_proxy_url: "{{ azure_devops_agents_proxy_url }}"
+      ║                                                                        ║
+      ║ Must be a valid HTTP/HTTPS URL                                        ║
+      ║ Example: http://proxy.company.com:8080                                ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  when: azure_devops_agents_proxy_url | default('') | length > 0
+  tags: azure_devops_agents
+
+- name: "Validate architecture value (if defined)"
+  ansible.builtin.assert:
+    that:
+      - azure_devops_agents_arch in ['', 'x64', 'arm64']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║                    VALIDATION ERROR: Architecture                     ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ azure_devops_agents_arch: "{{ azure_devops_agents_arch }}"
+      ║                                                                        ║
+      ║ Valid values: '' (auto-detect), 'x64', or 'arm64'                     ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  when: azure_devops_agents_arch is defined
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 7: Validation Success Message
+# =============================================================================
+- name: "Display validation success"
+  ansible.builtin.debug:
+    msg:
+      - "╔══════════════════════════════════════════════════════════════════════╗"
+      - "║                    ✅ VALIDATION PASSED                              ║"
+      - "╠══════════════════════════════════════════════════════════════════════╣"
+      - "║ All inputs validated successfully!                                   ║"
+      - "║                                                                       ║"
+      - "║ Configuration Summary:                                               ║"
+      - "║   • Azure DevOps URL: {{ azure_devops_agents_url }}"
+      - "║   • Total agents: {{ azure_devops_agents_list | length }}"
+      - "║   • Auto-create resources: {{ azure_devops_agents_auto_create_resources | default(false) }}"
+      - "║   • Run as service: {{ azure_devops_agents_run_as_service }}"
+      - "╚══════════════════════════════════════════════════════════════════════╝"
+  tags: azure_devops_agents

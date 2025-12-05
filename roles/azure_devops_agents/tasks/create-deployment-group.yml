@@ -1,0 +1,51 @@
+---
+# Create Deployment Group in Azure DevOps if it doesn't exist
+# This task is idempotent - it will not recreate if already exists
+
+- name: Set authorization header
+  ansible.builtin.set_fact:
+    _azdo_auth_header: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Check if Deployment Group already exists
+  ansible.builtin.uri:
+    url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups?name={{ agent.deployment_group | urlencode }}&api-version=7.1"
+    method: GET
+    headers:
+      Authorization: "{{ _azdo_auth_header }}"
+      Content-Type: "application/json"
+    status_code: [200]
+    return_content: true
+  register: _dg_check
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Extract existing Deployment Group info
+  ansible.builtin.set_fact:
+    _dg_exists: "{{ _dg_check.json.count | default(0) | int > 0 }}"
+    _dg_id: "{{ _dg_check.json.value[0].id | default('') if _dg_check.json.count | default(0) | int > 0 else '' }}"
+  tags: azure_devops_agents
+
+- name: Create Deployment Group
+  ansible.builtin.uri:
+    url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups?api-version=7.1"
+    method: POST
+    headers:
+      Authorization: "{{ _azdo_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ agent.deployment_group }}"
+      description: "Created by Ansible azure_devops_agents role"
+    status_code: [200, 201]
+    return_content: true
+  register: _dg_create
+  when: not _dg_exists
+  no_log: true
+  tags: azure_devops_agents
+
+- name: Set deployment group ID from creation or existing
+  ansible.builtin.set_fact:
+    _dg_id: "{{ _dg_create.json.id if _dg_create is changed else _dg_id }}"
+  tags: azure_devops_agents

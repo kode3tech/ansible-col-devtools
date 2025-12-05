@@ -4,7 +4,18 @@ Guides for using the code3tech.devtools collection effectively.
 
 ## 📋 Available Guides
 
-### [Docker Complete Guide](DOCKER_COMPLETE_GUIDE.md) ⭐ NEW
+### [Azure DevOps Agents Complete Guide](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md) ⭐ NEW
+The **comprehensive guide** to Azure DevOps self-hosted agents with the code3tech.devtools collection.
+- **Multi-Agent Architecture** - Deploy N agents per host with isolation
+- **Three Agent Types** - Self-hosted, Deployment Group, and Environment agents
+- **Auto-Create Resources** - Automatically create Deployment Groups and Environments
+- **Open Access** - Configure pipeline permissions for environments
+- Production deployment with inventory examples
+- Security best practices with PAT management
+- Troubleshooting common issues
+- Complete variable reference
+
+### [Docker Complete Guide](DOCKER_COMPLETE_GUIDE.md)
 The **comprehensive guide** to Docker with the code3tech.devtools collection.
 - **Docker Architecture** - Understanding the client-server model
 - Complete variable reference with detailed explanations
@@ -14,7 +25,7 @@ The **comprehensive guide** to Docker with the code3tech.devtools collection.
 - Troubleshooting common issues
 - Real-world examples for development, CI/CD, and production
 
-### [Podman Complete Guide](PODMAN_COMPLETE_GUIDE.md) ⭐ NEW
+### [Podman Complete Guide](PODMAN_COMPLETE_GUIDE.md)
 The **comprehensive guide** to Podman with the code3tech.devtools collection.
 - **Root vs Rootless Mode** - Understanding the key difference
 - Complete variable reference with detailed explanations
@@ -23,7 +34,7 @@ The **comprehensive guide** to Podman with the code3tech.devtools collection.
 - Troubleshooting common issues
 - Real-world examples for development, CI/CD, and production
 
-### [asdf Complete Guide](ASDF_COMPLETE_GUIDE.md) ⭐ NEW
+### [asdf Complete Guide](ASDF_COMPLETE_GUIDE.md)
 The **comprehensive guide** to asdf version manager with the code3tech.devtools collection.
 - **Centralized Group-Based Architecture** - Multi-user support without conflicts
 - Complete variable reference with detailed explanations
@@ -45,6 +56,12 @@ Learn how to configure private container registry authentication.
 ---
 
 ## 🎯 Common Use Cases
+
+### Azure DevOps Agent Deployment
+See [Azure DevOps Agents Guide - Production Deployment](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md#production-deployment)
+
+### Azure DevOps Multi-Agent Setup
+See [Azure DevOps Agents Guide - Architecture](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md#architecture)
 
 ### Docker Performance Optimization
 See [Docker Complete Guide - Performance Optimization](DOCKER_COMPLETE_GUIDE.md#performance-optimization)

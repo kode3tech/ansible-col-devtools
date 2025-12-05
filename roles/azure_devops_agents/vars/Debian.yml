@@ -1,0 +1,38 @@
+---
+# Debian/Ubuntu specific variables for azure_devops_agents role
+
+# Package manager
+azure_devops_agents_package_manager: apt
+
+# Prerequisites packages for Azure DevOps agent
+azure_devops_agents_prerequisites:
+  - curl
+  - wget
+  - tar
+  - unzip
+  - libcurl4
+  - libssl3
+  - libicu74  # Ubuntu 24.04+
+  - git
+  - jq
+
+# Fallback packages for older distributions
+azure_devops_agents_prerequisites_fallback:
+  - libicu72  # Ubuntu 22.04
+  - libicu70  # Debian 12
+  - libssl1.1  # Older systems
+
+# Additional packages for .NET runtime (if needed)
+azure_devops_agents_dotnet_deps:
+  - liblttng-ust1
+  - libkrb5-3
+  - zlib1g
+
+# CA certificates package
+azure_devops_agents_ca_certificates_package: ca-certificates
+
+# User shell
+azure_devops_agents_user_shell: /bin/bash
+
+# Systemd service directory
+azure_devops_agents_systemd_dir: /etc/systemd/system

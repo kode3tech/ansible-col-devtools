@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-01-XX
+
+### Added
+- **[Azure DevOps Agents]** NEW ROLE - Enterprise-grade agent deployment (v1.0.0)
+  - **Multi-agent support**: Deploy N agents per host with isolated directories
+  - **Three agent types**: Self-hosted (pools), Deployment Group, and Environment agents
+  - **Auto-create resources**: Automatically create Deployment Groups and Environments via REST API
+  - **Open access**: Configure pipeline permissions for environments (YAML pipelines)
+  - **Service verification**: Ensures all agent services are enabled and running at end of deployment
+  - **Agent removal**: Clean unregistration with `state: absent` support
+  - **Tag updates**: Update agent tags via REST API without reconfiguration
+  - **Input validation**: Comprehensive validation with clear ASCII-box error messages
+  - **Proxy support**: Full proxy configuration for enterprise environments
+  - **Multi-platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
+  - **Systemd integration**: Automatic service management for each agent
+  - **Security**: Dedicated non-root `azagent` user for agent processes
+  - **PAT authentication**: Unattended registration using Personal Access Tokens
+- **[Azure DevOps Agents]** Complete documentation
+  - **Role README**: Quick reference with all features and examples
+  - **Complete Guide**: Comprehensive 800+ line guide in `docs/user-guides/`
+  - **Production playbook**: Ready-to-use `install-production.yml` with vault and verification
+  - **Multiple example playbooks**: Single agent, multi-agent, deployment group
+- **[Azure DevOps Agents]** Advanced features
+  - **Rocky Linux support**: Handles `curl-minimal` package conflict with `allowerasing: true`
+  - **Download URL fix**: Uses new `download.agent.dev.azure.com` endpoint (old URLs deprecated)
+  - **Hostname sanitization**: Automatically replaces dots with dashes for valid agent names
+  - **svc.sh idempotency**: Checks for `.service` marker file before install
+  - **Service name escaping**: Reads actual service name from `.service` file
+
 ## [Unreleased]
 
 ### Added

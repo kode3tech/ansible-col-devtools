@@ -1,0 +1,78 @@
+---
+# Install multiple Azure DevOps agents on the same host
+# Demonstrates multi-agent deployment with different types
+#
+# Usage:
+#   ansible-playbook playbooks/azure_devops_agents/install-multi-agent.yml \
+#     -i inventory \
+#     --ask-vault-pass
+#
+# Prerequisites:
+#   - Create vars/azure_secrets.yml with Ansible Vault:
+#     vault_azure_devops_pat: "your-pat-token"
+#     vault_azure_devops_url: "https://dev.azure.com/your-org"
+#     vault_azure_devops_project: "YourProject"
+
+- name: Install multiple Azure DevOps agents
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/azure_secrets.yml
+
+  vars:
+    # Azure DevOps connection (from vault)
+    azure_devops_agents_url: "{{ vault_azure_devops_url }}"
+    azure_devops_agents_pat: "{{ vault_azure_devops_pat }}"
+
+    # Project name for deployment group and environment agents
+    azure_devops_project: "{{ vault_azure_devops_project | default('DefaultProject') }}"
+
+    # Multiple agents configuration
+    azure_devops_agents_list:
+      # Agent 1: Self-hosted for CI builds
+      - name: "{{ inventory_hostname_short }}-build"
+        type: "self-hosted"
+        pool: "Linux-Builds"
+        replace: true
+        tags:
+          - "linux"
+          - "docker"
+          - "nodejs"
+
+      # Agent 2: Deployment Group for Classic Releases
+      - name: "{{ inventory_hostname_short }}-deploy"
+        type: "deployment-group"
+        project: "{{ azure_devops_project }}"
+        deployment_group: "Production-Servers"
+        replace: true
+        tags:
+          - "web"
+          - "production"
+
+      # Agent 3: Environment for YAML Pipelines
+      - name: "{{ inventory_hostname_short }}-env"
+        type: "environment"
+        project: "{{ azure_devops_project }}"
+        environment: "production"
+        replace: true
+        tags:
+          - "api"
+          - "backend"
+
+  roles:
+    - code3tech.devtools.azure_devops_agents
+
+  post_tasks:
+    - name: Display agents summary
+      ansible.builtin.debug:
+        msg:
+          - "✅ Multiple Azure DevOps agents installed successfully"
+          - ""
+          - "Agents configured:"
+          - "  1. {{ azure_devops_agents_list[0].name }} (self-hosted → Linux-Builds pool)"
+          - "  2. {{ azure_devops_agents_list[1].name }} (deployment-group → Production-Servers)"
+          - "  3. {{ azure_devops_agents_list[2].name }} (environment → production)"
+          - ""
+          - "Base Path: {{ azure_devops_agents_base_path | default('/opt/azure-devops-agents') }}"

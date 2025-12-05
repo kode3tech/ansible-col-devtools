@@ -1,0 +1,64 @@
+---
+# Install Azure DevOps Deployment Group agent
+# For use with Classic Release pipelines
+#
+# Usage:
+#   ansible-playbook playbooks/azure_devops_agents/install-deployment-group.yml \
+#     -i inventory \
+#     --ask-vault-pass \
+#     -e "azure_devops_project=MyProject" \
+#     -e "azure_devops_deployment_group=Production"
+#
+# Prerequisites:
+#   - Create vars/azure_secrets.yml with Ansible Vault:
+#     vault_azure_devops_pat: "your-pat-token"
+#     vault_azure_devops_url: "https://dev.azure.com/your-org"
+#   - Create the Deployment Group in Azure DevOps first
+
+- name: Install Azure DevOps Deployment Group agent
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/azure_secrets.yml
+
+  vars:
+    # Azure DevOps connection (from vault)
+    azure_devops_agents_url: "{{ vault_azure_devops_url }}"
+    azure_devops_agents_pat: "{{ vault_azure_devops_pat }}"
+
+    # Project and Deployment Group (override via -e)
+    azure_devops_project: "DefaultProject"
+    azure_devops_deployment_group: "Production-Servers"
+
+    # Deployment group tags (can be overridden)
+    azure_devops_deployment_tags:
+      - "linux"
+      - "{{ ansible_distribution | lower }}"
+
+    # Agent configuration
+    azure_devops_agents_list:
+      - name: "{{ inventory_hostname | replace('.', '-') }}-dg"
+        type: "deployment-group"
+        project: "{{ azure_devops_project }}"
+        deployment_group: "{{ azure_devops_deployment_group }}"
+        replace: true
+        tags: "{{ azure_devops_deployment_tags }}"
+
+  roles:
+    - code3tech.devtools.azure_devops_agents
+
+  post_tasks:
+    - name: Display deployment group agent information
+      ansible.builtin.debug:
+        msg:
+          - "✅ Deployment Group agent installed successfully"
+          - ""
+          - "Agent Name: {{ azure_devops_agents_list[0].name }}"
+          - "Project: {{ azure_devops_project }}"
+          - "Deployment Group: {{ azure_devops_deployment_group }}"
+          - "Tags: {{ azure_devops_deployment_tags | join(', ') }}"
+          - ""
+          - "The agent is now available in Azure DevOps:"
+          - "  Pipelines → Deployment Groups → {{ azure_devops_deployment_group }}"

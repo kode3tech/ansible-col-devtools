@@ -1,0 +1,69 @@
+---
+# Configure Azure DevOps agent as systemd service
+# This file is included in a loop with 'agent' as the loop variable
+
+- name: Set agent directory path for service
+  ansible.builtin.set_fact:
+    _agent_dir: "{{ azure_devops_agents_base_path }}/{{ agent.name }}"
+  tags: azure_devops_agents
+
+# Check if .service file was already created by svc.sh
+# The svc.sh script stores the service name in .service file
+- name: Check if agent service is already installed
+  ansible.builtin.stat:
+    path: "{{ _agent_dir }}/.service"
+  register: _agent_svc_marker
+  tags: azure_devops_agents
+
+- name: Read existing service name if installed
+  ansible.builtin.slurp:
+    src: "{{ _agent_dir }}/.service"
+  register: _agent_svc_content
+  when: _agent_svc_marker.stat.exists
+  tags: azure_devops_agents
+
+- name: Set existing service name
+  ansible.builtin.set_fact:
+    _agent_actual_service: "{{ (_agent_svc_content.content | b64decode | trim) | regex_replace('\\.service$', '') }}"
+  when: _agent_svc_marker.stat.exists
+  tags: azure_devops_agents
+
+- name: Install agent service using svc.sh
+  ansible.builtin.shell: |
+    cd "{{ _agent_dir }}"
+    ./svc.sh install {{ azure_devops_agents_user }}
+  args:
+    executable: /bin/bash
+  become: true
+  when: not _agent_svc_marker.stat.exists
+  register: _agent_service_install
+  tags: azure_devops_agents
+
+- name: Read new service name after install
+  ansible.builtin.slurp:
+    src: "{{ _agent_dir }}/.service"
+  register: _agent_new_svc_content
+  when: _agent_service_install is changed
+  tags: azure_devops_agents
+
+- name: Set new service name after install
+  ansible.builtin.set_fact:
+    _agent_actual_service: "{{ (_agent_new_svc_content.content | b64decode | trim) | regex_replace('\\.service$', '') }}"
+  when: _agent_service_install is changed
+  tags: azure_devops_agents
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: _agent_service_install is changed
+  tags: azure_devops_agents
+
+- name: Ensure agent service is enabled and started
+  ansible.builtin.systemd:
+    name: "{{ _agent_actual_service }}"
+    enabled: "{{ azure_devops_agents_service_enabled }}"
+    state: "{{ azure_devops_agents_service_state }}"
+  when:
+    - _agent_actual_service is defined
+    - azure_devops_agents_run_as_service
+  tags: azure_devops_agents

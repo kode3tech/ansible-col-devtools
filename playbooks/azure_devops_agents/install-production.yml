@@ -1,0 +1,323 @@
+---
+# ==============================================================================
+# AZURE DEVOPS AGENTS - PRODUCTION MULTI-AGENT DEPLOYMENT
+# ==============================================================================
+# Deploy multiple Azure DevOps agents (self-hosted, deployment-group, environment)
+# on the same host with production-ready configuration.
+#
+# Features:
+#   - Multiple agent types on same host
+#   - Time synchronization for token validation
+#   - Auto-create deployment groups and environments
+#   - Open access for YAML pipeline environments
+#   - Comprehensive validation and verification
+#
+# Usage:
+#   ansible-playbook playbooks/azure_devops_agents/install-production.yml \
+#     -i your_inventory \
+#     --ask-vault-pass
+#
+# Prerequisites:
+#   1. Create vars/azure_secrets.yml with Ansible Vault:
+#      ansible-vault create playbooks/azure_devops_agents/vars/azure_secrets.yml
+#
+#   2. Add the following content:
+#      vault_azure_devops_pat: "your-pat-token"
+#      vault_azure_devops_url: "https://dev.azure.com/your-org"
+#
+# PAT Token Scopes Required:
+#   - Agent Pools (Read & manage)
+#   - Deployment Groups (Read & manage)
+#   - Environment (Read & manage)
+#   - Pipeline Resources (Use & manage) - for open_access feature
+#
+# ==============================================================================
+
+- name: Azure DevOps Agents - Production Multi-Agent Deployment
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/azure_secrets.yml
+
+  vars:
+    # ==========================================================================
+    # AZURE DEVOPS CONNECTION
+    # ==========================================================================
+    # Organization URL - loaded from vault or override here
+    azure_devops_agents_url: "{{ vault_azure_devops_url }}"
+
+    # Personal Access Token - ALWAYS use Ansible Vault!
+    azure_devops_agents_pat: "{{ vault_azure_devops_pat }}"
+
+    # ==========================================================================
+    # PROJECT CONFIGURATION
+    # ==========================================================================
+    # Azure DevOps project for deployment-group and environment agents
+    azure_devops_project: "my-project"
+
+    # ==========================================================================
+    # AGENT USER CONFIGURATION
+    # ==========================================================================
+    # User that runs the agent service
+    azure_devops_agents_user: "azagent"
+    azure_devops_agents_group: "azagent"
+
+    # Create the user if it doesn't exist
+    azure_devops_agents_create_user: true
+
+    # Base directory for all agent installations
+    azure_devops_agents_base_path: "/opt/azure-devops-agents"
+
+    # ==========================================================================
+    # SERVICE CONFIGURATION
+    # ==========================================================================
+    # Run agents as systemd services
+    azure_devops_agents_run_as_service: true
+    azure_devops_agents_service_enabled: true
+    azure_devops_agents_service_state: started
+
+    # ==========================================================================
+    # AUTO-CREATE RESOURCES
+    # ==========================================================================
+    # Automatically create Deployment Groups and Environments if they don't exist
+    # This is idempotent - existing resources won't be recreated
+    azure_devops_agents_auto_create_resources: true
+
+    # ==========================================================================
+    # MULTI-AGENT CONFIGURATION
+    # ==========================================================================
+    # Deploy multiple agents with different types on the same host
+    # Each agent will have its own directory and systemd service
+
+    azure_devops_agents_list:
+      # ========================================================================
+      # AGENT 1: Self-Hosted Agent for CI Builds
+      # ========================================================================
+      # Self-hosted agents run in Agent Pools (organization-level resource)
+      # Used for: Build pipelines, CI jobs, general automation
+      - name: "{{ ansible_hostname }}-worker001"
+        type: "self-hosted"
+        pool: "Default"                  # Agent pool name (must exist)
+        replace: true                    # Replace if agent with same name exists
+        work_dir: "_work"                # Work directory for job artifacts
+        tags:
+          - "linux"
+          - "docker"
+          - "production"
+
+      # ========================================================================
+      # AGENT 2: Deployment Group Agent for Classic Releases
+      # ========================================================================
+      # Deployment group agents are project-scoped resources
+      # Used for: Classic Release pipelines, deployment stages
+      - name: "{{ ansible_hostname }}-deploy001"
+        type: "deployment-group"
+        project: "{{ azure_devops_project }}"
+        deployment_group: "Production-Servers"
+        replace: true
+        tags:
+          - "web"
+          - "api"
+          - "production"
+
+      # ========================================================================
+      # AGENT 3: Environment Agent for YAML Pipelines
+      # ========================================================================
+      # Environment agents are project-scoped resources
+      # Used for: YAML pipeline environments, approval workflows
+      - name: "{{ ansible_hostname }}-env001"
+        type: "environment"
+        project: "{{ azure_devops_project }}"
+        environment: "production"
+        replace: true
+        open_access: true                # Allow all pipelines to use this environment
+        tags:
+          - "api"
+          - "backend"
+          - "production"
+
+  # ==========================================================================
+  # PRE-TASKS: Environment Preparation
+  # ==========================================================================
+  pre_tasks:
+    # ==========================================================================
+    # TIME SYNCHRONIZATION
+    # Critical for Azure DevOps token validation - tokens are time-sensitive
+    # ==========================================================================
+
+    # --- RedHat-based systems (RHEL, CentOS, Rocky, AlmaLinux) ---
+    - name: "[TimeSync] Ensure chrony is installed (RedHat)"
+      ansible.builtin.dnf:
+        name: chrony
+        state: present
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+      tags: timesync
+
+    - name: "[TimeSync] Ensure chronyd is enabled and running (RedHat)"
+      ansible.builtin.service:
+        name: chronyd
+        state: started
+        enabled: true
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+      tags: timesync
+
+    - name: "[TimeSync] Force time synchronization (RedHat)"
+      ansible.builtin.command:
+        cmd: chronyc makestep
+      changed_when: false
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+      tags: timesync
+
+    # --- Debian-based systems (Debian, Ubuntu) ---
+    - name: "[TimeSync] Ensure systemd-timesyncd is installed (Debian)"
+      ansible.builtin.apt:
+        name: systemd-timesyncd
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian'
+      tags: timesync
+
+    - name: "[TimeSync] Ensure systemd-timesyncd is enabled and running (Debian)"
+      ansible.builtin.service:
+        name: systemd-timesyncd
+        state: started
+        enabled: true
+      when: ansible_os_family == 'Debian'
+      tags: timesync
+
+    - name: "[TimeSync] Enable NTP synchronization (Debian)"
+      ansible.builtin.command:
+        cmd: timedatectl set-ntp true
+      changed_when: false
+      when: ansible_os_family == 'Debian'
+      tags: timesync
+
+    # --- Verification ---
+    - name: "[TimeSync] Wait for synchronization"
+      ansible.builtin.pause:
+        seconds: 2
+      tags: timesync
+
+    - name: "[TimeSync] Verify synchronization status"
+      ansible.builtin.command:
+        cmd: timedatectl show --property=NTPSynchronized --value
+      register: timesync_status
+      changed_when: false
+      failed_when: false
+      tags: timesync
+
+    - name: "[TimeSync] Display synchronization status"
+      ansible.builtin.debug:
+        msg: "Time Sync: {{ 'SYNCHRONIZED' if timesync_status.stdout == 'yes' else 'PENDING' }}"
+      tags: timesync
+
+  # ==========================================================================
+  # ROLES EXECUTION
+  # ==========================================================================
+  roles:
+    - azure_devops_agents
+
+  # ==========================================================================
+  # POST-TASKS: Validation and Verification
+  # ==========================================================================
+  post_tasks:
+    # ==========================================================================
+    # VERIFY AGENT DIRECTORIES
+    # ==========================================================================
+    - name: "[Verify] Check agent directories exist"
+      ansible.builtin.stat:
+        path: "{{ azure_devops_agents_base_path }}/{{ item.name }}"
+      loop: "{{ azure_devops_agents_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: agent_dirs
+
+    - name: "[Verify] Display directory status"
+      ansible.builtin.debug:
+        msg: "{{ item.item.name }}: {{ 'EXISTS' if item.stat.exists else 'MISSING' }}"
+      loop: "{{ agent_dirs.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # ==========================================================================
+    # VERIFY AGENT SERVICES
+    # ==========================================================================
+    - name: "[Verify] Get list of agent services"
+      ansible.builtin.shell: |
+        systemctl list-units --type=service --all | grep -E "vsts\.agent" || echo "No agent services found"
+      register: agent_services
+      changed_when: false
+      failed_when: false
+
+    - name: "[Verify] Display agent services"
+      ansible.builtin.debug:
+        msg: "{{ agent_services.stdout_lines }}"
+
+    # ==========================================================================
+    # VERIFY AZURE DEVOPS CONNECTIVITY
+    # ==========================================================================
+    - name: "[Verify] Test connectivity to Azure DevOps"
+      ansible.builtin.uri:
+        url: "{{ azure_devops_agents_url }}/_apis/projects?api-version=7.1"
+        method: GET
+        headers:
+          Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
+        status_code: [200, 203]
+      register: azdo_connectivity
+      failed_when: false
+      no_log: true
+
+    - name: "[Verify] Display connectivity status"
+      ansible.builtin.debug:
+        msg: "Azure DevOps API: {{ 'CONNECTED' if azdo_connectivity.status == 200 else 'FAILED' }}"
+
+    # ==========================================================================
+    # DEPLOYMENT SUMMARY
+    # ==========================================================================
+    - name: "[Summary] Display deployment summary"
+      ansible.builtin.debug:
+        msg:
+          - "======================================================"
+          - "       AZURE DEVOPS AGENTS - DEPLOYMENT COMPLETE      "
+          - "======================================================"
+          - ""
+          - "Agents deployed: {{ azure_devops_agents_list | length }}"
+          - "Base path: {{ azure_devops_agents_base_path }}"
+          - ""
+          - "Management commands:"
+          - "  systemctl status vsts.agent.*"
+          - "  journalctl -u vsts.agent.* -f"
+          - "======================================================"
+
+# ==============================================================================
+# PRODUCTION DEPLOYMENT NOTES
+# ==============================================================================
+#
+# SECURITY RECOMMENDATIONS:
+#   - Always use Ansible Vault for PAT tokens
+#   - Use minimal PAT scopes (only what's needed)
+#   - Rotate PAT tokens regularly (every 90 days recommended)
+#   - Review agent permissions in Azure DevOps
+#
+# MULTI-AGENT CONSIDERATIONS:
+#   - Each agent runs in its own directory
+#   - Each agent has its own systemd service
+#   - Agents share the same user (azagent by default)
+#   - Consider resource limits for high-concurrency builds
+#
+# MONITORING:
+#   - Monitor agent status in Azure DevOps portal
+#   - Set up alerts for offline agents
+#   - Monitor disk space (build artifacts can grow)
+#   - Track job queue times
+#
+# MAINTENANCE:
+#   - Regular agent updates (set azure_devops_agents_version)
+#   - Clean work directories periodically
+#   - Review and update agent tags as needed
+#   - Monitor agent logs: journalctl -u vsts.agent.*
+#
+# ==============================================================================

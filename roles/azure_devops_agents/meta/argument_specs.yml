@@ -1,0 +1,310 @@
+---
+# roles/azure_devops_agents/meta/argument_specs.yml
+# Provides automatic validation and documentation for role variables
+
+argument_specs:
+  main:
+    short_description: Install and configure Azure DevOps self-hosted agents
+    description:
+      - This role installs and configures Azure DevOps self-hosted agents on Linux servers.
+      - Supports multiple agents per host with different types (self-hosted, deployment-group, environment).
+      - Provides automated registration, service management, and agent removal capabilities.
+    author:
+      - Code3Tech DevOps Team <suporte@code3.tech>
+    version_added: "1.0.0"
+
+    options:
+      # =========================================================================
+      # Connection Settings
+      # =========================================================================
+      azure_devops_agents_url:
+        type: str
+        required: true
+        description:
+          - Azure DevOps organization URL.
+          - "Example: https://dev.azure.com/myorganization"
+
+      azure_devops_agents_pat:
+        type: str
+        required: true
+        no_log: true
+        description:
+          - Personal Access Token for authentication.
+          - Use Ansible Vault for security.
+          - "Required scopes: Agent Pools (read, manage), Deployment Groups (read, manage), Environment (read, manage)"
+
+      # =========================================================================
+      # Agent State
+      # =========================================================================
+      azure_devops_agents_state:
+        type: str
+        required: false
+        default: present
+        choices:
+          - present
+          - absent
+        description:
+          - Global state of agents.
+          - "present: Install and configure agents"
+          - "absent: Remove all agents from the host"
+
+      # =========================================================================
+      # Auto-Create Resources
+      # =========================================================================
+      azure_devops_agents_auto_create_resources:
+        type: bool
+        required: false
+        default: false
+        description:
+          - Automatically create Deployment Groups and Environments if they don't exist.
+          - Uses Azure DevOps REST API to create resources before registering agents.
+          - Idempotent - existing resources won't be recreated.
+
+      # =========================================================================
+      # Installation Settings
+      # =========================================================================
+      azure_devops_agents_version:
+        type: str
+        required: false
+        default: ""
+        description:
+          - Agent version to install.
+          - Leave empty to install the latest version.
+          - "Check: https://github.com/microsoft/azure-pipelines-agent/releases"
+
+      azure_devops_agents_base_path:
+        type: path
+        required: false
+        default: /opt/azure-devops-agents
+        description:
+          - Base directory for all agents on this host.
+          - Each agent will have its own subdirectory.
+
+      azure_devops_agents_download_url:
+        type: str
+        required: false
+        default: "https://download.agent.dev.azure.com"
+        description:
+          - Base URL for downloading agent packages.
+          - Uses official Microsoft CDN.
+
+      azure_devops_agents_arch:
+        type: str
+        required: false
+        default: ""
+        choices:
+          - ""
+          - x64
+          - arm64
+        description:
+          - Architecture for agent package.
+          - Leave empty for auto-detection.
+
+      # =========================================================================
+      # User Configuration
+      # =========================================================================
+      azure_devops_agents_user:
+        type: str
+        required: false
+        default: azagent
+        description:
+          - User that will run the agent service.
+
+      azure_devops_agents_group:
+        type: str
+        required: false
+        default: azagent
+        description:
+          - Group for the agent user.
+
+      azure_devops_agents_create_user:
+        type: bool
+        required: false
+        default: true
+        description:
+          - Create the agent user if it doesn't exist.
+
+      # =========================================================================
+      # Service Configuration
+      # =========================================================================
+      azure_devops_agents_run_as_service:
+        type: bool
+        required: false
+        default: true
+        description:
+          - Run agent as a systemd service.
+
+      azure_devops_agents_service_enabled:
+        type: bool
+        required: false
+        default: true
+        description:
+          - Enable the agent service to start on boot.
+
+      azure_devops_agents_service_state:
+        type: str
+        required: false
+        default: started
+        choices:
+          - started
+          - stopped
+        description:
+          - Desired state of the agent service.
+
+      azure_devops_agents_accept_tee_eula:
+        type: bool
+        required: false
+        default: true
+        description:
+          - Accept Team Explorer Everywhere EULA.
+          - Required for TFVC repositories.
+
+      # =========================================================================
+      # Proxy Settings
+      # =========================================================================
+      azure_devops_agents_proxy_url:
+        type: str
+        required: false
+        default: ""
+        description:
+          - HTTP proxy URL.
+          - "Example: http://proxy.company.com:8080"
+
+      azure_devops_agents_proxy_user:
+        type: str
+        required: false
+        default: ""
+        description:
+          - Proxy username if authentication is required.
+
+      azure_devops_agents_proxy_password:
+        type: str
+        required: false
+        default: ""
+        no_log: true
+        description:
+          - Proxy password if authentication is required.
+
+      # =========================================================================
+      # Cleanup Settings
+      # =========================================================================
+      azure_devops_agents_delete_on_remove:
+        type: bool
+        required: false
+        default: true
+        description:
+          - Delete agent directory after removal.
+
+      azure_devops_agents_force_remove:
+        type: bool
+        required: false
+        default: false
+        description:
+          - Force removal even if agent is running jobs.
+
+      # =========================================================================
+      # Agents List
+      # =========================================================================
+      azure_devops_agents_list:
+        type: list
+        required: true
+        elements: dict
+        description:
+          - List of agents to install and configure on this host.
+          - Each agent can be a different type.
+        options:
+          name:
+            type: str
+            required: true
+            description:
+              - Agent name (unique per pool/group/environment).
+              - "Must be 1-127 characters."
+              - "Allowed characters: alphanumeric, underscore, hyphen."
+              - "NOT allowed: . , \" / \\ [ ] : | < > + = ; ? *"
+
+          type:
+            type: str
+            required: true
+            choices:
+              - self-hosted
+              - deployment-group
+              - environment
+            description:
+              - Agent type.
+
+          state:
+            type: str
+            required: false
+            default: present
+            choices:
+              - present
+              - absent
+            description:
+              - State of this specific agent.
+
+          pool:
+            type: str
+            required: false
+            description:
+              - Agent pool name.
+              - Required for self-hosted agents.
+
+          project:
+            type: str
+            required: false
+            description:
+              - Azure DevOps project name.
+              - Required for deployment-group and environment agents.
+
+          deployment_group:
+            type: str
+            required: false
+            description:
+              - Deployment group name.
+              - Required for deployment-group agents.
+
+          environment:
+            type: str
+            required: false
+            description:
+              - Environment name.
+              - Required for environment agents.
+
+          replace:
+            type: bool
+            required: false
+            default: false
+            description:
+              - Replace existing agent with same name.
+
+          work_dir:
+            type: str
+            required: false
+            default: _work
+            description:
+              - Work directory name for job data.
+
+          tags:
+            type: list
+            required: false
+            default: []
+            elements: str
+            description:
+              - List of tags/capabilities for the agent.
+
+          update_tags:
+            type: bool
+            required: false
+            default: false
+            description:
+              - Update tags via REST API without reconfiguring agent.
+              - Only works for deployment-group and environment agents.
+
+          open_access:
+            type: bool
+            required: false
+            default: false
+            description:
+              - Allow all pipelines to use this environment without manual authorization.
+              - Only applies to environment agents (not supported for deployment-groups).
+              - Sets "Open access" permission on the environment resource via Azure DevOps API.

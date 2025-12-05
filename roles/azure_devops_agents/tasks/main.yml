@@ -1,0 +1,271 @@
+---
+# Main tasks file for azure_devops_agents role
+# Orchestrates the installation and configuration of Azure DevOps agents
+
+# =============================================================================
+# STEP 0: Validate all inputs with comprehensive error messages
+# =============================================================================
+- name: Include input validation
+  ansible.builtin.include_tasks: validate.yml
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 1: Setup OS-specific variables and detection
+# =============================================================================
+- name: Set OS family variable for consistency
+  ansible.builtin.set_fact:
+    azure_devops_agents_os_family: >-
+      {{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}
+  tags: azure_devops_agents
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ azure_devops_agents_os_family }}.yml"
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 2: Filter agents by state (present vs absent)
+# =============================================================================
+- name: Filter agents to remove
+  ansible.builtin.set_fact:
+    _agents_to_remove: >-
+      {{ azure_devops_agents_list | selectattr('state', 'defined') | selectattr('state', 'equalto', 'absent') | list }}
+    _agents_to_install: >-
+      {{ azure_devops_agents_list | rejectattr('state', 'defined') | list +
+         azure_devops_agents_list | selectattr('state', 'defined') | selectattr('state', 'equalto', 'present') | list }}
+  tags: azure_devops_agents
+
+- name: Check if global state is absent
+  ansible.builtin.set_fact:
+    _agents_to_remove: "{{ azure_devops_agents_list }}"
+    _agents_to_install: []
+  when: azure_devops_agents_state == 'absent'
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 3: Remove agents marked with state: absent
+# =============================================================================
+- name: Remove agents marked for removal
+  ansible.builtin.include_tasks: remove-agent.yml
+  loop: "{{ _agents_to_remove }}"
+  loop_control:
+    loop_var: agent
+    label: "{{ agent.name }}"
+  when: _agents_to_remove | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 4: Detect architecture and prepare installation
+# =============================================================================
+- name: Detect system architecture
+  ansible.builtin.set_fact:
+    azure_devops_agents_detected_arch: >-
+      {{ 'x64' if ansible_architecture == 'x86_64' else 'arm64' if ansible_architecture == 'aarch64' else ansible_architecture }}
+  when:
+    - azure_devops_agents_arch | length == 0
+    - _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+- name: Set final architecture
+  ansible.builtin.set_fact:
+    azure_devops_agents_final_arch: >-
+      {{ azure_devops_agents_arch if azure_devops_agents_arch | length > 0 else azure_devops_agents_detected_arch | default('x64') }}
+  when: _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 5: Install OS-specific dependencies
+# =============================================================================
+- name: Include OS-specific setup tasks
+  ansible.builtin.include_tasks: "setup-{{ azure_devops_agents_os_family }}.yml"
+  when: _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 6: Create agent user and group
+# =============================================================================
+- name: Create agent user and group
+  when:
+    - azure_devops_agents_create_user
+    - _agents_to_install | length > 0
+  tags: azure_devops_agents
+  block:
+    - name: Ensure agent group exists
+      ansible.builtin.group:
+        name: "{{ azure_devops_agents_group }}"
+        state: present
+        system: true
+
+    - name: Ensure agent user exists
+      ansible.builtin.user:
+        name: "{{ azure_devops_agents_user }}"
+        group: "{{ azure_devops_agents_group }}"
+        home: "{{ azure_devops_agents_base_path }}"
+        shell: "{{ azure_devops_agents_user_shell }}"
+        system: true
+        create_home: true
+        state: present
+
+# =============================================================================
+# STEP 7: Create base directory and prepare installation
+# =============================================================================
+- name: Create base directory for agents
+  ansible.builtin.file:
+    path: "{{ azure_devops_agents_base_path }}"
+    state: directory
+    owner: "{{ azure_devops_agents_user }}"
+    group: "{{ azure_devops_agents_group }}"
+    mode: '0755'
+  when: _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 8: Get latest agent version if not specified
+# =============================================================================
+- name: Get latest agent version if not specified
+  when:
+    - azure_devops_agents_version | length == 0
+    - _agents_to_install | length > 0
+  tags: azure_devops_agents
+  block:
+    - name: Fetch latest agent version from GitHub API
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/microsoft/azure-pipelines-agent/releases/latest"
+        method: GET
+        return_content: true
+        headers:
+          Accept: "application/vnd.github.v3+json"
+      register: azure_devops_agents_github_release
+      until: azure_devops_agents_github_release.status == 200
+      retries: 3
+      delay: 5
+
+    - name: Extract latest version number
+      ansible.builtin.set_fact:
+        azure_devops_agents_resolved_version: >-
+          {{ azure_devops_agents_github_release.json.tag_name | regex_replace('^v', '') }}
+
+- name: Set resolved agent version
+  ansible.builtin.set_fact:
+    azure_devops_agents_resolved_version: >-
+      {{ azure_devops_agents_version if azure_devops_agents_version | length > 0 else azure_devops_agents_resolved_version | default('') }}
+  when: _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 9: Display configuration summary
+# =============================================================================
+- name: Display agent configuration summary
+  ansible.builtin.debug:
+    msg:
+      - "Azure DevOps URL: {{ azure_devops_agents_url }}"
+      - "Agent Version: {{ azure_devops_agents_resolved_version | default('N/A') }}"
+      - "Architecture: {{ azure_devops_agents_final_arch | default('N/A') }}"
+      - "Base Path: {{ azure_devops_agents_base_path }}"
+      - "Agents to install: {{ _agents_to_install | length }}"
+      - "Agents to remove: {{ _agents_to_remove | length }}"
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 10: Download agent package
+# =============================================================================
+- name: Download and install agents
+  ansible.builtin.include_tasks: install-agent.yml
+  when: _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 11: Auto-create Azure DevOps resources (if enabled)
+# =============================================================================
+- name: Filter deployment-group agents for auto-creation
+  ansible.builtin.set_fact:
+    _dg_agents: >-
+      {{ _agents_to_install | selectattr('type', 'equalto', 'deployment-group') | list }}
+  when:
+    - azure_devops_agents_auto_create_resources
+    - _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+- name: Auto-create Deployment Groups
+  ansible.builtin.include_tasks: create-deployment-group.yml
+  loop: "{{ _dg_agents | default([]) }}"
+  loop_control:
+    loop_var: agent
+    label: "{{ agent.name }} → {{ agent.deployment_group }}"
+  when:
+    - azure_devops_agents_auto_create_resources
+    - _dg_agents | default([]) | length > 0
+  tags: azure_devops_agents
+
+- name: Filter environment agents for auto-creation
+  ansible.builtin.set_fact:
+    _env_agents: >-
+      {{ _agents_to_install | selectattr('type', 'equalto', 'environment') | list }}
+  when:
+    - azure_devops_agents_auto_create_resources
+    - _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+- name: Auto-create Environments
+  ansible.builtin.include_tasks: create-environment.yml
+  loop: "{{ _env_agents | default([]) }}"
+  loop_control:
+    loop_var: agent
+    label: "{{ agent.name }} → {{ agent.environment }}"
+  when:
+    - azure_devops_agents_auto_create_resources
+    - _env_agents | default([]) | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 12: Configure agents
+# =============================================================================
+- name: Configure each agent
+  ansible.builtin.include_tasks: configure-agent.yml
+  loop: "{{ _agents_to_install }}"
+  loop_control:
+    loop_var: agent
+    label: "{{ agent.name }}"
+  when: _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 13: Setup agent services
+# =============================================================================
+- name: Configure agent services
+  ansible.builtin.include_tasks: service-agent.yml
+  loop: "{{ _agents_to_install }}"
+  loop_control:
+    loop_var: agent
+    label: "{{ agent.name }}"
+  when:
+    - azure_devops_agents_run_as_service
+    - _agents_to_install | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 14: Update agent tags via REST API
+# =============================================================================
+- name: Filter agents that need tag updates
+  ansible.builtin.set_fact:
+    _agents_to_update_tags: >-
+      {{ _agents_to_install | selectattr('update_tags', 'defined') | selectattr('update_tags', 'equalto', true) | list }}
+  tags: azure_devops_agents
+
+- name: Update agent tags via REST API
+  ansible.builtin.include_tasks: update-tags.yml
+  loop: "{{ _agents_to_update_tags }}"
+  loop_control:
+    loop_var: agent
+    label: "{{ agent.name }}"
+  when: _agents_to_update_tags | length > 0
+  tags: azure_devops_agents
+
+# =============================================================================
+# STEP 15: Final verification - ensure all services are enabled and running
+# =============================================================================
+- name: Verify all agent services are enabled and running
+  ansible.builtin.include_tasks: verify-services.yml
+  when:
+    - azure_devops_agents_run_as_service
+    - _agents_to_install | length > 0
+  tags: azure_devops_agents

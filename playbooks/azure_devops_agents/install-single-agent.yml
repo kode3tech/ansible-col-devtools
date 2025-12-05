@@ -1,0 +1,51 @@
+---
+# Install a single Azure DevOps self-hosted agent
+#
+# Usage:
+#   ansible-playbook playbooks/azure_devops_agents/install-single-agent.yml \
+#     -i inventory \
+#     --ask-vault-pass \
+#     -e "azure_devops_pool=MyPool"
+#
+# Prerequisites:
+#   - Create vars/azure_secrets.yml with Ansible Vault:
+#     vault_azure_devops_pat: "your-pat-token"
+#     vault_azure_devops_url: "https://dev.azure.com/your-org"
+
+- name: Install single Azure DevOps agent
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/azure_secrets.yml
+
+  vars:
+    # Azure DevOps connection (from vault)
+    azure_devops_agents_url: "{{ vault_azure_devops_url }}"
+    azure_devops_agents_pat: "{{ vault_azure_devops_pat }}"
+
+    # Agent pool (can be overridden via -e)
+    azure_devops_pool: "Default"
+
+    # Agent configuration
+    azure_devops_agents_list:
+      - name: "{{ inventory_hostname | replace('.', '-') }}-agent"
+        type: "self-hosted"
+        pool: "{{ azure_devops_pool }}"
+        replace: true
+        tags:
+          - "linux"
+          - "{{ ansible_distribution | lower }}"
+
+  roles:
+    - code3tech.devtools.azure_devops_agents
+
+  post_tasks:
+    - name: Display agent information
+      ansible.builtin.debug:
+        msg:
+          - "✅ Azure DevOps agent installed successfully"
+          - "Agent Name: {{ azure_devops_agents_list[0].name }}"
+          - "Agent Pool: {{ azure_devops_pool }}"
+          - "Agent Path: {{ azure_devops_agents_base_path | default('/opt/azure-devops-agents') }}/{{ azure_devops_agents_list[0].name }}"
