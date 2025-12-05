@@ -16,6 +16,7 @@
   loop: "{{ azure_devops_agents_list }}"
   loop_control:
     label: "{{ item.name }}"
+  changed_when: true
   listen: restart azure devops agents
 
 - name: Stop all agents
@@ -27,6 +28,7 @@
   loop: "{{ azure_devops_agents_list }}"
   loop_control:
     label: "{{ item.name }}"
+  changed_when: true
   listen: stop azure devops agents
 
 - name: Start all agents
@@ -38,4 +40,5 @@
   loop: "{{ azure_devops_agents_list }}"
   loop_control:
     label: "{{ item.name }}"
+  changed_when: true
   listen: start azure devops agents

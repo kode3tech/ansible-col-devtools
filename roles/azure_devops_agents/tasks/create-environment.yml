@@ -10,6 +10,7 @@
 
 - name: Check if Environment already exists
   ansible.builtin.uri:
+    # yamllint disable-line rule:line-length
     url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments?name={{ agent.environment | urlencode }}&api-version=7.1"
     method: GET
     headers:
@@ -55,6 +56,7 @@
 # =============================================================================
 - name: Configure open access for environment
   ansible.builtin.uri:
+    # yamllint disable-line rule:line-length
     url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/pipelines/pipelinepermissions/environment/{{ _env_id }}?api-version=7.1-preview.1"
     method: PATCH
     headers:

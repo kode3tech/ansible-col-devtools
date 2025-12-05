@@ -37,25 +37,31 @@
   become: true
   when: not _agent_svc_marker.stat.exists
   register: _agent_service_install
+  changed_when: _agent_service_install.rc == 0
   tags: azure_devops_agents
 
 - name: Read new service name after install
   ansible.builtin.slurp:
     src: "{{ _agent_dir }}/.service"
   register: _agent_new_svc_content
-  when: _agent_service_install is changed
+  when: _agent_service_install is defined and _agent_service_install is changed
+  changed_when: false
   tags: azure_devops_agents
 
 - name: Set new service name after install
   ansible.builtin.set_fact:
-    _agent_actual_service: "{{ (_agent_new_svc_content.content | b64decode | trim) | regex_replace('\\.service$', '') }}"
-  when: _agent_service_install is changed
+    _agent_actual_service: >-
+      {{ (_agent_new_svc_content.content | b64decode | trim)
+         | regex_replace('\.service$', '') }}
+  when: _agent_service_install is defined and _agent_service_install is changed
+  changed_when: false
   tags: azure_devops_agents
 
 - name: Reload systemd daemon
   ansible.builtin.systemd:
     daemon_reload: true
-  when: _agent_service_install is changed
+  when: _agent_service_install is defined and _agent_service_install is changed
+  changed_when: false
   tags: azure_devops_agents
 
 - name: Ensure agent service is enabled and started

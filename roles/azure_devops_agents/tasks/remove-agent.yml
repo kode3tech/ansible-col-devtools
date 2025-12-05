@@ -33,7 +33,9 @@
 
 - name: Set service name fact
   ansible.builtin.set_fact:
-    _agent_service_name: "{{ (_service_name_content.content | b64decode | trim) if _service_name_content is not skipped else '' }}"
+    _agent_service_name: >-
+      {{ (_service_name_content.content | b64decode | trim)
+         if _service_name_content is not skipped else '' }}
   when: _agent_exists.stat.exists
   tags: azure_devops_agents
 
@@ -105,6 +107,7 @@
     - azure_devops_agents_remove_on_uninstall | default(true)
   no_log: true
   register: _agent_remove_result
+  changed_when: _agent_remove_result.rc == 0
   failed_when:
     - _agent_remove_result.rc != 0
     - not azure_devops_agents_force_remove | default(false)

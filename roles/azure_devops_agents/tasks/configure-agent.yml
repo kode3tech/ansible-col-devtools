@@ -70,7 +70,8 @@
       --work "{{ agent.work_dir | default('_work') }}"
       {{ '--replace' if agent.replace | default(false) else '' }}
       {{ '--addvirtualmachineresourcetags' if agent.tags | default([]) | length > 0 else '' }}
-      {{ '--virtualmachineresourcetags "' + (agent.tags | join(',')) + '"' if agent.tags | default([]) | length > 0 else '' }}
+      {{ '--virtualmachineresourcetags "' + (agent.tags | join(',')) + '"'
+         if agent.tags | default([]) | length > 0 else '' }}
       {{ '--acceptTeeEula' if azure_devops_agents_accept_tee_eula else '' }}
   when:
     - agent.type == 'environment'
@@ -83,8 +84,10 @@
     _agent_config_cmd: >-
       {{ _agent_config_cmd }}
       --proxyurl "{{ azure_devops_agents_proxy_url }}"
-      {{ '--proxyusername "' + azure_devops_agents_proxy_user + '"' if azure_devops_agents_proxy_user | length > 0 else '' }}
-      {{ '--proxypassword "' + azure_devops_agents_proxy_password + '"' if azure_devops_agents_proxy_password | length > 0 else '' }}
+      {{ '--proxyusername "' + azure_devops_agents_proxy_user + '"'
+         if azure_devops_agents_proxy_user | length > 0 else '' }}
+      {{ '--proxypassword "' + azure_devops_agents_proxy_password + '"'
+         if azure_devops_agents_proxy_password | length > 0 else '' }}
   when:
     - _agent_config_cmd is defined
     - azure_devops_agents_proxy_url | length > 0
@@ -110,7 +113,8 @@
 - name: Display agent configuration result
   ansible.builtin.debug:
     msg: "Agent '{{ agent.name }}' configured successfully as {{ agent.type }}"
-  when: _agent_config_result is changed
+  when: _agent_config_result is defined and _agent_config_result is changed
+  changed_when: false
   tags: azure_devops_agents
 
 - name: Skip already configured agent

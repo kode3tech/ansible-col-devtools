@@ -10,6 +10,7 @@
 
 - name: Check if Deployment Group already exists
   ansible.builtin.uri:
+    # yamllint disable-line rule:line-length
     url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups?name={{ agent.deployment_group | urlencode }}&api-version=7.1"
     method: GET
     headers:

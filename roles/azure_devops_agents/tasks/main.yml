@@ -59,7 +59,9 @@
 - name: Detect system architecture
   ansible.builtin.set_fact:
     azure_devops_agents_detected_arch: >-
-      {{ 'x64' if ansible_architecture == 'x86_64' else 'arm64' if ansible_architecture == 'aarch64' else ansible_architecture }}
+      {{ 'x64' if ansible_architecture == 'x86_64'
+         else 'arm64' if ansible_architecture == 'aarch64'
+         else ansible_architecture }}
   when:
     - azure_devops_agents_arch | length == 0
     - _agents_to_install | length > 0
@@ -68,7 +70,8 @@
 - name: Set final architecture
   ansible.builtin.set_fact:
     azure_devops_agents_final_arch: >-
-      {{ azure_devops_agents_arch if azure_devops_agents_arch | length > 0 else azure_devops_agents_detected_arch | default('x64') }}
+      {{ azure_devops_agents_arch if azure_devops_agents_arch | length > 0
+         else azure_devops_agents_detected_arch | default('x64') }}
   when: _agents_to_install | length > 0
   tags: azure_devops_agents
 
@@ -147,7 +150,8 @@
 - name: Set resolved agent version
   ansible.builtin.set_fact:
     azure_devops_agents_resolved_version: >-
-      {{ azure_devops_agents_version if azure_devops_agents_version | length > 0 else azure_devops_agents_resolved_version | default('') }}
+      {{ azure_devops_agents_version if azure_devops_agents_version | length > 0
+         else azure_devops_agents_resolved_version | default('') }}
   when: _agents_to_install | length > 0
   tags: azure_devops_agents
 
@@ -248,7 +252,10 @@
 - name: Filter agents that need tag updates
   ansible.builtin.set_fact:
     _agents_to_update_tags: >-
-      {{ _agents_to_install | selectattr('update_tags', 'defined') | selectattr('update_tags', 'equalto', true) | list }}
+      {{ _agents_to_install
+         | selectattr('update_tags', 'defined')
+         | selectattr('update_tags', 'equalto', true)
+         | list }}
   tags: azure_devops_agents
 
 - name: Update agent tags via REST API

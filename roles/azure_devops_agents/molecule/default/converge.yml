@@ -202,10 +202,16 @@
     - name: "Filter agents to remove (state: absent)"
       ansible.builtin.set_fact:
         _agents_to_remove: >-
-          {{ azure_devops_agents_list | selectattr('state', 'defined') | selectattr('state', 'equalto', 'absent') | list }}
+          {{ azure_devops_agents_list
+             | selectattr('state', 'defined')
+             | selectattr('state', 'equalto', 'absent')
+             | list }}
         _agents_to_keep: >-
           {{ azure_devops_agents_list | rejectattr('state', 'defined') | list +
-             azure_devops_agents_list | selectattr('state', 'defined') | selectattr('state', 'equalto', 'present') | list }}
+             azure_devops_agents_list
+             | selectattr('state', 'defined')
+             | selectattr('state', 'equalto', 'present')
+             | list }}
 
     - name: Display agents categorization
       ansible.builtin.debug:

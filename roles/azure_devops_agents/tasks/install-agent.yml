@@ -3,13 +3,16 @@
 
 - name: Set agent package filename
   ansible.builtin.set_fact:
-    azure_devops_agents_package_name: "vsts-agent-linux-{{ azure_devops_agents_final_arch }}-{{ azure_devops_agents_resolved_version }}.tar.gz"
+    azure_devops_agents_package_name: >-
+      vsts-agent-linux-{{ azure_devops_agents_final_arch }}-{{ azure_devops_agents_resolved_version }}.tar.gz
   tags: azure_devops_agents
 
 - name: Set agent download URL
   ansible.builtin.set_fact:
     azure_devops_agents_package_url: >-
-      {{ azure_devops_agents_download_url }}/agent/{{ azure_devops_agents_resolved_version }}/{{ azure_devops_agents_package_name }}
+      {{ azure_devops_agents_download_url }}/agent/{{-
+      azure_devops_agents_resolved_version }}/{{-
+      azure_devops_agents_package_name }}
   tags: azure_devops_agents
 
 - name: Display download URL for debugging

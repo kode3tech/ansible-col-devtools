@@ -48,8 +48,8 @@
   block:
     - name: Get deployment group target info
       ansible.builtin.uri:
-        url: >-
-          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups?name={{ agent.deployment_group | urlencode }}&api-version=7.1
+        # yamllint disable-line rule:line-length
+        url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups?name={{ agent.deployment_group | urlencode }}&api-version=7.1"
         method: GET
         headers:
           Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
@@ -66,8 +66,8 @@
 
     - name: Get target machine info
       ansible.builtin.uri:
-        url: >-
-          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups/{{ _deployment_group_id }}/targets?name={{ agent.name | urlencode }}&api-version=7.1
+        # yamllint disable-line rule:line-length
+        url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups/{{ _deployment_group_id }}/targets?name={{ agent.name | urlencode }}&api-version=7.1"
         method: GET
         headers:
           Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
@@ -87,8 +87,8 @@
 
     - name: Update deployment group target tags
       ansible.builtin.uri:
-        url: >-
-          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups/{{ _deployment_group_id }}/targets/{{ _target_id }}?api-version=7.1
+        # yamllint disable-line rule:line-length
+        url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/deploymentgroups/{{ _deployment_group_id }}/targets/{{ _target_id }}?api-version=7.1"
         method: PATCH
         headers:
           Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
@@ -105,7 +105,8 @@
     - name: Display deployment group tag update result
       ansible.builtin.debug:
         msg: "Tags updated for deployment group agent '{{ agent.name }}': {{ agent.tags | join(', ') }}"
-      when: _update_tags_result is changed
+      when: _update_tags_result is defined and _update_tags_result is changed
+      changed_when: false
 
 # =============================================================================
 # Update tags for Environment agents via REST API
@@ -120,8 +121,8 @@
   block:
     - name: Get environment info
       ansible.builtin.uri:
-        url: >-
-          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments?name={{ agent.environment | urlencode }}&api-version=7.1
+        # yamllint disable-line rule:line-length
+        url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments?name={{ agent.environment | urlencode }}&api-version=7.1"
         method: GET
         headers:
           Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
@@ -138,8 +139,8 @@
 
     - name: Get environment resource (VM) info
       ansible.builtin.uri:
-        url: >-
-          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments/{{ _environment_id }}/providers/virtualmachines?name={{ agent.name | urlencode }}&api-version=7.1
+        # yamllint disable-line rule:line-length
+        url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments/{{ _environment_id }}/providers/virtualmachines?name={{ agent.name | urlencode }}&api-version=7.1"
         method: GET
         headers:
           Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
@@ -159,8 +160,8 @@
 
     - name: Update environment VM resource tags
       ansible.builtin.uri:
-        url: >-
-          {{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments/{{ _environment_id }}/providers/virtualmachines/{{ _vm_resource_id }}?api-version=7.1
+        # yamllint disable-line rule:line-length
+        url: "{{ azure_devops_agents_url }}/{{ agent.project }}/_apis/distributedtask/environments/{{ _environment_id }}/providers/virtualmachines/{{ _vm_resource_id }}?api-version=7.1"
         method: PATCH
         headers:
           Authorization: "Basic {{ (':' + azure_devops_agents_pat) | b64encode }}"
@@ -177,7 +178,8 @@
     - name: Display environment tag update result
       ansible.builtin.debug:
         msg: "Tags updated for environment agent '{{ agent.name }}': {{ agent.tags | join(', ') }}"
-      when: _update_env_tags_result is changed
+      when: _update_env_tags_result is defined and _update_env_tags_result is changed
+      changed_when: false
 
 # =============================================================================
 # Self-hosted agents: Tags are capabilities, updated differently
