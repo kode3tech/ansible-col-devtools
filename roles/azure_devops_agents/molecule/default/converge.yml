@@ -5,7 +5,6 @@
 - name: Converge - Test azure_devops_agents role (Installation)
   hosts: all
   gather_facts: true
-  become: true
 
   vars:
     # Test configuration - uses mock values
@@ -153,7 +152,6 @@
 - name: Converge - Test azure_devops_agents role (Removal)
   hosts: all
   gather_facts: true
-  become: true
 
   vars:
     azure_devops_agents_url: "https://dev.azure.com/test-organization"

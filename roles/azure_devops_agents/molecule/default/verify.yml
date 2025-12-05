@@ -5,7 +5,6 @@
 - name: Verify azure_devops_agents role
   hosts: all
   gather_facts: true
-  become: true
 
   vars:
     # Agents that should exist after converge
