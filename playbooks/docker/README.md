@@ -79,9 +79,8 @@ docker_registries_auth:
 
 ## 📚 Related Documentation
 
-- [Docker Complete Guide](../../docs/user-guides/DOCKER_COMPLETE_GUIDE.md) - Comprehensive documentation
+- [Docker Complete Guide](../../docs/user-guides/docker/) - 8-part modular documentation
 - [Docker Role README](../../roles/docker/README.md) - Role reference
-- [Registry Authentication Guide](../../docs/user-guides/REGISTRY_AUTHENTICATION.md) - Auth documentation
 - [Variables Reference](../../docs/reference/VARIABLES.md) - All variables
 
 ---

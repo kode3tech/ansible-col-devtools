@@ -130,7 +130,7 @@ ansible-playbook playbooks/azure_devops_agents/install-production.yml \
 ## Related Documentation
 
 - [Role Documentation](../../roles/azure_devops_agents/README.md) - Quick reference
-- [Complete Guide](../../docs/user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md) - Comprehensive documentation
+- [Complete Guide](../../docs/user-guides/azure-devops-agents/) - Comprehensive 8-part modular documentation
 - [Variables Reference](../../docs/reference/VARIABLES.md) - All collection variables
 - [Azure DevOps Self-hosted Agents](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/linux-agent)
 

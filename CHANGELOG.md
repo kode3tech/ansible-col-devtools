@@ -77,7 +77,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-01-27
+
 ### Added
+- **[Documentation]** Complete modular documentation refactoring
+  - **All 5 roles** now have 8-part modular documentation structure
+  - **Removed** monolithic COMPLETE_GUIDE.md files in favor of modular docs
+  - **Removed** centralized REGISTRY_AUTHENTICATION.md (now per-role at 04-registry-auth.md)
+  - **45 total documentation files** across all roles
 - **[Documentation]** Docker Complete Guide (v1.4.0)
   - **Comprehensive documentation** for Docker production deployment
   - **Docker Architecture** overview and comparison with Podman
@@ -87,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Monitoring section** with Prometheus metrics configuration
   - **Troubleshooting section** for common issues (permissions, DNS, storage)
   - **Real-world examples** for development, CI/CD, and production environments
-  - Location: `docs/user-guides/DOCKER_COMPLETE_GUIDE.md`
+  - Location: `docs/user-guides/docker/` (8-part modular documentation)
 - **[Documentation]** Podman Complete Guide (v1.3.0)
   - **Comprehensive documentation** for Podman Root vs Rootless mode
   - **Detailed variable reference** with explanations and examples
@@ -95,7 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Performance optimization guide** (crun, metacopy, parallel downloads)
   - **Troubleshooting section** for common issues (XDG_RUNTIME_DIR, storage conflicts)
   - **Real-world examples** for development, CI/CD, and production environments
-  - Location: `docs/user-guides/PODMAN_COMPLETE_GUIDE.md`
+  - Location: `docs/user-guides/podman/` (8-part modular documentation)
 - **[Playbooks]** Updated Docker production playbook (v1.4.0)
   - **Replaced basic install-docker.yml** with full production configuration
   - **Custom data directory** (`/opt/docker-data`) for SSD optimization

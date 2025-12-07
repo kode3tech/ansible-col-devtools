@@ -25,7 +25,7 @@
 #       username: "myuser"
 #       password: "{{ vault_dockerhub_token }}"
 #
-# See: docs/user-guides/DOCKER_COMPLETE_GUIDE.md for complete documentation
+# See: docs/user-guides/docker/ for complete documentation
 # ==============================================================================
 
 - name: Docker Production Installation - Performance Optimized
@@ -342,7 +342,7 @@
              • userland-proxy disabled
           ✅ Prometheus metrics at http://127.0.0.1:9323/metrics
           
-          📖 Documentation: docs/user-guides/DOCKER_COMPLETE_GUIDE.md
+          📖 Documentation: docs/user-guides/docker/
           
           ════════════════════════════════════════════════════════════════
 

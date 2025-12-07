@@ -180,7 +180,7 @@ docker_registries_auth:
 - ✅ Non-interactive authentication (perfect for CI/CD)
 - ✅ Ansible Vault integration for security
 
-📖 **Complete guide**: [Registry Authentication](user-guides/REGISTRY_AUTHENTICATION.md)
+📖 **Complete guide**: [Docker Registry Authentication](user-guides/docker/04-registry-auth.md) | [Podman Registry Authentication](user-guides/podman/04-registry-auth.md)
 
 ### Can I customize Docker daemon configuration?
 
@@ -228,7 +228,7 @@ See the [Performance Tuning](../roles/docker/README.md#performance-tuning) secti
 
 ## Podman Questions
 
-> 📖 **Complete Guide**: For comprehensive Podman documentation including Root vs Rootless mode, production playbooks, and detailed variable explanations, see the **[Podman Complete Guide](user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+> 📖 **Complete Guide**: For comprehensive Podman documentation including Root vs Rootless mode, production playbooks, and detailed variable explanations, see the **[Podman Complete Guide](user-guides/podman/)**.
 
 ### What's the difference between Root and Rootless Podman?
 
@@ -245,7 +245,7 @@ This is the **most important concept** to understand:
 - **Root Mode**: System services, maximum performance, privileged ports (80, 443)
 - **Rootless Mode**: Developer workstations, security priority, multi-user isolation
 
-📖 **Detailed explanation**: [Podman Complete Guide - Root Mode vs Rootless Mode](user-guides/PODMAN_COMPLETE_GUIDE.md#root-mode-vs-rootless-mode)
+📖 **Detailed explanation**: [Podman Guide - Introduction](user-guides/podman/01-introduction.md#root-mode-vs-rootless-mode)
 
 ### Can I use Docker and Podman on the same host?
 

@@ -127,9 +127,9 @@ docker_registries_auth:
 - **SELinux context restoration** on RHEL/CentOS systems
 - **Non-interactive authentication** (perfect for CI/CD)
 
-📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
+📖 **Complete guide:** [Docker Registry Authentication](../../docs/user-guides/docker/04-registry-auth.md)
 
-📖 **Production Deployment:** [Docker Complete Guide](../../docs/user-guides/DOCKER_COMPLETE_GUIDE.md) - Comprehensive documentation with performance optimization, monitoring, and troubleshooting.
+📖 **Production Deployment:** [Docker Complete Guide](../../docs/user-guides/docker/) - Comprehensive 8-part modular documentation with performance optimization, monitoring, and troubleshooting.
 
 ### Docker Permission Handling
 

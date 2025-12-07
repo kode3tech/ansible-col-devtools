@@ -5,7 +5,7 @@
 # Production-optimized Podman configuration with focus on PERFORMANCE
 # Includes custom directories, rootless mode, and performance optimizations
 #
-# 📖 Complete Guide: docs/user-guides/PODMAN_COMPLETE_GUIDE.md
+# 📖 Complete Guide: docs/user-guides/podman/
 # ==============================================================================
 - name: Podman Production Installation - Performance Optimized
   hosts: all
@@ -679,7 +679,7 @@
 # PRODUCTION DEPLOYMENT NOTES - PODMAN
 # ==============================================================================
 #
-# 📖 COMPLETE GUIDE: docs/user-guides/PODMAN_COMPLETE_GUIDE.md
+# 📖 COMPLETE GUIDE: docs/user-guides/podman/
 #
 # 1. ROOTLESS vs ROOT MODE:
 #    - Rootless: More secure, per-user containers, recommended

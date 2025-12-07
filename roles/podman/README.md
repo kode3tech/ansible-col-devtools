@@ -2,7 +2,7 @@
 
 Ansible role for installing and configuring Podman on Linux servers.
 
-> 📖 **Complete Guide**: For a comprehensive understanding of Podman with this role, including Root vs Rootless mode, detailed variable explanations, production playbooks, and troubleshooting, see the **[Podman Complete Guide](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+> 📖 **Complete Guide**: For a comprehensive understanding of Podman with this role, including Root vs Rootless mode, detailed variable explanations, production playbooks, and troubleshooting, see the **[Podman Complete Guide](../../docs/user-guides/podman/)**.
 
 ## 📋 Table of Contents
 
@@ -87,7 +87,7 @@ podman_subgid_count: 65536
 podman_insecure_registries: []
 
 # Private registry authentication (optional)
-# See: https://github.com/kode3tech/ansible-col-devtools/blob/main/docs/user-guides/REGISTRY_AUTHENTICATION.md
+# See: docs/user-guides/podman/04-registry-auth.md
 podman_registries_auth: []
 
 # Clean up existing credentials before re-authentication
@@ -142,7 +142,7 @@ podman_registries_auth:
 
 **Applies to:** All supported distributions (Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux)
 
-📖 **Complete guide:** [Registry Authentication Documentation](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
+📖 **Complete guide:** [Podman Registry Authentication](../../docs/user-guides/podman/04-registry-auth.md)
 
 ## Time Synchronization (Compatibility Fixes)
 

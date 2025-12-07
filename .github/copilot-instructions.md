@@ -1008,7 +1008,7 @@ Every documentation directory **MUST** have a `README.md` index:
 
 ```markdown
 # In role README.md (e.g., roles/podman/README.md) - referencing collection docs
-See [Registry Authentication](../docs/user-guides/REGISTRY_AUTHENTICATION.md) for details.
+See [Podman Registry Authentication](../../docs/user-guides/podman/04-registry-auth.md) for details.
 
 # In collection docs (e.g., docs/user-guides/SOME_GUIDE.md) - referencing role docs
 See [Docker Role](../roles/docker/README.md) for Docker-specific configuration.
@@ -1079,8 +1079,8 @@ See [Docker Role](../roles/docker/README.md) for Docker-specific configuration.
 
 **Examples**:
 ```markdown
-# In docs/user-guides/REGISTRY_AUTHENTICATION.md
-[← Back to User Guides](README.md)
+# In docs/user-guides/docker/04-registry-auth.md
+[← Back to Docker Documentation](README.md)
 
 # In roles/docker/README.md  
 [← Back to Roles](../README.md)
@@ -1149,9 +1149,9 @@ docker_registries_auth:
     password: "{{ vault_token }}"
 ```
 
-📖 **Complete guide**: [Registry Authentication](../docs/user-guides/REGISTRY_AUTHENTICATION.md)
+📖 **Complete guide**: [Docker Registry Authentication](../../docs/user-guides/docker/04-registry-auth.md)
 
-# In docs/user-guides/REGISTRY_AUTHENTICATION.md - COMPLETE
+# In docs/user-guides/docker/04-registry-auth.md - COMPLETE
 [Full detailed content with all examples, explanations, security notes]
 ```
 
@@ -1191,14 +1191,14 @@ docker_registries_auth:
 
 **Common patterns**:
 ```markdown
-# From roles/docker/ to docs/user-guides/
-../docs/user-guides/REGISTRY_AUTHENTICATION.md
+# From roles/docker/ to docs/user-guides/docker/
+../../docs/user-guides/docker/04-registry-auth.md
 
 # From docs/getting-started/ to roles/docker/
-../roles/docker/README.md
+../../roles/docker/README.md
 
 # From playbooks/docker/ to roles/docker/
-../roles/docker/README.md
+../../roles/docker/README.md
 ```
 
 **Testing**: When updating links, verify by:

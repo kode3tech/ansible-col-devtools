@@ -204,15 +204,14 @@ See [playbooks/README.md](playbooks/README.md) for complete documentation.
 
 | Role | README | Complete Guide |
 |------|--------|----------------|
-| **Azure DevOps Agents** | [roles/azure_devops_agents/README.md](roles/azure_devops_agents/README.md) | [Azure DevOps Agents Guide](docs/user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md) |
+| **Azure DevOps Agents** | [roles/azure_devops_agents/README.md](roles/azure_devops_agents/README.md) | [Azure DevOps Agents Guide](docs/user-guides/azure-devops-agents/) |
 | **GitHub Actions Runners** | [roles/github_actions_runners/README.md](roles/github_actions_runners/README.md) | [GitHub Actions Runners Guide](docs/user-guides/github-actions-runners/) |
-| **Docker** | [roles/docker/README.md](roles/docker/README.md) | [Docker Complete Guide](docs/user-guides/DOCKER_COMPLETE_GUIDE.md) |
-| **Podman** | [roles/podman/README.md](roles/podman/README.md) | [Podman Complete Guide](docs/user-guides/PODMAN_COMPLETE_GUIDE.md) |
-| **asdf** | [roles/asdf/README.md](roles/asdf/README.md) | [asdf Complete Guide](docs/user-guides/ASDF_COMPLETE_GUIDE.md) |
+| **Docker** | [roles/docker/README.md](roles/docker/README.md) | [Docker Complete Guide](docs/user-guides/docker/) |
+| **Podman** | [roles/podman/README.md](roles/podman/README.md) | [Podman Complete Guide](docs/user-guides/podman/) |
+| **asdf** | [roles/asdf/README.md](roles/asdf/README.md) | [asdf Complete Guide](docs/user-guides/asdf/) |
 
 ### Additional Resources
 
-- [Registry Authentication](docs/user-guides/REGISTRY_AUTHENTICATION.md) - Configure private registry access
 - [Variables Reference](docs/reference/VARIABLES.md) - All role variables
 - [FAQ](docs/FAQ.md) - Frequently asked questions
 

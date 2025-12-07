@@ -33,9 +33,6 @@ Comprehensive guide to fixing XDG_RUNTIME_DIR issues in Podman.
 - [Role Variables](../defaults/main.yml) - All available variables
 - [Role Tasks](../tasks/main.yml) - Task implementation
 
-### Collection Documentation
-- [Registry Authentication](../../../docs/user-guides/REGISTRY_AUTHENTICATION.md) - Docker & Podman registry auth
-
 ---
 
 [← Back to Podman Role](../README.md) | [← Back to Collection Docs](../../../docs/README.md)

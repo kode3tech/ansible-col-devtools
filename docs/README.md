@@ -13,9 +13,8 @@ Start here if you're new to this collection.
 
 ### 📘 [User Guides](user-guides/)
 Learn how to use the collection effectively.
-- [Docker Complete Guide](user-guides/DOCKER_COMPLETE_GUIDE.md) ⭐ **NEW** - Comprehensive guide to production deployment, performance, monitoring, and troubleshooting
-- [Podman Complete Guide](user-guides/PODMAN_COMPLETE_GUIDE.md) ⭐ **NEW** - Comprehensive guide to Root vs Rootless mode, variables, performance, and troubleshooting
-- [Registry Authentication](user-guides/REGISTRY_AUTHENTICATION.md) - Configure private registry authentication for Docker and Podman
+- [Docker Complete Guide](user-guides/docker/) ⭐ **NEW** - 8-part modular guide to production deployment, performance, and troubleshooting
+- [Podman Complete Guide](user-guides/podman/) ⭐ **NEW** - 8-part modular guide to Root vs Rootless mode, variables, and performance
 
 ### 📖 [Reference](reference/)
 Technical reference documentation.

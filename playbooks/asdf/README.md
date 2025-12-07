@@ -2,7 +2,7 @@
 
 This directory contains example playbooks demonstrating how to use the `asdf` role from the `code3tech.devtools` collection.
 
-📖 **Complete Guide:** [asdf Complete Guide](../../docs/user-guides/ASDF_COMPLETE_GUIDE.md) - Comprehensive documentation with architecture, performance optimization, and troubleshooting.
+📖 **Complete Guide:** [asdf Complete Guide](../../docs/user-guides/asdf/) - Comprehensive 8-part modular documentation with architecture, performance optimization, and troubleshooting.
 
 ## Available Examples
 
@@ -126,7 +126,7 @@ You can customize these playbooks by:
 
 ## Related Documentation
 
-- [asdf Complete Guide](../../docs/user-guides/ASDF_COMPLETE_GUIDE.md) - Comprehensive documentation
+- [asdf Complete Guide](../../docs/user-guides/asdf/) - 8-part modular documentation
 - [asdf Role README](../../roles/asdf/README.md) - Role reference
 - [Collection README](../../README.md) - Main collection documentation
 - [asdf Official Documentation](https://asdf-vm.com/) - asdf project documentation

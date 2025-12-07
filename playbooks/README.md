@@ -243,15 +243,14 @@ When creating new example playbooks:
 
 ## 🔗 Related Documentation
 
-- [Azure DevOps Agents Complete Guide](../docs/user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md)
-- [Docker Complete Guide](../docs/user-guides/DOCKER_COMPLETE_GUIDE.md)
-- [Podman Complete Guide](../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)
-- [asdf Complete Guide](../docs/user-guides/ASDF_COMPLETE_GUIDE.md)
+- [Azure DevOps Agents Complete Guide](../docs/user-guides/azure-devops-agents/)
+- [Docker Complete Guide](../docs/user-guides/docker/)
+- [Podman Complete Guide](../docs/user-guides/podman/)
+- [asdf Complete Guide](../docs/user-guides/asdf/)
 - [Azure DevOps Agents Role README](../roles/azure_devops_agents/README.md)
 - [Docker Role README](../roles/docker/README.md)
 - [Podman Role README](../roles/podman/README.md)
 - [asdf Role README](../roles/asdf/README.md)
-- [Registry Authentication Guide](../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 - [Collection README](../README.md)
 
 ---

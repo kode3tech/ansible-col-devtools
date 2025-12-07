@@ -13,7 +13,7 @@ Complete reference of all variables available in the `code3tech.devtools` collec
 
 ## Azure DevOps Agents Role Variables
 
-> 📖 **Complete Guide**: For detailed explanations and production examples, see the **[Azure DevOps Agents Complete Guide](../user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md)**.
+> 📖 **Complete Guide**: For detailed explanations and production examples, see the **[Azure DevOps Agents Complete Guide](../user-guides/azure-devops-agents/)**.
 
 ### Required Variables
 
@@ -238,7 +238,7 @@ docker_registries_auth:
 
 ## Podman Role Variables
 
-> 📖 **Complete Guide**: For detailed explanations of each variable with examples and use cases, see the **[Podman Complete Guide](../user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+> 📖 **Complete Guide**: For detailed explanations of each variable with examples and use cases, see the **[Podman Complete Guide](../user-guides/podman/)**.
 
 ### Basic Configuration
 
@@ -559,7 +559,6 @@ ansible-playbook playbook.yml --ask-vault-pass
 - [Docker Role README](../../roles/docker/README.md)
 - [Podman Role README](../../roles/podman/README.md)
 - [asdf Role README](../../roles/asdf/README.md)
-- [Registry Authentication Guide](../user-guides/REGISTRY_AUTHENTICATION.md)
 - [FAQ](../FAQ.md)
 
 ---

@@ -16,7 +16,7 @@ The **comprehensive guide** to GitHub Actions self-hosted runners with the code3
 - Troubleshooting common issues
 - 📂 8-part modular documentation for video tutorials
 
-### [Azure DevOps Agents Complete Guide](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md)
+### [Azure DevOps Agents Complete Guide](azure-devops-agents/) ⭐ NEW
 The **comprehensive guide** to Azure DevOps self-hosted agents with the code3tech.devtools collection.
 - **Multi-Agent Architecture** - Deploy N agents per host with isolation
 - **Three Agent Types** - Self-hosted, Deployment Group, and Environment agents
@@ -26,8 +26,9 @@ The **comprehensive guide** to Azure DevOps self-hosted agents with the code3tec
 - Security best practices with PAT management
 - Troubleshooting common issues
 - Complete variable reference
+- 📂 8-part modular documentation for video tutorials
 
-### [Docker Complete Guide](DOCKER_COMPLETE_GUIDE.md)
+### [Docker Complete Guide](docker/) ⭐ NEW
 The **comprehensive guide** to Docker with the code3tech.devtools collection.
 - **Docker Architecture** - Understanding the client-server model
 - Complete variable reference with detailed explanations
@@ -36,8 +37,9 @@ The **comprehensive guide** to Docker with the code3tech.devtools collection.
 - Monitoring with Prometheus metrics
 - Troubleshooting common issues
 - Real-world examples for development, CI/CD, and production
+- 📂 8-part modular documentation for video tutorials
 
-### [Podman Complete Guide](PODMAN_COMPLETE_GUIDE.md)
+### [Podman Complete Guide](podman/) ⭐ NEW
 The **comprehensive guide** to Podman with the code3tech.devtools collection.
 - **Root vs Rootless Mode** - Understanding the key difference
 - Complete variable reference with detailed explanations
@@ -45,25 +47,18 @@ The **comprehensive guide** to Podman with the code3tech.devtools collection.
 - Performance optimization (crun, metacopy, parallel downloads)
 - Troubleshooting common issues
 - Real-world examples for development, CI/CD, and production
+- 📂 8-part modular documentation for video tutorials
 
-### [asdf Complete Guide](ASDF_COMPLETE_GUIDE.md)
+### [asdf Complete Guide](asdf/) ⭐ NEW
 The **comprehensive guide** to asdf version manager with the code3tech.devtools collection.
 - **Centralized Group-Based Architecture** - Multi-user support without conflicts
-- Complete variable reference with detailed explanations
-- Production playbook walkthrough with line-by-line explanations
-- Plugin management (lightweight vs heavy plugins)
-- Performance optimization tips
+- **Plugin Categories** - Lightweight (binary) vs Heavy (compiled) plugins
+- **Multi-User Configuration** - Group-based permissions for team environments
+- Production deployment with complete examples
+- Performance optimization and security best practices
 - Troubleshooting common issues
-- Real-world examples for development, CI/CD, and DevOps
-
-### [Registry Authentication](REGISTRY_AUTHENTICATION.md)
-Learn how to configure private container registry authentication.
-- **Applies to:** Both Docker and Podman roles
-- Docker Hub authentication
-- Private registry setup
-- GitHub Container Registry (GHCR)
-- Quay.io authentication
-- Security best practices with Ansible Vault
+- Complete variable reference
+- 📂 8-part modular documentation for video tutorials
 
 ---
 
@@ -82,52 +77,52 @@ See [GitHub Actions Runners Guide - Labels & Runner Groups](github-actions-runne
 See [GitHub Actions Runners Guide - Security](github-actions-runners/07-security.md)
 
 ### Azure DevOps Agent Deployment
-See [Azure DevOps Agents Guide - Production Deployment](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md#production-deployment)
+See [Azure DevOps Agents Guide - Production Deployment](azure-devops-agents/06-production-deployment.md)
 
 ### Azure DevOps Multi-Agent Setup
-See [Azure DevOps Agents Guide - Architecture](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md#architecture)
+See [Azure DevOps Agents Guide - Introduction & Architecture](azure-devops-agents/01-introduction.md)
 
 ### Docker Performance Optimization
-See [Docker Complete Guide - Performance Optimization](DOCKER_COMPLETE_GUIDE.md#performance-optimization)
+See [Docker Guide - Performance & Security](docker/07-performance-security.md)
 
 ### Docker Production Deployment
-See [Docker Complete Guide - Production Playbook Explained](DOCKER_COMPLETE_GUIDE.md#production-playbook-explained)
+See [Docker Guide - Production Deployment](docker/06-production-deployment.md)
 
 ### Understanding Podman Root vs Rootless
-See [Podman Complete Guide - Root Mode vs Rootless Mode](PODMAN_COMPLETE_GUIDE.md#root-mode-vs-rootless-mode)
+See [Podman Guide - Introduction](podman/01-introduction.md#root-mode-vs-rootless-mode)
 
 ### Configuring Rootless Users
-See [Podman Complete Guide - Rootless Configuration](PODMAN_COMPLETE_GUIDE.md#rootless-configuration)
+See [Podman Guide - Rootless Configuration](podman/05-rootless-config.md)
 
-### Performance Optimization
-See [Podman Complete Guide - Performance Optimization](PODMAN_COMPLETE_GUIDE.md#performance-optimization)
+### Podman Performance Optimization
+See [Podman Guide - Performance & Security](podman/07-performance-security.md)
 
 ### Authenticating to Docker Hub
-See [Registry Authentication - Docker Hub](REGISTRY_AUTHENTICATION.md#docker-hub)
+See [Docker Guide - Registry Authentication](docker/04-registry-auth.md#docker-hub)
 
 ### Authenticating to Private Registries
-See [Registry Authentication - Private Registries](REGISTRY_AUTHENTICATION.md#private-registries)
+See [Docker Guide - Registry Authentication](docker/04-registry-auth.md#private-registries)
 
 ### Using Ansible Vault for Credentials
-See [Registry Authentication - Security](REGISTRY_AUTHENTICATION.md#security-best-practices)
+See [Docker Guide - Registry Authentication](docker/04-registry-auth.md#security-best-practices)
 
 ### Troubleshooting Docker Issues
-See [Docker Complete Guide - Troubleshooting](DOCKER_COMPLETE_GUIDE.md#troubleshooting)
+See [Docker Guide - Troubleshooting](docker/08-troubleshooting.md)
 
 ### Troubleshooting Podman Issues
-See [Podman Complete Guide - Troubleshooting](PODMAN_COMPLETE_GUIDE.md#troubleshooting)
+See [Podman Guide - Troubleshooting](podman/08-troubleshooting.md)
 
 ### Understanding asdf Architecture
-See [asdf Complete Guide - asdf Architecture](ASDF_COMPLETE_GUIDE.md#asdf-architecture)
+See [asdf Complete Guide - Introduction](asdf/01-introduction.md)
 
 ### Configuring asdf Plugins
-See [asdf Complete Guide - Plugin Configuration](ASDF_COMPLETE_GUIDE.md#plugin-configuration)
+See [asdf Complete Guide - Plugin Management](asdf/04-plugin-management.md)
 
 ### Multi-User asdf Configuration
-See [asdf Complete Guide - Multi-User Configuration](ASDF_COMPLETE_GUIDE.md#multi-user-configuration)
+See [asdf Complete Guide - Multi-User Configuration](asdf/05-multi-user-config.md)
 
 ### Troubleshooting asdf Issues
-See [asdf Complete Guide - Troubleshooting](ASDF_COMPLETE_GUIDE.md#troubleshooting)
+See [asdf Complete Guide - Troubleshooting](asdf/08-troubleshooting.md)
 
 ---
 

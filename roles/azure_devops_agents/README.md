@@ -16,6 +16,8 @@ Install and configure Azure DevOps self-hosted agents on Linux servers. This rol
 - 🔐 **Security**: Dedicated non-root user for agent processes
 - 📝 **Input Validation**: Comprehensive validation with clear error messages
 
+📖 **Complete Guide**: [Azure DevOps Agents Complete Guide](../../docs/user-guides/azure-devops-agents/) - 8-part modular documentation with detailed explanations, diagrams, and production examples.
+
 ## 📋 Table of Contents
 
 - [Requirements](#requirements)

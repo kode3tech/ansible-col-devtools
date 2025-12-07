@@ -2,7 +2,7 @@
 
 Example playbooks demonstrating Podman role usage.
 
-> 📖 **Complete Guide**: For comprehensive Podman documentation including Root vs Rootless mode, detailed variable explanations, and production deployment, see the **[Podman Complete Guide](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md)**.
+> 📖 **Complete Guide**: For comprehensive Podman documentation including Root vs Rootless mode, detailed variable explanations, and production deployment, see the **[Podman Complete Guide](../../docs/user-guides/podman/)**.
 
 ## 📋 Available Examples
 
@@ -118,20 +118,19 @@ If you see warnings about XDG_RUNTIME_DIR:
 ### Authentication Failures
 If authentication fails:
 - Verify credentials are correct
-- Check [Registry Authentication Guide](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
+- Check [Podman Registry Authentication](../../docs/user-guides/podman/04-registry-auth.md)
 - Enable `podman_clean_credentials: true` to clear old credentials
 
 ### Storage Driver Conflicts
 If you see "database graph driver mismatch" errors:
 - Set `podman_reset_storage_on_driver_change: true` (⚠️ deletes containers/images)
-- See [Podman Complete Guide - Troubleshooting](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md#troubleshooting)
+- See [Podman Guide - Troubleshooting](../../docs/user-guides/podman/08-troubleshooting.md)
 
 ## 📚 Related Documentation
 
-- [Podman Complete Guide](../../docs/user-guides/PODMAN_COMPLETE_GUIDE.md) - **Comprehensive documentation**
+- [Podman Complete Guide](../../docs/user-guides/podman/) - **Comprehensive 8-part documentation**
 - [Podman Role README](../../roles/podman/README.md)
 - [Podman XDG Runtime Fix](../../roles/podman/docs/PODMAN_XDG_RUNTIME_FIX.md)
-- [Registry Authentication Guide](../../docs/user-guides/REGISTRY_AUTHENTICATION.md)
 
 ---
 

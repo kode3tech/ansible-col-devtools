@@ -6,7 +6,7 @@
 # Plugins: direnv, jq, yq (fast installation ~15-30 seconds, no compilation)
 # Uses centralized group-based architecture
 #
-# Documentation: docs/user-guides/ASDF_COMPLETE_GUIDE.md
+# Documentation: docs/user-guides/asdf/
 # ==============================================================================
 - name: Install asdf with Lightweight Plugins
   hosts: all
