@@ -1,0 +1,186 @@
+---
+# Verify playbook for github_actions_runners role testing
+# Validates the role installation, configuration, and removal
+
+- name: Verify github_actions_runners role
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # Runners that should exist after converge
+    runners_to_verify:
+      - name: "test-runner-01"
+      - name: "test-runner-02"
+      - name: "test-runner-03"
+
+    # Runner that should have been removed
+    runner_removed: "test-runner-to-remove"
+
+  tasks:
+    # =========================================================================
+    # Verify User and Group
+    # =========================================================================
+    - name: Verify runner user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: ghrunner
+      register: runner_user
+
+    - name: Assert runner user was created
+      ansible.builtin.assert:
+        that:
+          - runner_user is succeeded
+        fail_msg: "Runner user 'ghrunner' was not created"
+        success_msg: "✅ Runner user 'ghrunner' exists"
+
+    - name: Verify runner group exists
+      ansible.builtin.getent:
+        database: group
+        key: ghrunner
+      register: runner_group
+
+    - name: Assert runner group was created
+      ansible.builtin.assert:
+        that:
+          - runner_group is succeeded
+        fail_msg: "Runner group 'ghrunner' was not created"
+        success_msg: "✅ Runner group 'ghrunner' exists"
+
+    # =========================================================================
+    # Verify Base Directory
+    # =========================================================================
+    - name: Verify base directory exists
+      ansible.builtin.stat:
+        path: /opt/github-actions-runners
+      register: base_dir
+
+    - name: Assert base directory was created
+      ansible.builtin.assert:
+        that:
+          - base_dir.stat.exists
+          - base_dir.stat.isdir
+          - base_dir.stat.pw_name == 'ghrunner'
+        fail_msg: "Base directory /opt/github-actions-runners was not properly created"
+        success_msg: "✅ Base directory exists with correct ownership"
+
+    # =========================================================================
+    # Verify Runner Directories (should exist)
+    # =========================================================================
+    - name: Verify runner directories exist
+      ansible.builtin.stat:
+        path: "/opt/github-actions-runners/{{ item.name }}"
+      loop: "{{ runners_to_verify }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: runner_dirs
+
+    - name: Assert all runner directories were created
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+        fail_msg: "Runner directory {{ item.item.name }} was not created"
+        success_msg: "✅ Runner directory {{ item.item.name }} exists"
+      loop: "{{ runner_dirs.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # =========================================================================
+    # Verify Runner Removal (should NOT exist)
+    # =========================================================================
+    - name: Verify removed runner directory does NOT exist
+      ansible.builtin.stat:
+        path: "/opt/github-actions-runners/{{ runner_removed }}"
+      register: removed_runner_dir
+
+    - name: Assert removed runner directory was deleted
+      ansible.builtin.assert:
+        that:
+          - not removed_runner_dir.stat.exists
+        fail_msg: "Runner directory {{ runner_removed }} should have been removed but still exists"
+        success_msg: "✅ Runner directory {{ runner_removed }} was successfully removed"
+
+    # =========================================================================
+    # Verify Prerequisite Packages
+    # =========================================================================
+    - name: Verify prerequisite packages are installed (Debian)
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+          - tar
+          - git
+          - jq
+        state: present
+      check_mode: true
+      register: prereq_check_debian
+      when: ansible_os_family == 'Debian'
+
+    - name: Verify prerequisite packages are installed (RedHat)
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+          - tar
+          - git
+          - jq
+        state: present
+      check_mode: true
+      register: prereq_check_redhat
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+
+    - name: Assert prerequisites are installed
+      ansible.builtin.assert:
+        that:
+          - (prereq_check_debian is defined and not prereq_check_debian.changed) or
+            (prereq_check_redhat is defined and not prereq_check_redhat.changed)
+        fail_msg: "Prerequisite packages are not installed"
+        success_msg: "✅ All prerequisite packages are installed"
+
+    # =========================================================================
+    # Verify Mock Files for Remaining Runners
+    # =========================================================================
+    - name: Verify mock config.sh exists for remaining runners
+      ansible.builtin.stat:
+        path: "/opt/github-actions-runners/{{ item.name }}/config.sh"
+      loop: "{{ runners_to_verify }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: config_scripts
+
+    - name: Assert config.sh scripts exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.executable
+        fail_msg: "config.sh not found or not executable for {{ item.item.name }}"
+        success_msg: "✅ config.sh exists and is executable for {{ item.item.name }}"
+      loop: "{{ config_scripts.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # =========================================================================
+    # Summary
+    # =========================================================================
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg:
+          - "═══════════════════════════════════════════════════════════"
+          - "           VERIFICATION COMPLETED SUCCESSFULLY             "
+          - "═══════════════════════════════════════════════════════════"
+          - ""
+          - "✅ Runner user and group created"
+          - "✅ Base directory created with correct permissions"
+          - "✅ {{ runners_to_verify | length }} runner directories created and verified"
+          - "✅ 1 runner directory removed ({{ runner_removed }})"
+          - "✅ Prerequisite packages installed"
+          - "✅ Mock config.sh scripts in place"
+          - ""
+          - "Tested scenarios:"
+          - "  - Multi-runner installation (3 runners)"
+          - "  - Runner removal with state: absent"
+          - "  - Directory cleanup on removal"
+          - ""
+          - "Note: Full runner registration/unregistration tests"
+          - "      require valid GitHub credentials"
+          - "═══════════════════════════════════════════════════════════"

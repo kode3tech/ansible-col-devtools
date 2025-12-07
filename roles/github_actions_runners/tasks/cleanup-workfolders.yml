@@ -1,0 +1,155 @@
+---
+# Cleanup old work folders to free disk space
+# This task is included when github_actions_runners_work_folder_cleanup_days > 0
+
+# =============================================================================
+# Find all runner directories
+# =============================================================================
+- name: Find all runner directories for cleanup
+  ansible.builtin.find:
+    paths: "{{ github_actions_runners_base_path }}"
+    patterns: "*"
+    file_type: directory
+    excludes:
+      - ".downloads"
+  register: _cleanup_runner_dirs
+  tags: github_actions_runners
+
+# =============================================================================
+# Cleanup _work directories in each runner
+# =============================================================================
+- name: Find old directories in _work folders
+  ansible.builtin.find:
+    paths: "{{ item.path }}/_work"
+    age: "{{ github_actions_runners_work_folder_cleanup_days }}d"
+    file_type: directory
+    recurse: false
+  loop: "{{ _cleanup_runner_dirs.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: _old_work_dirs
+  failed_when: false
+  tags: github_actions_runners
+
+- name: Calculate total directories to clean
+  ansible.builtin.set_fact:
+    _dirs_to_clean: >-
+      {{ _old_work_dirs.results
+         | selectattr('files', 'defined')
+         | map(attribute='files')
+         | flatten
+         | list }}
+  tags: github_actions_runners
+
+- name: Display cleanup summary
+  ansible.builtin.debug:
+    msg: >-
+      🧹 Found {{ _dirs_to_clean | length }} directories older than
+      {{ github_actions_runners_work_folder_cleanup_days }} days to clean
+  when: _dirs_to_clean | length > 0
+  tags: github_actions_runners
+
+- name: Remove old work directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _dirs_to_clean }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: _dirs_to_clean | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# Cleanup _temp directories (always safe to clean)
+# =============================================================================
+- name: Find and clean _temp directories
+  ansible.builtin.find:
+    paths: "{{ item.path }}/_work/_temp"
+    age: "1d"
+    file_type: any
+    recurse: true
+  loop: "{{ _cleanup_runner_dirs.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: _temp_files
+  failed_when: false
+  tags: github_actions_runners
+
+- name: Calculate temp files to clean
+  ansible.builtin.set_fact:
+    _temp_to_clean: >-
+      {{ _temp_files.results
+         | selectattr('files', 'defined')
+         | map(attribute='files')
+         | flatten
+         | list }}
+  tags: github_actions_runners
+
+- name: Remove old temp files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _temp_to_clean }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: _temp_to_clean | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# Optional: Cleanup toolcache (configurable)
+# =============================================================================
+- name: Find old toolcache entries
+  ansible.builtin.find:
+    paths: "{{ item.path }}/_work/_tool"
+    age: "{{ github_actions_runners_toolcache_cleanup_days | default(30) }}d"
+    file_type: directory
+    recurse: false
+  loop: "{{ _cleanup_runner_dirs.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: _old_tools
+  when: github_actions_runners_cleanup_toolcache | default(false)
+  failed_when: false
+  tags: github_actions_runners
+
+- name: Calculate toolcache to clean
+  ansible.builtin.set_fact:
+    _tools_to_clean: >-
+      {{ _old_tools.results | default([])
+         | selectattr('files', 'defined')
+         | map(attribute='files')
+         | flatten
+         | list }}
+  when: github_actions_runners_cleanup_toolcache | default(false)
+  tags: github_actions_runners
+
+- name: Remove old toolcache entries
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _tools_to_clean | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when:
+    - github_actions_runners_cleanup_toolcache | default(false)
+    - _tools_to_clean | default([]) | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# Report disk space after cleanup
+# =============================================================================
+- name: Get disk usage after cleanup
+  ansible.builtin.command: du -sh "{{ github_actions_runners_base_path }}"
+  register: _disk_usage_after
+  changed_when: false
+  tags: github_actions_runners
+
+- name: Display cleanup complete
+  ansible.builtin.debug:
+    msg:
+      - "✅ Work folder cleanup complete"
+      - "   Directories removed: {{ _dirs_to_clean | length }}"
+      - "   Temp files removed: {{ _temp_to_clean | length }}"
+      - "   Toolcache entries removed: {{ _tools_to_clean | default([]) | length }}"
+      - "   Current disk usage: {{ _disk_usage_after.stdout }}"
+  tags: github_actions_runners

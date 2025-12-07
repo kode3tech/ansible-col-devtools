@@ -1,0 +1,159 @@
+---
+# ============================================================================
+# GitHub Actions Runners Configuration
+# ============================================================================
+# This file defines the runner deployment configuration.
+# Use with: install-production.yml
+# ============================================================================
+
+# ============================================================================
+# GITHUB CONNECTION
+# ============================================================================
+# Runner scope: organization, repository, or enterprise
+github_actions_runners_scope: "organization"
+
+# Organization name (for scope: organization)
+github_actions_runners_organization: "your-organization"
+
+# Repository (for scope: repository)
+# github_actions_runners_repository: "owner/repo"
+
+# Enterprise slug (for scope: enterprise)
+# github_actions_runners_enterprise: "your-enterprise"
+
+# ============================================================================
+# RUNNER USER CONFIGURATION
+# ============================================================================
+# Base installation path
+github_actions_runners_base_path: "/opt/github-actions-runners"
+
+# Runner user and group
+github_actions_runners_user: "ghrunner"
+github_actions_runners_group: "ghrunner"
+
+# ============================================================================
+# SERVICE CONFIGURATION
+# ============================================================================
+github_actions_runners_service_enabled: true
+github_actions_runners_service_state: "started"
+
+# Ephemeral runners (removed after each job)
+# Recommended for public repositories
+github_actions_runners_ephemeral: false
+
+# ============================================================================
+# DEFAULT LABELS
+# ============================================================================
+github_actions_runners_default_labels:
+  - "self-hosted"
+  - "Linux"
+  - "{{ ansible_architecture }}"
+
+# ============================================================================
+# RUNNER GROUPS CONFIGURATION
+# ============================================================================
+# Groups control which repositories can use runners (like Azure DevOps open_access)
+# Only works with scope: organization or enterprise (not repository)
+#
+# Visibility options:
+#   - "all": All repos can use runners in this group (open access)
+#   - "selected": Only specified repos can use (restricted access)
+#   - "private": Only private repos can use
+#
+# IMPORTANT: To use "selected" visibility, you MUST specify selected_repositories
+
+# Default settings for groups not explicitly defined below
+github_actions_runners_default_group_visibility: "all"
+github_actions_runners_default_group_allows_public_repos: false
+
+# Explicit group definitions with access control
+github_actions_runners_groups:
+  # ==========================================================================
+  # PRODUCTION GROUP - Restricted access (like open_access: false)
+  # ==========================================================================
+  - name: "production"
+    visibility: "selected"              # Only specific repos can use
+    allows_public_repos: false
+    selected_repositories:              # ← Repos with access to this group
+      - "your-production-repo"          # Add your production repos here
+      # - "frontend-app"
+      # - "backend-api"
+
+  # ==========================================================================
+  # DEVELOPMENT GROUP - Open access (like open_access: true)
+  # ==========================================================================
+  - name: "development"
+    visibility: "all"                   # All repos can use
+    allows_public_repos: false
+
+# ============================================================================
+# RUNNERS LIST
+# ============================================================================
+# Each runner gets its own isolated directory and systemd service.
+# Labels help route jobs to specific runners.
+#
+# runner_group: Reference to a group defined in github_actions_runners_groups
+#               or use "Default" for the built-in default group.
+
+github_actions_runners_list:
+  # ==========================================================================
+  # RUNNER 1: General Purpose / Docker Builds (Production Group)
+  # ==========================================================================
+  - name: "runner-01"
+    labels:
+      - "general"
+      - "docker"
+      - "builds"
+    runner_group: "production"  # ← Restricted: only selected repos
+    state: present
+
+  # ==========================================================================
+  # RUNNER 2: Node.js / Frontend Builds (Development Group)
+  # ==========================================================================
+  - name: "runner-02"
+    labels:
+      - "nodejs"
+      - "npm"
+      - "frontend"
+    runner_group: "development"  # ← Open: all repos can use
+    state: present
+
+  # ==========================================================================
+  # RUNNER 3: Python / Backend Builds (Production Group)
+  # ==========================================================================
+  - name: "runner-03"
+    labels:
+      - "python"
+      - "pip"
+      - "backend"
+    runner_group: "production"  # ← Same as runner-01
+    state: present
+
+  # Example: Remove a runner
+  # - name: "old-runner"
+  #   state: absent
+
+# ============================================================================
+# WORKFLOW EXAMPLES
+# ============================================================================
+# Example workflow targeting these runners:
+#
+#   jobs:
+#     build:
+#       runs-on: [self-hosted, linux, docker]
+#       steps:
+#         - uses: actions/checkout@v4
+#         - run: docker build .
+#
+#     test-frontend:
+#       runs-on: [self-hosted, nodejs, frontend]
+#       steps:
+#         - uses: actions/checkout@v4
+#         - run: npm test
+#
+#     test-backend:
+#       runs-on: [self-hosted, python, backend]
+#       steps:
+#         - uses: actions/checkout@v4
+#         - run: pytest
+# ============================================================================

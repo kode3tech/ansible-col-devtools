@@ -1,0 +1,137 @@
+---
+# Configure GitHub Actions runner
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set runner directory path
+  ansible.builtin.set_fact:
+    _runner_dir: "{{ github_actions_runners_base_path }}/{{ runner.name }}"
+  tags: github_actions_runners
+
+- name: Check if runner is already configured
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}/.runner"
+  register: _runner_configured
+  tags: github_actions_runners
+
+# =============================================================================
+# Get Registration Token from GitHub API
+# =============================================================================
+- name: Determine effective scope for this runner
+  ansible.builtin.set_fact:
+    _runner_scope: "{{ runner.scope | default(github_actions_runners_scope) }}"
+    _runner_org: "{{ runner.organization | default(github_actions_runners_organization) }}"
+    _runner_repo: "{{ runner.repository | default(github_actions_runners_repository) }}"
+    _runner_enterprise: "{{ runner.enterprise | default(github_actions_runners_enterprise) }}"
+  tags: github_actions_runners
+
+- name: Build API endpoint for registration token
+  ansible.builtin.set_fact:
+    _registration_token_url: >-
+      {% if _runner_scope == 'organization' %}
+      {{ github_actions_runners_api_url }}/orgs/{{ _runner_org }}/actions/runners/registration-token
+      {% elif _runner_scope == 'repository' %}
+      {{ github_actions_runners_api_url }}/repos/{{ _runner_repo }}/actions/runners/registration-token
+      {% elif _runner_scope == 'enterprise' %}
+      {{ github_actions_runners_api_url }}/enterprises/{{ _runner_enterprise }}/actions/runners/registration-token
+      {% endif %}
+  tags: github_actions_runners
+
+- name: Get registration token from GitHub API
+  ansible.builtin.uri:
+    url: "{{ _registration_token_url | trim }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ github_actions_runners_token }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    status_code: [201]
+    return_content: true
+  register: _registration_token_response
+  when: not _runner_configured.stat.exists or github_actions_runners_replace_existing
+  no_log: true
+  tags: github_actions_runners
+
+- name: Store registration token
+  ansible.builtin.set_fact:
+    _runner_registration_token: "{{ _registration_token_response.json.token }}"
+  when:
+    - _registration_token_response is not skipped
+    - _registration_token_response.status | default(0) == 201
+  no_log: true
+  tags: github_actions_runners
+
+# =============================================================================
+# Build Configuration Command
+# =============================================================================
+- name: Build runner URL based on scope
+  ansible.builtin.set_fact:
+    _runner_url: >-
+      {% if _runner_scope == 'organization' %}
+      {{ github_actions_runners_github_url }}/{{ _runner_org }}
+      {% elif _runner_scope == 'repository' %}
+      {{ github_actions_runners_github_url }}/{{ _runner_repo }}
+      {% elif _runner_scope == 'enterprise' %}
+      {{ github_actions_runners_github_url }}/enterprises/{{ _runner_enterprise }}
+      {% endif %}
+  tags: github_actions_runners
+
+- name: Build labels string
+  ansible.builtin.set_fact:
+    _runner_labels: "{{ runner.labels | default([]) | join(',') }}"
+  tags: github_actions_runners
+
+- name: Build configuration command
+  ansible.builtin.set_fact:
+    _runner_config_cmd: >-
+      ./config.sh
+      --unattended
+      --url "{{ _runner_url | trim }}"
+      --token "{{ _runner_registration_token }}"
+      --name "{{ runner.name }}"
+      --work "{{ runner.work_dir | default('_work') }}"
+      {{ '--labels "' + _runner_labels + '"' if _runner_labels | length > 0 else '' }}
+      {% if runner.runner_group is defined and _runner_scope != 'repository' %}
+      --runnergroup "{{ runner.runner_group }}"
+      {% endif %}
+      {{ '--replace' if github_actions_runners_replace_existing or runner.replace | default(false) else '' }}
+      {{ '--ephemeral' if github_actions_runners_ephemeral or runner.ephemeral | default(false) else '' }}
+      {{ '--disableupdate' if github_actions_runners_disable_update else '' }}
+  when:
+    - _runner_registration_token is defined
+    - not _runner_configured.stat.exists or github_actions_runners_replace_existing
+  no_log: true
+  tags: github_actions_runners
+
+# =============================================================================
+# Configure Runner
+# =============================================================================
+- name: Configure runner
+  ansible.builtin.shell: |
+    cd "{{ _runner_dir }}"
+    {{ _runner_config_cmd }}
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ github_actions_runners_user }}"
+  when:
+    - _runner_config_cmd is defined
+    - not _runner_configured.stat.exists or github_actions_runners_replace_existing
+  register: _runner_config_result
+  changed_when: _runner_config_result.rc == 0
+  no_log: true
+  tags: github_actions_runners
+
+- name: Display runner configuration result  # noqa: no-handler
+  ansible.builtin.debug:
+    msg: "✅ Runner '{{ runner.name }}' configured successfully"
+  when: _runner_config_result is changed
+  tags: github_actions_runners
+
+- name: Display runner already configured
+  ansible.builtin.debug:
+    msg: "ℹ️  Runner '{{ runner.name }}' already configured (skipped)"
+  when:
+    - _runner_configured.stat.exists
+    - not github_actions_runners_replace_existing
+    - not (runner.replace | default(false))
+  tags: github_actions_runners

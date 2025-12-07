@@ -1,7 +1,7 @@
 ---
 namespace: code3tech
 name: devtools
-version: 1.1.0
+version: 1.2.0
 readme: README.md
 
 authors:
@@ -9,7 +9,7 @@ authors:
 
 description: >-
   Ansible Collection for DevOps tools installation and configuration.
-  Includes roles for Azure DevOps Agents, Docker, Podman, and asdf version manager.
+  Includes roles for Azure DevOps Agents, GitHub Actions Runners, Docker, Podman, and asdf version manager.
   Supports Ubuntu, Debian, and RHEL-based systems with production-ready configurations.
 
 license:
@@ -31,6 +31,10 @@ tags:
   - agents
   - asdf
   - versionmanager
+  - github
+  - actions
+  - runners
+  - selfhosted
 
 dependencies:
   'community.docker': '>=3.4.0'

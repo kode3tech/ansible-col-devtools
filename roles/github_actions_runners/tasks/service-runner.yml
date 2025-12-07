@@ -1,0 +1,88 @@
+---
+# Configure GitHub Actions runner as systemd service
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set runner directory path for service
+  ansible.builtin.set_fact:
+    _runner_dir: "{{ github_actions_runners_base_path }}/{{ runner.name }}"
+  tags: github_actions_runners
+
+# =============================================================================
+# Check if service is already installed
+# =============================================================================
+- name: Check if service marker file exists
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}/.service"
+  register: _service_marker
+  tags: github_actions_runners
+
+# =============================================================================
+# Install service using svc.sh
+# =============================================================================
+- name: Install runner service
+  ansible.builtin.shell: |
+    cd "{{ _runner_dir }}"
+    sudo ./svc.sh install {{ github_actions_runners_user }}
+  args:
+    executable: /bin/bash
+  when: not _service_marker.stat.exists
+  register: _service_install
+  changed_when: _service_install.rc == 0
+  tags: github_actions_runners
+
+# =============================================================================
+# Get actual service name from marker file
+# =============================================================================
+- name: Check service marker file after installation
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}/.service"
+  register: _service_marker_after
+  tags: github_actions_runners
+
+- name: Read service name from marker file
+  ansible.builtin.slurp:
+    src: "{{ _runner_dir }}/.service"
+  register: _service_name_content
+  when: _service_marker_after.stat.exists
+  tags: github_actions_runners
+
+- name: Set service name fact
+  ansible.builtin.set_fact:
+    _runner_service_name: "{{ _service_name_content.content | b64decode | trim }}"
+  when: _service_marker_after.stat.exists
+  tags: github_actions_runners
+
+# =============================================================================
+# Reload systemd and manage service
+# =============================================================================
+- name: Reload systemd daemon  # noqa: no-handler
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: _service_install is changed
+  tags: github_actions_runners
+
+- name: Enable runner service
+  ansible.builtin.systemd:
+    name: "{{ _runner_service_name }}"
+    enabled: "{{ github_actions_runners_service_enabled }}"
+  when:
+    - _runner_service_name is defined
+    - _runner_service_name | length > 0
+  tags: github_actions_runners
+
+- name: Start runner service
+  ansible.builtin.systemd:
+    name: "{{ _runner_service_name }}"
+    state: "{{ github_actions_runners_service_state }}"
+  when:
+    - _runner_service_name is defined
+    - _runner_service_name | length > 0
+  tags: github_actions_runners
+
+- name: Display service configuration result
+  ansible.builtin.debug:
+    msg: "✅ Service '{{ _runner_service_name }}' configured for runner '{{ runner.name }}'"
+  when:
+    - _runner_service_name is defined
+    - _runner_service_name | length > 0
+  tags: github_actions_runners

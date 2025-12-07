@@ -1,0 +1,253 @@
+---
+# Defaults file for github_actions_runners role
+# All variables are prefixed with github_actions_runners_ to avoid conflicts
+
+# =============================================================================
+# GitHub Connection Settings
+# =============================================================================
+
+# GitHub API URL (github.com or GitHub Enterprise Server)
+# For GitHub.com: https://api.github.com
+# For GHES: https://github.your-company.com/api/v3
+github_actions_runners_api_url: "https://api.github.com"
+
+# GitHub base URL (for downloads and web interface)
+# For GitHub.com: https://github.com
+# For GHES: https://github.your-company.com
+github_actions_runners_github_url: "https://github.com"
+
+# Personal Access Token or GitHub App token (required)
+# Use Ansible Vault for security: "{{ vault_github_token }}"
+#
+# Required PAT scopes by scope type:
+#   - organization: admin:org
+#   - repository: repo
+#   - enterprise: admin:enterprise
+github_actions_runners_token: ""
+
+# =============================================================================
+# Runner Scope
+# =============================================================================
+
+# Scope for runners: 'organization', 'repository', or 'enterprise'
+# - organization: Runners available to all repos in the org (or specific via groups)
+# - repository: Runners available only to a specific repository
+# - enterprise: Runners available across the entire enterprise
+github_actions_runners_scope: "organization"
+
+# Organization name (required for 'organization' and 'enterprise' scopes)
+# Example: "mycompany"
+github_actions_runners_organization: ""
+
+# Repository name in "owner/repo" format (required for 'repository' scope)
+# Example: "mycompany/myrepo"
+github_actions_runners_repository: ""
+
+# Enterprise slug (required for 'enterprise' scope)
+# Example: "my-enterprise"
+github_actions_runners_enterprise: ""
+
+# =============================================================================
+# Runner State
+# =============================================================================
+
+# Global state: 'present' to install, 'absent' to remove all runners
+github_actions_runners_state: present
+
+# =============================================================================
+# Runner Installation Settings
+# =============================================================================
+
+# Runner version to install (empty = latest)
+# Check: https://github.com/actions/runner/releases
+github_actions_runners_version: ""
+
+# Base directory for all runners on this host
+# Each runner will have its own subdirectory: {{ base_path }}/{{ runner.name }}
+github_actions_runners_base_path: "/opt/github-actions-runners"
+
+# User that will run the runner service
+# This user will be created if it doesn't exist (security: runs as non-root)
+github_actions_runners_user: "ghrunner"
+
+# Group for the runner user
+github_actions_runners_group: "ghrunner"
+
+# Create the runner user if it doesn't exist
+github_actions_runners_create_user: true
+
+# Architecture for runner package (auto-detected if empty)
+# Options: x64, arm64
+github_actions_runners_arch: ""
+
+# =============================================================================
+# Runner List Configuration
+# =============================================================================
+
+# List of runners to install and configure on this host
+# Each runner runs as an independent process with its own directory
+#
+# Example:
+# github_actions_runners_list:
+#   - name: "runner-01"
+#     labels:                      # Custom labels (always includes: self-hosted, Linux, X64)
+#       - "docker"
+#       - "nodejs"
+#     runner_group: "Default"      # Runner group (org/enterprise only)
+#     state: present               # 'present' (default) or 'absent'
+#     work_dir: "_work"            # Work directory name
+#
+#   - name: "runner-02"
+#     scope: "repository"          # Override global scope for this runner
+#     repository: "myorg/myrepo"   # Required when scope is 'repository'
+#     labels:
+#       - "special-repo"
+#
+#   - name: "old-runner"
+#     state: absent                # This runner will be removed
+#
+github_actions_runners_list: []
+
+# =============================================================================
+# Runner Configuration Reference
+# =============================================================================
+#
+# SCOPE: organization
+# Description: Runners available to organization repositories
+# Required fields:
+#   - name: Runner name (unique per organization)
+# Optional fields:
+#   - labels: List of custom labels
+#   - runner_group: Runner group name (default: "Default")
+#   - work_dir: Work directory name (default: "_work")
+#   - state: 'present' or 'absent'
+#
+# SCOPE: repository
+# Description: Runners available only to a specific repository
+# Required fields:
+#   - name: Runner name
+#   - repository: Repository in "owner/repo" format (or use global)
+# Optional fields:
+#   - labels: List of custom labels
+#   - work_dir: Work directory name (default: "_work")
+#   - state: 'present' or 'absent'
+#
+# SCOPE: enterprise
+# Description: Runners available across the entire enterprise
+# Required fields:
+#   - name: Runner name
+# Optional fields:
+#   - labels: List of custom labels
+#   - runner_group: Runner group name (default: "Default")
+#   - work_dir: Work directory name (default: "_work")
+#   - state: 'present' or 'absent'
+#
+# =============================================================================
+
+# =============================================================================
+# Runner Groups (Organization/Enterprise level only)
+# =============================================================================
+
+# Automatically create runner groups if they don't exist
+# Requires: admin:org permission in PAT
+github_actions_runners_auto_create_groups: true
+
+# Default runner group settings (used when creating new groups without explicit config)
+github_actions_runners_default_group_visibility: "all"  # all, selected
+github_actions_runners_default_group_allows_public_repos: false
+
+# =============================================================================
+# Runner Groups Configuration
+# =============================================================================
+# Define runner groups with specific access control
+# Groups are created automatically if they don't exist
+#
+# Example:
+# github_actions_runners_groups:
+#   - name: "production"
+#     visibility: "all"           # All repos can use (like Azure DevOps open_access: true)
+#     allows_public_repos: false  # Deny public repos for security
+#
+#   - name: "development"
+#     visibility: "selected"      # Only specific repos (like Azure DevOps open_access: false)
+#     allows_public_repos: false
+#     selected_repositories:      # Required when visibility: "selected"
+#       - "frontend-app"
+#       - "backend-api"
+#       - "shared-libs"
+#
+#   - name: "open-source"
+#     visibility: "all"
+#     allows_public_repos: true   # Allow public repos (for open-source projects)
+#
+github_actions_runners_groups: []
+
+# =============================================================================
+# Service Configuration
+# =============================================================================
+
+# Run runner as a systemd service
+github_actions_runners_run_as_service: true
+
+# Enable and start the runner service immediately
+github_actions_runners_service_enabled: true
+github_actions_runners_service_state: started
+
+# =============================================================================
+# Proxy Settings (optional)
+# =============================================================================
+
+# HTTP/HTTPS proxy URL (e.g., http://proxy.company.com:8080)
+github_actions_runners_proxy_url: ""
+
+# No proxy hosts (comma-separated)
+github_actions_runners_no_proxy: ""
+
+# =============================================================================
+# SSL/TLS Settings (optional) - For GitHub Enterprise Server
+# =============================================================================
+
+# Path to custom CA certificate bundle
+github_actions_runners_ssl_ca_cert: ""
+
+# Skip SSL certificate validation (NOT recommended for production)
+github_actions_runners_ssl_skip_cert_validation: false
+
+# =============================================================================
+# Cleanup Settings
+# =============================================================================
+
+# Remove runner from GitHub when uninstalling
+github_actions_runners_remove_on_uninstall: true
+
+# Delete runner directory after removal (when state: absent)
+github_actions_runners_delete_on_remove: true
+
+# Force removal even if runner is running jobs
+github_actions_runners_force_remove: false
+
+# =============================================================================
+# Advanced Settings
+# =============================================================================
+
+# Replace existing runner with same name
+github_actions_runners_replace_existing: false
+
+# Ephemeral runner (single job execution, then auto-removes)
+# Useful for: dynamic scaling, clean environments per job
+github_actions_runners_ephemeral: false
+
+# Disable automatic updates (not recommended)
+github_actions_runners_disable_update: false
+
+# Runner work folder cleanup (days to keep, 0 = never cleanup)
+# Set to > 0 to enable automatic cleanup of old work directories
+# Example: 7 = remove directories older than 7 days
+github_actions_runners_work_folder_cleanup_days: 0
+
+# Cleanup toolcache as well (Node.js, Python installations)
+# WARNING: May cause re-downloads on next job execution
+github_actions_runners_cleanup_toolcache: false
+
+# Days to keep toolcache entries (only if cleanup_toolcache is true)
+github_actions_runners_toolcache_cleanup_days: 30

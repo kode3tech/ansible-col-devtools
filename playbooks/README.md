@@ -13,6 +13,10 @@ playbooks/
 │   ├── install-single-agent.yml     # Basic single agent
 │   ├── install-multi-agent.yml      # Multiple agents per host
 │   └── install-deployment-group.yml # Deployment group agents
+├── github_actions_runners/           # GitHub Actions runners examples
+│   ├── install-production.yml       # Production deployment (recommended)
+│   ├── install-single-runner.yml    # Basic single runner
+│   └── install-multi-runner.yml     # Multiple runners per host
 ├── docker/                           # Docker role examples
 │   └── install-docker.yml           # Production Docker installation
 ├── podman/                           # Podman role examples
@@ -60,6 +64,31 @@ Deploy multiple agents (different types) on the same host.
 Configure deployment group agents for Classic Release pipelines.
 
 See [Azure DevOps Agents README](azure_devops_agents/README.md) for details.
+
+### 🐙 GitHub Actions Runners Examples (`github_actions_runners/`)
+
+#### [install-production.yml](github_actions_runners/install-production.yml) ⭐ **RECOMMENDED**
+Production-ready GitHub Actions runner deployment with comprehensive validation, error handling, and verification.
+
+**Features:**
+- Pre-flight validation (variables, API connectivity)
+- Vault-based credential management
+- Service verification post-deployment
+- Support for all scopes (organization, repository, enterprise)
+
+**Usage:**
+```bash
+ansible-playbook playbooks/github_actions_runners/install-production.yml \
+  -i inventory --ask-vault-pass
+```
+
+#### [install-single-runner.yml](github_actions_runners/install-single-runner.yml)
+Basic installation of a single self-hosted runner.
+
+#### [install-multi-runner.yml](github_actions_runners/install-multi-runner.yml)
+Deploy multiple runners per host for CI/CD farms.
+
+See [GitHub Actions Runners README](github_actions_runners/README.md) for details.
 
 ### 🐳 Docker Examples (`docker/`)
 

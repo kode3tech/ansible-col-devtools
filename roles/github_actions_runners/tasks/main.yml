@@ -1,0 +1,318 @@
+---
+# Main tasks file for github_actions_runners role
+# Orchestrates the installation and configuration of GitHub Actions self-hosted runners
+
+# =============================================================================
+# STEP 0: Validate all inputs with comprehensive error messages
+# =============================================================================
+- name: Include input validation
+  ansible.builtin.include_tasks: validate.yml
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 1: Setup OS-specific variables and detection
+# =============================================================================
+- name: Set OS family variable for consistency
+  ansible.builtin.set_fact:
+    github_actions_runners_os_family: >-
+      {{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}
+  tags: github_actions_runners
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ github_actions_runners_os_family }}.yml"
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 2: Filter runners by state (present vs absent)
+# =============================================================================
+- name: Filter runners to remove
+  ansible.builtin.set_fact:
+    _runners_to_remove: >-
+      {{ github_actions_runners_list |
+         selectattr('state', 'defined') |
+         selectattr('state', 'equalto', 'absent') | list }}
+    _runners_to_install: >-
+      {{ github_actions_runners_list |
+         rejectattr('state', 'defined') | list +
+         github_actions_runners_list |
+         selectattr('state', 'defined') |
+         selectattr('state', 'equalto', 'present') | list }}
+  tags: github_actions_runners
+
+- name: Check if global state is absent
+  ansible.builtin.set_fact:
+    _runners_to_remove: "{{ github_actions_runners_list }}"
+    _runners_to_install: []
+  when: github_actions_runners_state == 'absent'
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 3: Remove runners marked with state: absent
+# =============================================================================
+- name: Remove runners marked for removal
+  ansible.builtin.include_tasks: remove-runner.yml
+  loop: "{{ _runners_to_remove }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+  when: _runners_to_remove | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 4: Detect architecture and prepare installation
+# =============================================================================
+- name: Detect system architecture
+  ansible.builtin.set_fact:
+    github_actions_runners_detected_arch: >-
+      {{ github_actions_runners_arch_map[ansible_architecture] | default('x64') }}
+  when:
+    - github_actions_runners_arch | length == 0
+    - _runners_to_install | length > 0
+  tags: github_actions_runners
+
+- name: Set final architecture
+  ansible.builtin.set_fact:
+    github_actions_runners_final_arch: >-
+      {{ github_actions_runners_arch if github_actions_runners_arch | length > 0
+         else github_actions_runners_detected_arch | default('x64') }}
+  when: _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 5: Install OS-specific dependencies
+# =============================================================================
+- name: Include OS-specific setup tasks
+  ansible.builtin.include_tasks: "setup-{{ github_actions_runners_os_family }}.yml"
+  when: _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 6: Create runner user and group
+# =============================================================================
+- name: Check if runner user already exists
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ github_actions_runners_user }}"
+  register: _runner_user_exists
+  failed_when: false
+  when: _runners_to_install | length > 0
+  tags: github_actions_runners
+
+- name: Create runner user and group
+  when:
+    - github_actions_runners_create_user
+    - _runners_to_install | length > 0
+    - _runner_user_exists.failed | default(true)
+  tags: github_actions_runners
+  block:
+    - name: Ensure runner group exists
+      ansible.builtin.group:
+        name: "{{ github_actions_runners_group }}"
+        state: present
+        system: true
+
+    - name: Ensure runner user exists
+      ansible.builtin.user:
+        name: "{{ github_actions_runners_user }}"
+        group: "{{ github_actions_runners_group }}"
+        home: "{{ github_actions_runners_base_path }}"
+        shell: "{{ github_actions_runners_user_shell }}"
+        system: true
+        create_home: true
+        state: present
+
+- name: User already exists - skip creation
+  ansible.builtin.debug:
+    msg: "ℹ️ User '{{ github_actions_runners_user }}' already exists, skipping creation"
+  when:
+    - _runners_to_install | length > 0
+    - not (_runner_user_exists.failed | default(true))
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 7: Create base directory and prepare installation
+# =============================================================================
+- name: Create base directory for runners
+  ansible.builtin.file:
+    path: "{{ github_actions_runners_base_path }}"
+    state: directory
+    owner: "{{ github_actions_runners_user }}"
+    group: "{{ github_actions_runners_group }}"
+    mode: '0755'
+  when: _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 8: Get latest runner version if not specified
+# =============================================================================
+- name: Get latest runner version if not specified
+  when:
+    - github_actions_runners_version | length == 0
+    - _runners_to_install | length > 0
+  tags: github_actions_runners
+  block:
+    - name: Fetch latest runner version from GitHub API
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/actions/runner/releases/latest"
+        method: GET
+        return_content: true
+        headers:
+          Accept: "application/vnd.github.v3+json"
+      register: github_actions_runners_github_release
+      until: github_actions_runners_github_release.status == 200
+      retries: 3
+      delay: 5
+
+    - name: Extract latest version number
+      ansible.builtin.set_fact:
+        github_actions_runners_resolved_version: >-
+          {{ github_actions_runners_github_release.json.tag_name | regex_replace('^v', '') }}
+
+- name: Set resolved runner version
+  ansible.builtin.set_fact:
+    github_actions_runners_resolved_version: >-
+      {{ github_actions_runners_version if github_actions_runners_version | length > 0
+         else github_actions_runners_resolved_version | default('') }}
+  when: _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 9: Display configuration summary
+# =============================================================================
+- name: Display runner configuration summary
+  ansible.builtin.debug:
+    msg:
+      - "GitHub API URL: {{ github_actions_runners_api_url }}"
+      - "Runner Scope: {{ github_actions_runners_scope }}"
+      - "Organization: {{ github_actions_runners_organization | default('N/A') }}"
+      - "Repository: {{ github_actions_runners_repository | default('N/A') }}"
+      - "Runner Version: {{ github_actions_runners_resolved_version | default('N/A') }}"
+      - "Architecture: {{ github_actions_runners_final_arch | default('N/A') }}"
+      - "Base Path: {{ github_actions_runners_base_path }}"
+      - "Runners to install: {{ _runners_to_install | length }}"
+      - "Runners to remove: {{ _runners_to_remove | length }}"
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 10: Download runner package
+# =============================================================================
+- name: Download and install runners
+  ansible.builtin.include_tasks: install-runner.yml
+  when: _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 11: Create runner groups (if auto-create enabled)
+# =============================================================================
+# First, create groups defined in github_actions_runners_groups
+- name: Create explicitly defined runner groups
+  ansible.builtin.include_tasks: create-runner-group.yml
+  loop: "{{ github_actions_runners_groups | default([]) }}"
+  loop_control:
+    loop_var: group_config
+    label: "{{ group_config.name }}"
+  when:
+    - github_actions_runners_auto_create_groups
+    - github_actions_runners_groups | default([]) | length > 0
+    - github_actions_runners_scope in ['organization', 'enterprise']
+  tags: github_actions_runners
+
+# Then, create groups referenced in runners but not in groups list
+- name: Filter runners that need groups created
+  ansible.builtin.set_fact:
+    _runners_with_groups: >-
+      {{ _runners_to_install
+         | selectattr('runner_group', 'defined')
+         | rejectattr('runner_group', 'equalto', 'Default')
+         | list }}
+    _defined_group_names: >-
+      {{ github_actions_runners_groups | default([]) | map(attribute='name') | list }}
+  when:
+    - github_actions_runners_auto_create_groups
+    - _runners_to_install | length > 0
+    - github_actions_runners_scope in ['organization', 'enterprise']
+  tags: github_actions_runners
+
+- name: Auto-create runner groups from runner definitions
+  ansible.builtin.include_tasks: create-runner-group.yml
+  loop: >-
+    {{ _runners_with_groups | default([])
+       | map(attribute='runner_group')
+       | unique
+       | reject('in', _defined_group_names | default([]))
+       | list }}
+  loop_control:
+    loop_var: group_config
+    label: "{{ group_config }}"
+  when:
+    - github_actions_runners_auto_create_groups
+    - _runners_with_groups | default([]) | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 12: Get registration token and configure runners
+# =============================================================================
+- name: Configure each runner
+  ansible.builtin.include_tasks: configure-runner.yml
+  loop: "{{ _runners_to_install }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+  when: _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 13: Setup runner services
+# =============================================================================
+- name: Configure runner services
+  ansible.builtin.include_tasks: service-runner.yml
+  loop: "{{ _runners_to_install }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+  when:
+    - github_actions_runners_run_as_service
+    - _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 14: Update runner labels via REST API (if requested)
+# =============================================================================
+- name: Filter runners that need label updates
+  ansible.builtin.set_fact:
+    _runners_to_update_labels: >-
+      {{ _runners_to_install
+         | selectattr('update_labels', 'defined')
+         | selectattr('update_labels', 'equalto', true)
+         | list }}
+  tags: github_actions_runners
+
+- name: Update runner labels via REST API
+  ansible.builtin.include_tasks: update-labels.yml
+  loop: "{{ _runners_to_update_labels }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name }}"
+  when: _runners_to_update_labels | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 15: Final verification - ensure all services are enabled and running
+# =============================================================================
+- name: Verify all runner services are enabled and running
+  ansible.builtin.include_tasks: verify-services.yml
+  when:
+    - github_actions_runners_run_as_service
+    - _runners_to_install | length > 0
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 16: Cleanup old work folders (if enabled)
+# =============================================================================
+- name: Cleanup old work folders
+  ansible.builtin.include_tasks: cleanup-workfolders.yml
+  when:
+    - github_actions_runners_work_folder_cleanup_days | int > 0
+  tags:
+    - github_actions_runners
+    - cleanup

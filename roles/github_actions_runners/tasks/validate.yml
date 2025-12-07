@@ -1,0 +1,382 @@
+---
+# Validate role inputs with clear error messages
+# This task should be the first one included in main.yml
+
+# =============================================================================
+# STEP 1: Validate Required Connection Variables
+# =============================================================================
+- name: "Validate GitHub token is provided"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_token is defined
+      - github_actions_runners_token | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: GitHub Token Missing                   ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ github_actions_runners_token is required but not defined.             ║
+      ║                                                                        ║
+      ║ Current: {{ 'DEFINED' if github_actions_runners_token | default('') | length > 0 else 'NOT DEFINED' }}
+      ║                                                                        ║
+      ║ Required PAT scopes:                                                  ║
+      ║   • Organization scope: admin:org                                     ║
+      ║   • Repository scope: repo                                            ║
+      ║   • Enterprise scope: admin:enterprise                                ║
+      ║                                                                        ║
+      ║ Security: Use Ansible Vault to store the token!                       ║
+      ║   github_actions_runners_token: "{{ '{{' }} vault_github_token {{ '}}' }}"
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 2: Validate Scope
+# =============================================================================
+- name: "Validate runner scope value"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_scope is defined
+      - github_actions_runners_scope in ['organization', 'repository', 'enterprise']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Invalid Scope                          ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ github_actions_runners_scope: "{{ github_actions_runners_scope | default('UNDEFINED') }}"
+      ║                                                                        ║
+      ║ Valid values:                                                         ║
+      ║   • organization - Runners for all/selected org repos                ║
+      ║   • repository   - Runners for a specific repository                 ║
+      ║   • enterprise   - Runners for the entire enterprise                 ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 3: Validate Organization (for org/enterprise scope)
+# =============================================================================
+- name: "Validate organization is provided for organization scope"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_organization is defined
+      - github_actions_runners_organization | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Organization Required                  ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Scope "{{ github_actions_runners_scope }}" requires github_actions_runners_organization
+      ║                                                                        ║
+      ║ Current: {{ github_actions_runners_organization | default('NOT DEFINED') }}
+      ║                                                                        ║
+      ║ Example:                                                              ║
+      ║   github_actions_runners_organization: "mycompany"                    ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  when: github_actions_runners_scope in ['organization', 'enterprise']
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 4: Validate Repository (for repository scope)
+# =============================================================================
+- name: "Validate repository is provided for repository scope"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_repository is defined
+      - github_actions_runners_repository | length > 0
+      - github_actions_runners_repository is regex('^[^/]+/[^/]+$')
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Repository Required                    ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Scope "repository" requires github_actions_runners_repository         ║
+      ║                                                                        ║
+      ║ Current: {{ github_actions_runners_repository | default('NOT DEFINED') }}
+      ║                                                                        ║
+      ║ Format: "owner/repo"                                                  ║
+      ║ Example:                                                              ║
+      ║   github_actions_runners_repository: "mycompany/myrepo"               ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  when: github_actions_runners_scope == 'repository'
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 5: Validate Enterprise (for enterprise scope)
+# =============================================================================
+- name: "Validate enterprise is provided for enterprise scope"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_enterprise is defined
+      - github_actions_runners_enterprise | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Enterprise Required                    ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Scope "enterprise" requires github_actions_runners_enterprise         ║
+      ║                                                                        ║
+      ║ Current: {{ github_actions_runners_enterprise | default('NOT DEFINED') }}
+      ║                                                                        ║
+      ║ Example:                                                              ║
+      ║   github_actions_runners_enterprise: "my-enterprise-slug"             ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  when: github_actions_runners_scope == 'enterprise'
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 6: Validate Runners List Structure
+# =============================================================================
+- name: "Validate runners list is defined and non-empty"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_list is defined
+      - github_actions_runners_list is iterable
+      - github_actions_runners_list | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Runners List Empty                     ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ github_actions_runners_list must be a non-empty list.                 ║
+      ║                                                                        ║
+      ║ Example:                                                              ║
+      ║   github_actions_runners_list:                                        ║
+      ║     - name: "runner-01"                                               ║
+      ║       labels:                                                         ║
+      ║         - "docker"                                                    ║
+      ║         - "nodejs"                                                    ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 7: Validate Global State
+# =============================================================================
+- name: "Validate global state value"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_state in ['present', 'absent']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Invalid State                          ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ github_actions_runners_state: "{{ github_actions_runners_state }}"
+      ║                                                                        ║
+      ║ Valid values: 'present' or 'absent'                                   ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 8: Validate Each Runner Configuration
+# =============================================================================
+- name: "Validate runner name - required and format"
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name is string
+      - item.name | length > 0
+      - item.name | length <= 64
+      - item.name is regex('^[a-zA-Z0-9][a-zA-Z0-9_.-]*$')
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Invalid Runner Name                    ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Runner: {{ item.name | default('UNDEFINED') }}
+      ║                                                                        ║
+      ║ Invalid runner name. Requirements:                                    ║
+      ║   ✓ Must be defined and non-empty                                     ║
+      ║   ✓ Length: 1-64 characters                                           ║
+      ║   ✓ Must start with letter or number                                  ║
+      ║   ✓ Allowed: letters, numbers, underscore (_), hyphen (-), dot (.)    ║
+      ║                                                                        ║
+      ║ Example: "linux-runner-01"                                            ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ github_actions_runners_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  tags: github_actions_runners
+
+- name: "Validate runner state value (if defined)"
+  ansible.builtin.assert:
+    that:
+      - item.state | default('present') in ['present', 'absent']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Invalid Runner State                   ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Runner: {{ item.name }}
+      ║ State: {{ item.state | default('UNDEFINED') }}
+      ║                                                                        ║
+      ║ Valid values: 'present' (default) or 'absent'                         ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ github_actions_runners_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when: item.state is defined
+  tags: github_actions_runners
+
+- name: "Validate runner labels format (if defined)"
+  ansible.builtin.assert:
+    that:
+      - item.labels is iterable
+      - item.labels is not string
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Invalid Labels Format                  ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Runner: {{ item.name }}
+      ║                                                                        ║
+      ║ Labels must be a list of strings:                                     ║
+      ║                                                                        ║
+      ║ ✅ Correct:                                                            ║
+      ║   labels:                                                             ║
+      ║     - "docker"                                                        ║
+      ║     - "nodejs"                                                        ║
+      ║                                                                        ║
+      ║ ❌ Wrong:                                                              ║
+      ║   labels: "docker,nodejs"                                             ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ github_actions_runners_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when: item.labels is defined
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 9: Validate Repository Override for Individual Runners
+# =============================================================================
+- name: "Validate repository format for runners with repository scope override"
+  ansible.builtin.assert:
+    that:
+      - item.repository is defined
+      - item.repository | length > 0
+      - item.repository is regex('^[^/]+/[^/]+$')
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Repository Required                    ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Runner: {{ item.name }}
+      ║ Scope: repository (override)                                          ║
+      ║                                                                        ║
+      ║ Repository format must be "owner/repo"                                ║
+      ║ Current: {{ item.repository | default('NOT DEFINED') }}
+      ║                                                                        ║
+      ║ Example:                                                              ║
+      ║   - name: "{{ item.name }}"
+      ║     scope: "repository"                                               ║
+      ║     repository: "mycompany/myrepo"                                    ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ github_actions_runners_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when:
+    - item.scope is defined
+    - item.scope == 'repository'
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 10: Validate Runner Groups (Organization/Enterprise only)
+# =============================================================================
+- name: "Warn if runner_group is used with repository scope"
+  ansible.builtin.debug:
+    msg: |
+      ⚠️  WARNING: Runner '{{ item.name }}' has 'runner_group' defined but scope is 'repository'.
+      Runner groups are only supported for organization and enterprise scopes.
+      The 'runner_group' setting will be ignored for this runner.
+  loop: "{{ github_actions_runners_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when:
+    - item.runner_group is defined
+    - (item.scope | default(github_actions_runners_scope)) == 'repository'
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 11: Validate API URL format
+# =============================================================================
+- name: "Validate API URL format"
+  ansible.builtin.assert:
+    that:
+      - github_actions_runners_api_url is regex('^https?://')
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Invalid API URL                        ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ github_actions_runners_api_url: "{{ github_actions_runners_api_url }}"
+      ║                                                                        ║
+      ║ Must be a valid URL starting with http:// or https://                ║
+      ║                                                                        ║
+      ║ Examples:                                                             ║
+      ║   • GitHub.com: https://api.github.com                                ║
+      ║   • GHES: https://github.mycompany.com/api/v3                         ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  tags: github_actions_runners
+
+# =============================================================================
+# STEP 12: Validate Runner Groups Configuration
+# =============================================================================
+- name: "Validate runner groups have required name"
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name | length > 0
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Missing group name                     ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Each group in github_actions_runners_groups must have a 'name'        ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ github_actions_runners_groups | default([]) }}"
+  loop_control:
+    label: "{{ item.name | default('UNNAMED') }}"
+  when: github_actions_runners_groups | default([]) | length > 0
+  tags: github_actions_runners
+
+- name: "Validate runner groups visibility values"
+  ansible.builtin.assert:
+    that:
+      - item.visibility | default('all') in ['all', 'selected']
+    fail_msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║              VALIDATION ERROR: Invalid visibility value               ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Group '{{ item.name }}' has invalid visibility: {{ item.visibility }}
+      ║                                                                        ║
+      ║ Valid values: 'all', 'selected'                                       ║
+      ║                                                                        ║
+      ║ • all = All repos can use runners (like open_access: true)           ║
+      ║ • selected = Only specified repos (requires selected_repositories)   ║
+      ╚══════════════════════════════════════════════════════════════════════╝
+    quiet: true
+  loop: "{{ github_actions_runners_groups | default([]) }}"
+  loop_control:
+    label: "{{ item.name | default('UNNAMED') }}"
+  when:
+    - github_actions_runners_groups | default([]) | length > 0
+    - item.visibility is defined
+  tags: github_actions_runners
+
+- name: "Warn if visibility is 'selected' without selected_repositories"
+  ansible.builtin.debug:
+    msg: |
+      ⚠️  WARNING: Group '{{ item.name }}' has visibility: 'selected'
+      but no 'selected_repositories' list defined.
+      All repositories will be blocked from using runners in this group!
+  loop: "{{ github_actions_runners_groups | default([]) }}"
+  loop_control:
+    label: "{{ item.name | default('UNNAMED') }}"
+  when:
+    - github_actions_runners_groups | default([]) | length > 0
+    - item.visibility | default('all') == 'selected'
+    - item.selected_repositories | default([]) | length == 0
+  tags: github_actions_runners
+
+- name: "Display validation passed message"
+  ansible.builtin.debug:
+    msg: "✅ All input validations passed successfully"
+  tags: github_actions_runners

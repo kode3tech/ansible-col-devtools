@@ -1,0 +1,235 @@
+---
+# Create runner group in GitHub (Organization/Enterprise level only)
+# This file is included in a loop with 'group_config' as the loop variable
+# group_config can be:
+#   - A string (group name from runner definition)
+#   - A dict from github_actions_runners_groups list
+
+- name: Set authorization header
+  ansible.builtin.set_fact:
+    _gh_auth_header: "Bearer {{ github_actions_runners_token }}"
+  no_log: true
+  tags: github_actions_runners
+
+# =============================================================================
+# Normalize group configuration
+# =============================================================================
+- name: Set group name from string or dict
+  ansible.builtin.set_fact:
+    _group_name: "{{ group_config if group_config is string else group_config.name }}"
+  tags: github_actions_runners
+
+- name: Get group configuration from groups list
+  ansible.builtin.set_fact:
+    _group_config: >-
+      {{
+        github_actions_runners_groups
+        | selectattr('name', 'equalto', _group_name)
+        | list
+        | first
+        | default({})
+      }}
+  when: github_actions_runners_groups | length > 0
+  tags: github_actions_runners
+
+- name: Set default group configuration if not defined
+  ansible.builtin.set_fact:
+    _group_config: {}
+  when: _group_config is not defined or _group_config == ''
+  tags: github_actions_runners
+
+# Resolve final settings (group config > default)
+- name: Resolve group visibility setting
+  ansible.builtin.set_fact:
+    _group_visibility: >-
+      {{ _group_config.visibility | default(github_actions_runners_default_group_visibility) }}
+    _group_allows_public: >-
+      {{ _group_config.allows_public_repos |
+         default(github_actions_runners_default_group_allows_public_repos) }}
+    _group_selected_repos: "{{ _group_config.selected_repositories | default([]) }}"
+  tags: github_actions_runners
+
+# =============================================================================
+# Build API URL based on scope
+# =============================================================================
+- name: Build runner groups API URL
+  ansible.builtin.set_fact:
+    _runner_groups_url: >-
+      {% if github_actions_runners_scope == 'organization' %}
+      {{ github_actions_runners_api_url }}/orgs/{{ github_actions_runners_organization }}/actions/runner-groups
+      {% elif github_actions_runners_scope == 'enterprise' %}
+      {{ github_actions_runners_api_url }}/enterprises/{{ github_actions_runners_enterprise }}/actions/runner-groups
+      {% endif %}
+  tags: github_actions_runners
+
+# =============================================================================
+# Check if runner group already exists
+# =============================================================================
+- name: Get existing runner groups
+  ansible.builtin.uri:
+    url: "{{ _runner_groups_url | trim }}"
+    method: GET
+    headers:
+      Authorization: "{{ _gh_auth_header }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    status_code: [200]
+    return_content: true
+  register: _existing_groups
+  no_log: true
+  tags: github_actions_runners
+
+- name: Check if group already exists and get ID
+  ansible.builtin.set_fact:
+    _group_exists: >-
+      {{ _existing_groups.json.runner_groups |
+         selectattr('name', 'equalto', _group_name) | list | length > 0 }}
+    _existing_group_id: >-
+      {{ (_existing_groups.json.runner_groups |
+         selectattr('name', 'equalto', _group_name) |
+         list | first | default({})).id | default('') }}
+  tags: github_actions_runners
+
+# =============================================================================
+# Create runner group if it doesn't exist
+# =============================================================================
+- name: Create runner group
+  ansible.builtin.uri:
+    url: "{{ _runner_groups_url | trim }}"
+    method: POST
+    headers:
+      Authorization: "{{ _gh_auth_header }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    body_format: json
+    body:
+      name: "{{ _group_name }}"
+      visibility: "{{ _group_visibility }}"
+      allows_public_repositories: "{{ _group_allows_public | bool }}"
+    status_code: [201]
+    return_content: true
+  register: _group_create
+  when: not _group_exists
+  no_log: true
+  tags: github_actions_runners
+
+- name: Store new group ID
+  ansible.builtin.set_fact:
+    _runner_group_id: "{{ _group_create.json.id }}"
+  when:
+    - not _group_exists
+    - _group_create is succeeded
+  tags: github_actions_runners
+
+- name: Use existing group ID
+  ansible.builtin.set_fact:
+    _runner_group_id: "{{ _existing_group_id }}"
+  when: _group_exists
+  tags: github_actions_runners
+
+# =============================================================================
+# Update runner group if it exists (sync visibility settings)
+# =============================================================================
+- name: Update existing runner group settings
+  ansible.builtin.uri:
+    url: "{{ _runner_groups_url | trim }}/{{ _runner_group_id }}"
+    method: PATCH
+    headers:
+      Authorization: "{{ _gh_auth_header }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    body_format: json
+    body:
+      visibility: "{{ _group_visibility }}"
+      allows_public_repositories: "{{ _group_allows_public | bool }}"
+    status_code: [200]
+    return_content: true
+  register: _group_update
+  when:
+    - _group_exists
+    - _runner_group_id | string | length > 0
+  no_log: true
+  tags: github_actions_runners
+
+# =============================================================================
+# Configure selected repositories (when visibility: selected)
+# =============================================================================
+- name: Get repository IDs for selected repositories
+  ansible.builtin.uri:
+    url: "{{ github_actions_runners_api_url }}/repos/{{ github_actions_runners_organization }}/{{ item }}"
+    method: GET
+    headers:
+      Authorization: "{{ _gh_auth_header }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    status_code: [200, 404]
+    return_content: true
+  register: _repo_info
+  loop: "{{ _group_selected_repos }}"
+  when:
+    - _group_visibility == 'selected'
+    - _group_selected_repos | length > 0
+  no_log: true
+  tags: github_actions_runners
+
+- name: Build list of repository IDs
+  ansible.builtin.set_fact:
+    _selected_repo_ids: >-
+      {{ _repo_info.results | default([]) |
+         selectattr('status', 'equalto', 200) |
+         map(attribute='json.id') | list }}
+  when:
+    - _group_visibility == 'selected'
+    - _group_selected_repos | length > 0
+    - _repo_info is defined
+  tags: github_actions_runners
+
+- name: Add each repository to runner group
+  ansible.builtin.uri:
+    url: "{{ _runner_groups_url | trim }}/{{ _runner_group_id }}/repositories/{{ item }}"
+    method: PUT
+    headers:
+      Authorization: "{{ _gh_auth_header }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    status_code: [204, 409]
+  loop: "{{ _selected_repo_ids }}"
+  loop_control:
+    label: "repo_id: {{ item }}"
+  when:
+    - _group_visibility == 'selected'
+    - _selected_repo_ids is defined
+    - _selected_repo_ids | length > 0
+    - _runner_group_id | string | length > 0
+  no_log: true
+  tags: github_actions_runners
+
+# =============================================================================
+# Display results
+# =============================================================================
+- name: Display group creation result
+  ansible.builtin.debug:
+    msg: >
+      ✅ Runner group '{{ _group_name }}' created
+      (visibility: {{ _group_visibility }}
+      {% if _group_visibility == 'selected' and _group_selected_repos | length > 0 %}
+      repos: {{ _group_selected_repos | join(', ') }}
+      {% endif %})
+  when:
+    - not _group_exists
+    - _group_create is succeeded
+  tags: github_actions_runners
+
+- name: Display group update result
+  ansible.builtin.debug:
+    msg: >
+      🔄 Runner group '{{ _group_name }}' updated
+      (visibility: {{ _group_visibility }}
+      {% if _group_visibility == 'selected' and _group_selected_repos | length > 0 %}
+      repos: {{ _group_selected_repos | join(', ') }}
+      {% endif %})
+  when:
+    - _group_exists
+    - _group_update is defined
+    - _group_update is succeeded
+  tags: github_actions_runners

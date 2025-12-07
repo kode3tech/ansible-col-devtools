@@ -4,7 +4,19 @@ Guides for using the code3tech.devtools collection effectively.
 
 ## 📋 Available Guides
 
-### [Azure DevOps Agents Complete Guide](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md) ⭐ NEW
+### [GitHub Actions Runners Complete Guide](github-actions-runners/) ⭐ NEW
+The **comprehensive guide** to GitHub Actions self-hosted runners with the code3tech.devtools collection.
+- **Multi-Runner Architecture** - Deploy N runners per host with isolation
+- **Three Scopes** - Organization, Repository, and Enterprise runners
+- **Runner Groups** - Create groups and manage access control
+- **Label Management** - Automatic label assignment via REST API
+- **Ephemeral Runners** - Single-use runners for maximum security
+- Production deployment with complete examples
+- Security best practices with token protection
+- Troubleshooting common issues
+- 📂 8-part modular documentation for video tutorials
+
+### [Azure DevOps Agents Complete Guide](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md)
 The **comprehensive guide** to Azure DevOps self-hosted agents with the code3tech.devtools collection.
 - **Multi-Agent Architecture** - Deploy N agents per host with isolation
 - **Three Agent Types** - Self-hosted, Deployment Group, and Environment agents
@@ -56,6 +68,18 @@ Learn how to configure private container registry authentication.
 ---
 
 ## 🎯 Common Use Cases
+
+### GitHub Actions Runner Deployment
+See [GitHub Actions Runners Guide - Basic Installation](github-actions-runners/03-basic-installation.md)
+
+### GitHub Actions Multi-Runner Setup
+See [GitHub Actions Runners Guide - Multi-Runner Deployment](github-actions-runners/06-advanced-features.md#multi-runner-deployment)
+
+### GitHub Actions Runner Groups
+See [GitHub Actions Runners Guide - Labels & Runner Groups](github-actions-runners/05-labels-and-groups.md)
+
+### GitHub Actions Security Best Practices
+See [GitHub Actions Runners Guide - Security](github-actions-runners/07-security.md)
 
 ### Azure DevOps Agent Deployment
 See [Azure DevOps Agents Guide - Production Deployment](AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md#production-deployment)

@@ -1,0 +1,96 @@
+---
+# ============================================================================
+# GitHub Actions Runner - Multi-Runner Installation
+# ============================================================================
+#
+# Description:
+#   Deploy multiple GitHub Actions self-hosted runners per host.
+#   Ideal for CI/CD farms and maximizing host utilization.
+#
+# Usage:
+#   ansible-playbook install-multi-runner.yml \
+#     -i inventory.ini \
+#     --ask-vault-pass \
+#     -e github_actions_runners_organization="your-org" \
+#     -e runners_per_host=3
+#
+# Requirements:
+#   - GitHub PAT with admin:org scope
+#   - Ansible Vault for secrets
+#   - Target hosts with sufficient resources for N runners
+#
+# ============================================================================
+
+- name: Install Multiple GitHub Actions Runners per Host
+  hosts: runners
+  become: true
+
+  vars_files:
+    - vars/github_secrets.yml
+
+  vars:
+    # GitHub Token (from vault)
+    github_actions_runners_token: "{{ vault_github_token }}"
+
+    # Runner scope
+    github_actions_runners_scope: "organization"
+    github_actions_runners_organization: ""
+
+    # Number of runners per host (override with -e runners_per_host=N)
+    runners_per_host: 3
+
+    # Generate runner list dynamically
+    github_actions_runners_list: "{{ _generated_runners }}"
+
+    # Base labels for all runners
+    github_actions_runners_default_labels:
+      - "self-hosted"
+      - "Linux"
+      - "{{ ansible_architecture }}"
+
+  pre_tasks:
+    - name: Generate runner list
+      ansible.builtin.set_fact:
+        _generated_runners: >-
+          {{
+            range(1, runners_per_host | int + 1) | map('regex_replace', '^(.*)$',
+              '{"name": "' ~ inventory_hostname ~ '-runner-\1", "labels": ["runner-\1"]}'
+            ) | map('from_json') | list
+          }}
+      tags: always
+
+    - name: Display deployment plan
+      ansible.builtin.debug:
+        msg:
+          - "╔══════════════════════════════════════════════════════════════════════╗"
+          - "║          GITHUB ACTIONS RUNNERS - MULTI-RUNNER DEPLOYMENT           ║"
+          - "╠══════════════════════════════════════════════════════════════════════╣"
+          - "║ Host: {{ inventory_hostname }}"
+          - "║ Runners per host: {{ runners_per_host }}"
+          - "║ Organization: {{ github_actions_runners_organization }}"
+          - "╠══════════════════════════════════════════════════════════════════════╣"
+          - "║ Runners to deploy:"
+          - "{% for runner in _generated_runners %}║   - {{ runner.name }}: {{ runner.labels | join(', ') }}\n{% endfor %}╚══════════════════════════════════════════════════════════════════════╝"
+      tags: always
+
+  roles:
+    - role: code3tech.devtools.github_actions_runners
+      tags:
+        - github_actions
+        - runners
+
+  post_tasks:
+    - name: Display completion summary
+      ansible.builtin.debug:
+        msg:
+          - "✅ Multi-Runner deployment completed!"
+          - ""
+          - "Runners installed on {{ inventory_hostname }}:"
+          - "{% for runner in _generated_runners %}  - {{ runner.name }}\n{% endfor %}"
+          - ""
+          - "Verify all runners:"
+          - "  sudo systemctl list-units 'actions.runner.*'"
+          - ""
+          - "View in GitHub:"
+          - "  https://github.com/organizations/{{ github_actions_runners_organization }}/settings/actions/runners"
+      tags: always

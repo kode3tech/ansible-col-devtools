@@ -1,0 +1,22 @@
+---
+# Setup tasks for Debian/Ubuntu systems
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  tags: github_actions_runners
+
+- name: Install prerequisite packages
+  ansible.builtin.apt:
+    name: "{{ github_actions_runners_prerequisites }}"
+    state: present
+  tags: github_actions_runners
+
+- name: Install additional .NET dependencies for runner
+  ansible.builtin.apt:
+    name:
+      - libicu-dev
+      - libssl-dev
+    state: present
+  tags: github_actions_runners

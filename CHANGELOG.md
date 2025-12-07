@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-07
+
+### Added
+- **[GitHub Actions Runners]** NEW ROLE - Self-hosted runner deployment (v1.0.0)
+  - **Multi-runner support**: Deploy N runners per host with isolated directories
+  - **Three scopes**: Organization, Repository, and Enterprise runners
+  - **Label management**: Automatic label assignment and updates via REST API
+  - **Runner groups**: Create and assign runners to groups (Organization/Enterprise)
+  - **Lifecycle management**: Install, configure, update, and remove runners
+  - **Secure authentication**: Registration tokens with automatic refresh
+  - **Service verification**: Comprehensive service status checks
+  - **Input validation**: ASCII-box error messages matching Azure DevOps role pattern
+  - **Multi-platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
+  - **Systemd integration**: Automatic service management for each runner
+  - **Ephemeral runners**: Support for single-use runners (ideal for public repos)
+  - **Security**: Dedicated non-root `ghrunner` user for runner processes
+  - **Work folder cleanup**: Automatic cleanup of runner work directories on removal
+- **[GitHub Actions Runners]** Complete documentation (8-part modular guide)
+  - **Part 1**: Introduction & Concepts - Architecture and terminology
+  - **Part 2**: Prerequisites & Setup - Requirements and preparation
+  - **Part 3**: Basic Installation - Simple deployment examples
+  - **Part 4**: Runner Scopes - Organization, Repository, Enterprise
+  - **Part 5**: Labels & Runner Groups - Advanced categorization
+  - **Part 6**: Advanced Features - Ephemeral, replacement, multi-runner
+  - **Part 7**: Security Best Practices - Token handling, permissions
+  - **Part 8**: Troubleshooting - Common issues and solutions
+  - **Location**: `docs/user-guides/github-actions-runners/`
+- **[GitHub Actions Runners]** Production playbooks
+  - **install-production.yml**: Full production deployment with vault and verification
+  - **install-single-runner.yml**: Basic single runner installation
+  - **install-multi-runner.yml**: Multiple runners per host
+  - **Location**: `playbooks/github_actions_runners/`
+- **[GitHub Actions Runners]** Molecule tests
+  - **Multi-distro testing**: Ubuntu 22.04, Debian 12, Rocky Linux 9
+  - **Pytest/testinfra**: Comprehensive test suite for structure validation
+  - **Service verification**: Validates user, group, directories, and prerequisites
+  - **Removal testing**: Validates runner removal with `state: absent`
+- **[CI/CD]** GitHub Actions workflow for github_actions_runners role
+  - **molecule-github-actions-runners** job in CI pipeline
+  - **Multi-platform matrix**: Ubuntu 22.04, Debian 12, Rocky Linux 9
+
 ## [1.1.0] - 2025-12-05
 
 ### Added
@@ -253,5 +294,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Testing guidelines
 - Contributing guidelines
 
-[Unreleased]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/kode3tech/ansible-col-devtools/releases/tag/v1.0.0

@@ -1,0 +1,82 @@
+---
+# ============================================================================
+# GitHub Actions Runner - Single Runner Installation
+# ============================================================================
+#
+# Description:
+#   Basic playbook for installing a single GitHub Actions self-hosted runner
+#   per host. Ideal for development, testing, or small deployments.
+#
+# Usage:
+#   ansible-playbook install-single-runner.yml \
+#     -i inventory.ini \
+#     --ask-vault-pass \
+#     -e github_actions_runners_organization="your-org"
+#
+# Requirements:
+#   - GitHub PAT with admin:org scope (for organization runners)
+#   - Ansible Vault for secrets
+#   - Target hosts with Ubuntu 22+, Debian 11+, or RHEL 9+
+#
+# ============================================================================
+
+- name: Install GitHub Actions Self-Hosted Runner
+  hosts: runners
+  become: true
+
+  vars_files:
+    - vars/github_secrets.yml  # Contains vault_github_token
+
+  vars:
+    # GitHub Token (from vault)
+    github_actions_runners_token: "{{ vault_github_token }}"
+
+    # Runner scope: organization, repository, or enterprise
+    github_actions_runners_scope: "organization"
+
+    # Organization name (required for scope: organization)
+    # Override with: -e github_actions_runners_organization="your-org"
+    github_actions_runners_organization: ""
+
+    # Runner configuration
+    github_actions_runners_list:
+      - name: "runner-{{ inventory_hostname }}"
+        labels:
+          - "self-hosted"
+          - "Linux"
+          - "{{ ansible_architecture }}"
+
+  pre_tasks:
+    - name: Display deployment information
+      ansible.builtin.debug:
+        msg:
+          - "╔══════════════════════════════════════════════════════════════════════╗"
+          - "║           GITHUB ACTIONS RUNNER - SINGLE INSTALLATION               ║"
+          - "╠══════════════════════════════════════════════════════════════════════╣"
+          - "║ Target Host: {{ inventory_hostname }}"
+          - "║ Scope: {{ github_actions_runners_scope }}"
+          - "║ Organization: {{ github_actions_runners_organization | default('N/A') }}"
+          - "║ Runner Name: runner-{{ inventory_hostname }}"
+          - "╚══════════════════════════════════════════════════════════════════════╝"
+      tags: always
+
+  roles:
+    - role: code3tech.devtools.github_actions_runners
+      tags:
+        - github_actions
+        - runners
+
+  post_tasks:
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "✅ GitHub Actions Runner installed successfully!"
+          - ""
+          - "Runner Details:"
+          - "  - Name: runner-{{ inventory_hostname }}"
+          - "  - Path: /opt/github-actions-runners/runner-{{ inventory_hostname }}"
+          - "  - Service: actions.runner.{{ github_actions_runners_organization }}.runner-{{ inventory_hostname }}"
+          - ""
+          - "Verify in GitHub:"
+          - "  https://github.com/organizations/{{ github_actions_runners_organization }}/settings/actions/runners"
+      tags: always

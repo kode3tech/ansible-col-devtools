@@ -1,0 +1,27 @@
+---
+# Setup tasks for RedHat/CentOS/Rocky/AlmaLinux systems
+
+# Rocky Linux 9+ may have curl-minimal instead of curl
+# Must be handled BEFORE installing other prerequisites
+- name: Handle curl-minimal conflict on Rocky/AlmaLinux
+  ansible.builtin.dnf:
+    name: curl
+    state: present
+    allowerasing: true
+  when: ansible_distribution in ['Rocky', 'AlmaLinux']
+  tags: github_actions_runners
+
+- name: Install prerequisite packages
+  ansible.builtin.dnf:
+    name: "{{ github_actions_runners_prerequisites }}"
+    state: present
+  tags: github_actions_runners
+
+- name: Install additional .NET dependencies for runner
+  ansible.builtin.dnf:
+    name:
+      - libicu
+      - openssl-libs
+      - krb5-libs
+    state: present
+  tags: github_actions_runners

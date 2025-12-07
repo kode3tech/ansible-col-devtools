@@ -12,6 +12,37 @@ This file provides additional metadata about the `code3tech.devtools` collection
 
 ## Roles Included
 
+### azure_devops_agents
+Deploy and manage Azure DevOps self-hosted agents on Linux servers.
+
+**Supported Platforms:**
+- Ubuntu 22.04, 24.04, 25.04
+- Debian 11, 12, 13
+- RHEL/CentOS/Rocky Linux 9, 10
+
+**Main Features:**
+- Multi-agent support with isolated directories
+- Three agent types: Self-hosted, Deployment Group, Environment
+- Automatic resource creation via REST API
+- Service verification and management
+- Clean agent removal
+
+### github_actions_runners
+Deploy and manage GitHub Actions self-hosted runners on Linux servers.
+
+**Supported Platforms:**
+- Ubuntu 22.04, 24.04, 25.04
+- Debian 11, 12, 13
+- RHEL/CentOS/Rocky Linux 9, 10
+
+**Main Features:**
+- Multi-runner support with isolated directories
+- Three scopes: Organization, Repository, Enterprise
+- Label management via REST API
+- Runner groups support
+- Ephemeral runners for security
+- Service verification and management
+
 ### docker
 Docker Engine installation and configuration with Docker Compose support.
 

@@ -1,0 +1,106 @@
+---
+# Download and install GitHub Actions runner package
+# This task downloads the runner once and extracts to each runner directory
+
+- name: Create downloads directory
+  ansible.builtin.file:
+    path: "{{ github_actions_runners_base_path }}/.downloads"
+    state: directory
+    owner: "{{ github_actions_runners_user }}"
+    group: "{{ github_actions_runners_group }}"
+    mode: '0755'
+  tags: github_actions_runners
+
+- name: Set runner package filename
+  ansible.builtin.set_fact:
+    _runner_package_name: >-
+      actions-runner-linux-{{ github_actions_runners_final_arch }}-{{
+      github_actions_runners_resolved_version }}.tar.gz
+    _runner_download_url: >-
+      {{ github_actions_runners_download_base_url }}/v{{
+      github_actions_runners_resolved_version }}/actions-runner-linux-{{
+      github_actions_runners_final_arch }}-{{
+      github_actions_runners_resolved_version }}.tar.gz
+  tags: github_actions_runners
+
+- name: Check if runner package already downloaded
+  ansible.builtin.stat:
+    path: "{{ github_actions_runners_base_path }}/.downloads/{{ _runner_package_name }}"
+  register: _runner_package_stat
+  tags: github_actions_runners
+
+- name: Download runner package
+  ansible.builtin.get_url:
+    url: "{{ _runner_download_url }}"
+    dest: "{{ github_actions_runners_base_path }}/.downloads/{{ _runner_package_name }}"
+    owner: "{{ github_actions_runners_user }}"
+    group: "{{ github_actions_runners_group }}"
+    mode: '0644'
+    timeout: 120
+  when: not _runner_package_stat.stat.exists
+  register: _runner_download
+  until: _runner_download is succeeded
+  retries: 3
+  delay: 10
+  tags: github_actions_runners
+
+- name: Create runner directories
+  ansible.builtin.file:
+    path: "{{ github_actions_runners_base_path }}/{{ item.name }}"
+    state: directory
+    owner: "{{ github_actions_runners_user }}"
+    group: "{{ github_actions_runners_group }}"
+    mode: '0755'
+  loop: "{{ _runners_to_install }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: github_actions_runners
+
+- name: Check if runner already extracted
+  ansible.builtin.stat:
+    path: "{{ github_actions_runners_base_path }}/{{ item.name }}/config.sh"
+  loop: "{{ _runners_to_install }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _runner_extracted_check
+  tags: github_actions_runners
+
+- name: Extract runner package to each runner directory
+  ansible.builtin.unarchive:
+    src: "{{ github_actions_runners_base_path }}/.downloads/{{ _runner_package_name }}"
+    dest: "{{ github_actions_runners_base_path }}/{{ item.item.name }}"
+    remote_src: true
+    owner: "{{ github_actions_runners_user }}"
+    group: "{{ github_actions_runners_group }}"
+  loop: "{{ _runner_extracted_check.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: not item.stat.exists
+  tags: github_actions_runners
+
+- name: Set correct permissions on runner directories
+  ansible.builtin.file:
+    path: "{{ github_actions_runners_base_path }}/{{ item.name }}"
+    state: directory
+    owner: "{{ github_actions_runners_user }}"
+    group: "{{ github_actions_runners_group }}"
+    recurse: true
+  loop: "{{ _runners_to_install }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: github_actions_runners
+
+- name: Install runner dependencies (run installdependencies.sh)
+  ansible.builtin.shell: |
+    cd "{{ github_actions_runners_base_path }}/{{ item.name }}"
+    if [ -f "./bin/installdependencies.sh" ]; then
+      sudo ./bin/installdependencies.sh
+    fi
+  args:
+    executable: /bin/bash
+  loop: "{{ _runners_to_install }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: false
+  failed_when: false
+  tags: github_actions_runners

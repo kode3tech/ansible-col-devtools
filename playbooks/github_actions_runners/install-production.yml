@@ -1,0 +1,242 @@
+---
+# ============================================================================
+# GitHub Actions Runner - Production Installation
+# ============================================================================
+#
+# Description:
+#   Production-ready playbook for deploying GitHub Actions self-hosted runners
+#   with comprehensive validation, error handling, and verification.
+#
+# Features:
+#   ✅ Pre-flight validation with time synchronization
+#   ✅ Service verification and monitoring
+#   ✅ Runner groups with visibility control (like Azure DevOps open_access)
+#   ✅ Custom labels per runner
+#   ✅ Automatic work folder cleanup
+#   ✅ Comprehensive error handling
+#
+# Usage:
+#   ansible-playbook install-production.yml \
+#     -i inventory.ini \
+#     --ask-vault-pass
+#
+# Requirements:
+#   - GitHub PAT with appropriate scopes (admin:org for organization runners)
+#   - Ansible Vault for secrets
+#   - vars/github_secrets.yml with vault_github_token
+#   - vars/github_runners.yml with runner configuration
+#
+# ============================================================================
+
+- name: GitHub Actions Runners - Production Deployment
+  hosts: runners
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - vars/github_secrets.yml   # vault_github_token
+    - vars/github_runners.yml   # Runner configuration
+
+  vars:
+    # =========================================================================
+    # GITHUB AUTHENTICATION
+    # =========================================================================
+    # Token from vault (NEVER store tokens in plain text!)
+    github_actions_runners_token: "{{ vault_github_token }}"
+
+    # =========================================================================
+    # SERVICE CONFIGURATION
+    # =========================================================================
+    # Enable service verification (recommended for production)
+    github_actions_runners_skip_verification: false
+
+    # Replace existing runners (useful for updates)
+    github_actions_runners_replace_existing: false
+
+    # =========================================================================
+    # WORK FOLDER CLEANUP (Prevents disk space issues)
+    # =========================================================================
+    # Remove work directories older than X days (0 = disabled)
+    github_actions_runners_work_folder_cleanup_days: 7
+
+    # Also cleanup toolcache (Node.js, Python, etc. installations)
+    github_actions_runners_cleanup_toolcache: false
+    github_actions_runners_toolcache_cleanup_days: 30
+
+  pre_tasks:
+    # =========================================================================
+    # TIME SYNCHRONIZATION (Important for Token Validation)
+    # =========================================================================
+    # --- RedHat-like (RHEL, CentOS, Rocky, AlmaLinux) ---
+    - name: "[TimeSync] Ensure chrony is installed (RedHat)"
+      ansible.builtin.dnf:
+        name: chrony
+        state: present
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+      tags:
+        - timesync
+        - always
+
+    - name: "[TimeSync] Ensure chronyd is enabled and running (RedHat)"
+      ansible.builtin.service:
+        name: chronyd
+        state: started
+        enabled: true
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+      tags:
+        - timesync
+        - always
+
+    - name: "[TimeSync] Force time synchronization (RedHat)"
+      ansible.builtin.command:
+        cmd: chronyc makestep
+      changed_when: false
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+      tags:
+        - timesync
+        - always
+
+    # --- Debian-like (Debian, Ubuntu) ---
+    - name: "[TimeSync] Ensure systemd-timesyncd is installed (Debian)"
+      ansible.builtin.apt:
+        name: systemd-timesyncd
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian'
+      tags:
+        - timesync
+        - always
+
+    - name: "[TimeSync] Ensure systemd-timesyncd is running (Debian)"
+      ansible.builtin.service:
+        name: systemd-timesyncd
+        state: started
+        enabled: true
+      when: ansible_os_family == 'Debian'
+      tags:
+        - timesync
+        - always
+
+    - name: "[TimeSync] Force NTP synchronization (Debian)"
+      ansible.builtin.command:
+        cmd: timedatectl set-ntp true
+      changed_when: false
+      when: ansible_os_family == 'Debian'
+      tags:
+        - timesync
+        - always
+
+    # =========================================================================
+    # Pre-Flight Checks
+    # =========================================================================
+    - name: Display deployment banner
+      ansible.builtin.debug:
+        msg:
+          - "╔══════════════════════════════════════════════════════════════════════╗"
+          - "║       GITHUB ACTIONS RUNNERS - PRODUCTION DEPLOYMENT                ║"
+          - "╠══════════════════════════════════════════════════════════════════════╣"
+          - "║ Deployment started at: {{ ansible_date_time.iso8601 }}"
+          - "║ Target hosts: {{ ansible_play_hosts | length }}"
+          - "║ Scope: {{ github_actions_runners_scope | default('organization') }}"
+          - "╚══════════════════════════════════════════════════════════════════════╝"
+      run_once: true
+      tags: always
+
+    - name: Verify required variables are defined
+      ansible.builtin.assert:
+        that:
+          - github_actions_runners_token is defined
+          - github_actions_runners_token | length > 0
+          - github_actions_runners_list is defined
+          - github_actions_runners_list | length > 0
+        fail_msg: |
+          Missing required variables!
+          
+          Ensure the following are defined:
+            - vault_github_token in vars/github_secrets.yml
+            - github_actions_runners_list in vars/github_runners.yml
+        success_msg: "✅ Required variables verified"
+      tags: always
+
+    - name: Verify GitHub API connectivity
+      ansible.builtin.uri:
+        url: "https://api.github.com/zen"
+        method: GET
+        status_code: 200
+        timeout: 10
+      register: github_api_check
+      failed_when: false
+      tags: always
+
+    - name: Check GitHub API result
+      ansible.builtin.assert:
+        that:
+          - github_api_check.status == 200
+        fail_msg: |
+          Cannot reach GitHub API!
+          
+          Verify:
+            - Internet connectivity
+            - DNS resolution
+            - Firewall rules for api.github.com:443
+        success_msg: "✅ GitHub API is reachable"
+      tags: always
+
+    - name: Display runner deployment plan
+      ansible.builtin.debug:
+        msg:
+          - "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          - "Host: {{ inventory_hostname }}"
+          - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Architecture: {{ ansible_architecture }}"
+          - "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          - "Runners to deploy:"
+          - "{% for runner in github_actions_runners_list %}  {{ '✓' if runner.state | default('present') == 'present' else '✗' }} {{ runner.name }}: {{ runner.labels | default(['default']) | join(', ') }}\n{% endfor %}"
+      tags: always
+
+  roles:
+    - role: code3tech.devtools.github_actions_runners
+      tags:
+        - github_actions
+        - runners
+        - production
+
+  post_tasks:
+    # =========================================================================
+    # Post-Deployment Verification
+    # =========================================================================
+    - name: Collect deployed runner services
+      ansible.builtin.shell: |
+        systemctl list-units --type=service --state=running | grep -E '^actions\.runner\.' | awk '{print $1}'
+      register: running_services
+      changed_when: false
+      failed_when: false
+      tags: always
+
+    - name: Display deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "╔══════════════════════════════════════════════════════════════════════╗"
+          - "║          DEPLOYMENT COMPLETED - {{ inventory_hostname }}"
+          - "╠══════════════════════════════════════════════════════════════════════╣"
+          - "║ Running Services:"
+          - "{% for svc in running_services.stdout_lines %}║   ✅ {{ svc }}\n{% endfor %}║"
+          - "║ Base Path: {{ github_actions_runners_base_path | default('/opt/github-actions-runners') }}"
+          - "║ User/Group: {{ github_actions_runners_user | default('ghrunner') }}:{{ github_actions_runners_group | default('ghrunner') }}"
+          - "╚══════════════════════════════════════════════════════════════════════╝"
+      tags: always
+
+    - name: Final deployment status
+      ansible.builtin.debug:
+        msg:
+          - ""
+          - "🎉 Production deployment completed successfully!"
+          - ""
+          - "Next steps:"
+          - "  1. Verify runners in GitHub Settings → Actions → Runners"
+          - "  2. Test with a workflow using 'runs-on: self-hosted'"
+          - "  3. Monitor logs: journalctl -u 'actions.runner.*' -f"
+          - ""
+      run_once: true
+      tags: always

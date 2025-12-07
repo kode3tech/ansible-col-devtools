@@ -23,7 +23,7 @@ Ansible Collection for DevOps tools installation and configuration. This collect
 
 ## 📦 Included Roles
 
-### ☁️ Azure DevOps Agents ⭐ NEW
+### ☁️ Azure DevOps Agents
 Deploy and manage Azure DevOps self-hosted agents on Linux servers.
 - Multi-agent support: N agents per host with isolated directories
 - Three agent types: Self-hosted, Deployment Group, Environment
@@ -31,6 +31,15 @@ Deploy and manage Azure DevOps self-hosted agents on Linux servers.
 - Open access: Configure pipeline permissions for environments
 - Service verification: Ensures all services are enabled and running
 - Agent removal: Clean unregistration and removal
+
+### 🐙 GitHub Actions Runners ⭐ NEW
+Deploy and manage GitHub Actions self-hosted runners on Linux servers.
+- Multi-runner support: N runners per host with isolated directories
+- Three scopes: Organization, Repository, Enterprise
+- Label management: Automatic label assignment and updates via REST API
+- Runner groups: Create and assign runners to groups
+- Ephemeral runners: Support for single-use runners
+- Service verification: Ensures all services are enabled and running
 
 ### 🐳 Docker
 Complete Docker Engine installation and configuration with Docker Compose support.
@@ -149,6 +158,14 @@ The collection includes ready-to-use example playbooks in the `playbooks/` direc
 | [install-single-agent.yml](playbooks/azure_devops_agents/install-single-agent.yml) | Basic single agent installation |
 | [install-multi-agent.yml](playbooks/azure_devops_agents/install-multi-agent.yml) | Multiple agents per host |
 
+### GitHub Actions Runners
+
+| Playbook | Description |
+|----------|-------------|
+| [install-production.yml](playbooks/github_actions_runners/install-production.yml) | ⭐ Production deployment with validation |
+| [install-single-runner.yml](playbooks/github_actions_runners/install-single-runner.yml) | Basic single runner installation |
+| [install-multi-runner.yml](playbooks/github_actions_runners/install-multi-runner.yml) | Multiple runners per host |
+
 ### Docker
 
 | Playbook | Description |
@@ -188,6 +205,7 @@ See [playbooks/README.md](playbooks/README.md) for complete documentation.
 | Role | README | Complete Guide |
 |------|--------|----------------|
 | **Azure DevOps Agents** | [roles/azure_devops_agents/README.md](roles/azure_devops_agents/README.md) | [Azure DevOps Agents Guide](docs/user-guides/AZURE_DEVOPS_AGENTS_COMPLETE_GUIDE.md) |
+| **GitHub Actions Runners** | [roles/github_actions_runners/README.md](roles/github_actions_runners/README.md) | [GitHub Actions Runners Guide](docs/user-guides/github-actions-runners/) |
 | **Docker** | [roles/docker/README.md](roles/docker/README.md) | [Docker Complete Guide](docs/user-guides/DOCKER_COMPLETE_GUIDE.md) |
 | **Podman** | [roles/podman/README.md](roles/podman/README.md) | [Podman Complete Guide](docs/user-guides/PODMAN_COMPLETE_GUIDE.md) |
 | **asdf** | [roles/asdf/README.md](roles/asdf/README.md) | [asdf Complete Guide](docs/user-guides/ASDF_COMPLETE_GUIDE.md) |

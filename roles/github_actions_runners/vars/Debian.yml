@@ -1,0 +1,22 @@
+---
+# Debian/Ubuntu specific variables for github_actions_runners role
+
+# Prerequisite packages for GitHub Actions Runner
+github_actions_runners_prerequisites:
+  - curl
+  - wget
+  - tar
+  - git
+  - jq
+  - libicu-dev
+  - libssl-dev
+  - libkrb5-3
+  - zlib1g
+  - apt-transport-https
+  - ca-certificates
+
+# User shell (nologin for security)
+github_actions_runners_user_shell: "/usr/sbin/nologin"
+
+# Package manager update command
+github_actions_runners_package_update_cmd: "apt-get update"

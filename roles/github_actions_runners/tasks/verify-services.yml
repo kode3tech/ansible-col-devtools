@@ -1,0 +1,114 @@
+---
+# Verify and ensure all runner services are enabled and running
+# Final verification step - minimal output, maximum reliability
+
+- name: Find all runner directories
+  ansible.builtin.find:
+    paths: "{{ github_actions_runners_base_path }}"
+    patterns: "*"
+    file_type: directory
+    excludes:
+      - ".downloads"
+  register: _runner_directories
+  tags: github_actions_runners
+
+- name: Check for .service marker files
+  ansible.builtin.stat:
+    path: "{{ item.path }}/.service"
+  loop: "{{ _runner_directories.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: _service_markers
+  tags: github_actions_runners
+
+- name: Read service names from marker files
+  ansible.builtin.slurp:
+    src: "{{ item.stat.path }}"
+  loop: "{{ _service_markers.results | selectattr('stat.exists', 'equalto', true) | list }}"
+  loop_control:
+    label: "{{ item.item.path | basename }}"
+  register: _service_contents
+  tags: github_actions_runners
+
+- name: Build list of installed service names
+  ansible.builtin.set_fact:
+    _installed_runner_services: >-
+      {{ _service_contents.results | map(attribute='content') | map('b64decode') | map('trim') | list }}
+  tags: github_actions_runners
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  tags: github_actions_runners
+
+- name: Ensure runner services are enabled and running
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop: "{{ _installed_runner_services }}"
+  loop_control:
+    label: "{{ item }}"
+  register: _service_verification
+  tags: github_actions_runners
+
+# =============================================================================
+# Verification Summary
+# =============================================================================
+- name: Get service status for verification
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+  loop: "{{ _installed_runner_services }}"
+  loop_control:
+    label: "{{ item }}"
+  register: _service_status
+  tags: github_actions_runners
+
+- name: Build verification summary
+  ansible.builtin.set_fact:
+    _verification_summary: >-
+      {{ _service_status.results | map(attribute='name') | list }}
+  tags: github_actions_runners
+
+- name: Display verification summary
+  ansible.builtin.debug:
+    msg:
+      - "╔══════════════════════════════════════════════════════════════════════╗"
+      - "║           GITHUB ACTIONS RUNNERS - VERIFICATION COMPLETE             ║"
+      - "╠══════════════════════════════════════════════════════════════════════╣"
+      - "║ ✅ {{ _installed_runner_services | length }} runner(s) verified: enabled and running"
+      - "╠══════════════════════════════════════════════════════════════════════╣"
+      - "║ Services:                                                            ║"
+      - "{% for svc in _installed_runner_services %}║   • {{ svc }}\n{% endfor %}"
+      - "╚══════════════════════════════════════════════════════════════════════╝"
+  tags: github_actions_runners
+
+# =============================================================================
+# Fail if any service is not running
+# =============================================================================
+- name: Check for failed services
+  ansible.builtin.set_fact:
+    _failed_services: >-
+      {{ _service_status.results | selectattr('status.ActiveState', 'ne', 'active') | map(attribute='name') | list }}
+  tags: github_actions_runners
+
+- name: Fail if services are not running
+  ansible.builtin.fail:
+    msg: |
+      ╔══════════════════════════════════════════════════════════════════════╗
+      ║       GITHUB ACTIONS RUNNERS - SERVICE VERIFICATION FAILED           ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ The following services are not properly configured:                   ║
+      ╠══════════════════════════════════════════════════════════════════════╣
+      {% for svc in _failed_services %}
+      ║ ✗ {{ svc }}
+      {% endfor %}
+      ╠══════════════════════════════════════════════════════════════════════╣
+      ║ Troubleshooting:                                                      ║
+      {% for svc in _failed_services %}
+      ║   sudo systemctl status {{ svc }}
+      ║   sudo journalctl -u {{ svc }}
+      {% endfor %}
+      ╚══════════════════════════════════════════════════════════════════════╝
+  when: _failed_services | length > 0
+  tags: github_actions_runners

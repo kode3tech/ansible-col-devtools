@@ -1,0 +1,44 @@
+---
+# Role metadata for github_actions_runners
+
+galaxy_info:
+  role_name: github_actions_runners
+  namespace: code3tech
+  author: Code3Tech DevOps Team
+  description: Install and configure GitHub Actions self-hosted runners on Linux
+  company: Code3Tech
+
+  issue_tracker_url: https://github.com/kode3tech/ansible-col-devtools/issues
+
+  license: MIT
+
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy    # 22.04
+        - noble    # 24.04
+        - plucky   # 25.04
+    - name: Debian
+      versions:
+        - bullseye # 11
+        - bookworm # 12
+        - trixie   # 13
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+
+  galaxy_tags:
+    - github
+    - actions
+    - runner
+    - cicd
+    - pipelines
+    - build
+    - deployment
+    - automation
+    - selfhosted
+
+dependencies: []

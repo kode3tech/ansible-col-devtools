@@ -1,0 +1,37 @@
+---
+# Common variables for github_actions_runners role
+# These are internal variables, not meant to be overridden by users
+
+# GitHub Actions Runner download URL
+github_actions_runners_download_base_url: "https://github.com/actions/runner/releases/download"
+
+# GitHub API endpoints
+github_actions_runners_api_endpoints:
+  organization:
+    registration_token: "/orgs/{{ github_actions_runners_organization }}/actions/runners/registration-token"
+    remove_token: "/orgs/{{ github_actions_runners_organization }}/actions/runners/remove-token"
+    list_runners: "/orgs/{{ github_actions_runners_organization }}/actions/runners"
+    runner_groups: "/orgs/{{ github_actions_runners_organization }}/actions/runner-groups"
+  repository:
+    registration_token: "/repos/{{ github_actions_runners_repository }}/actions/runners/registration-token"
+    remove_token: "/repos/{{ github_actions_runners_repository }}/actions/runners/remove-token"
+    list_runners: "/repos/{{ github_actions_runners_repository }}/actions/runners"
+  enterprise:
+    registration_token: >-
+      /enterprises/{{ github_actions_runners_enterprise }}/actions/runners/registration-token
+    remove_token: >-
+      /enterprises/{{ github_actions_runners_enterprise }}/actions/runners/remove-token
+    list_runners: >-
+      /enterprises/{{ github_actions_runners_enterprise }}/actions/runners
+    runner_groups: >-
+      /enterprises/{{ github_actions_runners_enterprise }}/actions/runner-groups
+
+# Runner package naming pattern
+github_actions_runners_package_pattern: >-
+  actions-runner-linux-{{ github_actions_runners_final_arch }}-{{ github_actions_runners_resolved_version }}.tar.gz
+
+# Supported architectures mapping
+github_actions_runners_arch_map:
+  x86_64: "x64"
+  aarch64: "arm64"
+  arm64: "arm64"

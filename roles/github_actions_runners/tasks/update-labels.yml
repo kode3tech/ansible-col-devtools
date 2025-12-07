@@ -1,0 +1,99 @@
+---
+# Update runner labels via GitHub REST API
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set authorization header for label update
+  ansible.builtin.set_fact:
+    _gh_auth_header: "Bearer {{ github_actions_runners_token }}"
+  no_log: true
+  tags: github_actions_runners
+
+# =============================================================================
+# Determine scope and build API URL
+# =============================================================================
+- name: Determine effective scope for label update
+  ansible.builtin.set_fact:
+    _runner_scope: "{{ runner.scope | default(github_actions_runners_scope) }}"
+    _runner_org: "{{ runner.organization | default(github_actions_runners_organization) }}"
+    _runner_repo: "{{ runner.repository | default(github_actions_runners_repository) }}"
+    _runner_enterprise: "{{ runner.enterprise | default(github_actions_runners_enterprise) }}"
+  tags: github_actions_runners
+
+- name: Build runners list API URL
+  ansible.builtin.set_fact:
+    _list_runners_url: >-
+      {% if _runner_scope == 'organization' %}
+      {{ github_actions_runners_api_url }}/orgs/{{ _runner_org }}/actions/runners
+      {% elif _runner_scope == 'repository' %}
+      {{ github_actions_runners_api_url }}/repos/{{ _runner_repo }}/actions/runners
+      {% elif _runner_scope == 'enterprise' %}
+      {{ github_actions_runners_api_url }}/enterprises/{{ _runner_enterprise }}/actions/runners
+      {% endif %}
+  tags: github_actions_runners
+
+# =============================================================================
+# Get runner ID from GitHub API
+# =============================================================================
+- name: Get list of runners
+  ansible.builtin.uri:
+    url: "{{ _list_runners_url | trim }}"
+    method: GET
+    headers:
+      Authorization: "{{ _gh_auth_header }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    status_code: [200]
+    return_content: true
+  register: _runners_list
+  no_log: true
+  tags: github_actions_runners
+
+- name: Find runner ID by name
+  ansible.builtin.set_fact:
+    _runner_id: >-
+      {{ (_runners_list.json.runners | selectattr('name', 'equalto', runner.name) | list | first).id | default('') }}
+  tags: github_actions_runners
+
+- name: Skip if runner not found
+  ansible.builtin.debug:
+    msg: "⚠️  Runner '{{ runner.name }}' not found in GitHub. Cannot update labels."
+  when: _runner_id | length == 0
+  tags: github_actions_runners
+
+# =============================================================================
+# Update runner labels
+# =============================================================================
+- name: Build labels update API URL
+  ansible.builtin.set_fact:
+    _update_labels_url: "{{ _list_runners_url | trim }}/{{ _runner_id }}/labels"
+  when: _runner_id | length > 0
+  tags: github_actions_runners
+
+- name: Update runner labels via API
+  ansible.builtin.uri:
+    url: "{{ _update_labels_url }}"
+    method: PUT
+    headers:
+      Authorization: "{{ _gh_auth_header }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    body_format: json
+    body:
+      labels: "{{ runner.labels | default([]) }}"
+    status_code: [200]
+    return_content: true
+  register: _labels_update
+  when:
+    - _runner_id | length > 0
+    - runner.labels is defined
+    - runner.labels | length > 0
+  no_log: true
+  tags: github_actions_runners
+
+- name: Display labels update result
+  ansible.builtin.debug:
+    msg: "🏷️  Labels updated for runner '{{ runner.name }}': {{ runner.labels | join(', ') }}"
+  when:
+    - _runner_id | length > 0
+    - _labels_update is changed
+  tags: github_actions_runners

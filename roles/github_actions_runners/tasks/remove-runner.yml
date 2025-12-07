@@ -1,0 +1,148 @@
+---
+# Remove GitHub Actions runner
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set runner directory path for removal
+  ansible.builtin.set_fact:
+    _runner_dir: "{{ github_actions_runners_base_path }}/{{ runner.name }}"
+  tags: github_actions_runners
+
+- name: Check if runner directory exists
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}"
+  register: _runner_dir_stat
+  tags: github_actions_runners
+
+- name: Check if runner is configured
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}/.runner"
+  register: _runner_configured
+  when: _runner_dir_stat.stat.exists
+  tags: github_actions_runners
+
+# =============================================================================
+# Stop and Uninstall Service
+# =============================================================================
+- name: Check if service marker file exists
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}/.service"
+  register: _service_marker
+  when: _runner_dir_stat.stat.exists
+  tags: github_actions_runners
+
+- name: Read service name from marker file
+  ansible.builtin.slurp:
+    src: "{{ _runner_dir }}/.service"
+  register: _service_name_content
+  when:
+    - _runner_dir_stat.stat.exists
+    - _service_marker.stat.exists | default(false)
+  tags: github_actions_runners
+
+- name: Stop runner service
+  ansible.builtin.systemd:
+    name: "{{ (_service_name_content.content | b64decode | trim) }}"
+    state: stopped
+  when:
+    - _runner_dir_stat.stat.exists
+    - _service_marker.stat.exists | default(false)
+  failed_when: false
+  tags: github_actions_runners
+
+- name: Uninstall runner service
+  ansible.builtin.shell: |
+    cd "{{ _runner_dir }}"
+    sudo ./svc.sh uninstall || true
+  args:
+    executable: /bin/bash
+  when:
+    - _runner_dir_stat.stat.exists
+    - _service_marker.stat.exists | default(false)
+  changed_when: true
+  tags: github_actions_runners
+
+# =============================================================================
+# Get Remove Token and Unregister Runner
+# =============================================================================
+- name: Determine effective scope for removal
+  ansible.builtin.set_fact:
+    _runner_scope: "{{ runner.scope | default(github_actions_runners_scope) }}"
+    _runner_org: "{{ runner.organization | default(github_actions_runners_organization) }}"
+    _runner_repo: "{{ runner.repository | default(github_actions_runners_repository) }}"
+    _runner_enterprise: "{{ runner.enterprise | default(github_actions_runners_enterprise) }}"
+  when:
+    - _runner_dir_stat.stat.exists
+    - _runner_configured.stat.exists | default(false)
+    - github_actions_runners_remove_on_uninstall
+  tags: github_actions_runners
+
+- name: Build API endpoint for remove token
+  ansible.builtin.set_fact:
+    _remove_token_url: >-
+      {% if _runner_scope == 'organization' %}
+      {{ github_actions_runners_api_url }}/orgs/{{ _runner_org }}/actions/runners/remove-token
+      {% elif _runner_scope == 'repository' %}
+      {{ github_actions_runners_api_url }}/repos/{{ _runner_repo }}/actions/runners/remove-token
+      {% elif _runner_scope == 'enterprise' %}
+      {{ github_actions_runners_api_url }}/enterprises/{{ _runner_enterprise }}/actions/runners/remove-token
+      {% endif %}
+  when:
+    - _runner_dir_stat.stat.exists
+    - _runner_configured.stat.exists | default(false)
+    - github_actions_runners_remove_on_uninstall
+  tags: github_actions_runners
+
+- name: Get remove token from GitHub API
+  ansible.builtin.uri:
+    url: "{{ _remove_token_url | trim }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ github_actions_runners_token }}"
+      Accept: "application/vnd.github.v3+json"
+      X-GitHub-Api-Version: "2022-11-28"
+    status_code: [201]
+    return_content: true
+  register: _remove_token_response
+  when:
+    - _runner_dir_stat.stat.exists
+    - _runner_configured.stat.exists | default(false)
+    - github_actions_runners_remove_on_uninstall
+  no_log: true
+  failed_when: false
+  tags: github_actions_runners
+
+- name: Unregister runner from GitHub
+  ansible.builtin.shell: |
+    cd "{{ _runner_dir }}"
+    ./config.sh remove --token "{{ _remove_token_response.json.token }}"
+  args:
+    executable: /bin/bash
+  become: true
+  become_user: "{{ github_actions_runners_user }}"
+  when:
+    - _runner_dir_stat.stat.exists
+    - _runner_configured.stat.exists | default(false)
+    - github_actions_runners_remove_on_uninstall
+    - _remove_token_response.json.token is defined
+  changed_when: true
+  no_log: true
+  failed_when: false
+  tags: github_actions_runners
+
+# =============================================================================
+# Delete Runner Directory
+# =============================================================================
+- name: Delete runner directory
+  ansible.builtin.file:
+    path: "{{ _runner_dir }}"
+    state: absent
+  when:
+    - _runner_dir_stat.stat.exists
+    - github_actions_runners_delete_on_remove
+  tags: github_actions_runners
+
+- name: Display runner removal result
+  ansible.builtin.debug:
+    msg: "🗑️  Runner '{{ runner.name }}' removed successfully"
+  when: _runner_dir_stat.stat.exists
+  tags: github_actions_runners
