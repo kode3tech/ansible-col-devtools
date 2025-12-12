@@ -1,4 +1,4 @@
-.PHONY: help install lint test clean build install-collection
+.PHONY: help install version doctor lint lint-yaml lint-ansible test clean build install-collection publish
 
 # Variables
 VENV_DIR = .venv
@@ -52,16 +52,38 @@ version: ## Show installed tools versions
 
 lint: ## Run linters (yamllint and ansible-lint)
 	@echo "🔍 Running yamllint..."
-	@$(YAMLLINT) $(YAMLLINT_DIRS) $(YAMLLINT_FILES) 2>/dev/null || true
+	@$(YAMLLINT) .
 	@echo ""
 	@echo "🔍 Running ansible-lint..."
-	@$(ANSIBLE_LINT) $(LINT_DIRS)
+	@$(ANSIBLE_LINT) --profile production .
 
 lint-yaml: ## Run yamllint only
-	@$(YAMLLINT) $(YAMLLINT_DIRS) $(YAMLLINT_FILES) 2>/dev/null || true
+	@$(YAMLLINT) .
 
 lint-ansible: ## Run ansible-lint only
-	@$(ANSIBLE_LINT) $(LINT_DIRS)
+	@$(ANSIBLE_LINT) --profile production .
+
+doctor: ## Diagnose common local environment issues (collections paths, duplicates)
+	@echo "🩺 Environment diagnostics"
+	@echo ""
+	@echo "📌 Project: $(COLLECTION_NAMESPACE).$(COLLECTION_NAME) v$(COLLECTION_VERSION)"
+	@echo "📌 PWD: $(PROJECT_DIR)"
+	@echo ""
+	@echo "🐍 Python:"
+	@$(PYTHON) --version || true
+	@echo ""
+	@echo "🧰 Tooling:"
+	@$(ANSIBLE) --version | head -n 1 || true
+	@$(ANSIBLE_LINT) --version || true
+	@$(YAMLLINT) --version || true
+	@$(MOLECULE) --version || true
+	@echo ""
+	@echo "📦 Installed collections (showing potential duplicates):"
+	@$(VENV_DIR)/bin/ansible-galaxy collection list 2>/dev/null | grep -E 'code3tech\\.devtools|community\\.docker|containers\\.podman' || true
+	@echo ""
+	@echo "💡 If you see multiple versions above, clean local installs and reinstall into a single path:";
+	@echo "   - Remove: ~/.ansible/collections/ansible_collections/code3tech/devtools (and other duplicates)";
+	@echo "   - Then run: make clean && make install-collection";
 
 test: ## Test all roles with Molecule
 	@echo "🧪 Testing all roles..."

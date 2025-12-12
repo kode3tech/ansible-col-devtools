@@ -220,16 +220,19 @@ docker_daemon_config:
   # Add build optimization
   max-concurrent-downloads: 10
 ```
+
+If you want **non-blocking** logging too:
+
+```yaml
+docker_daemon_config:
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
     max-file: "3"
     compress: "true"
     mode: "non-blocking"
-  
-  # Network optimization
-  userland-proxy: false
-  iptables: true
-  
-  # Build optimization
-  features:
+```
+
 ### Optional: crun Runtime
 
 To use `crun` (if installed):

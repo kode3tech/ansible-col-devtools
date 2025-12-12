@@ -35,6 +35,7 @@ concurrency:
 
 env:
   ANSIBLE_FORCE_COLOR: "1"
+  ANSIBLE_COLLECTIONS_PATHS: ~/.ansible/collections
 
 jobs:
   # ===========================================================================
@@ -47,9 +48,9 @@ jobs:
       fail-fast: false
       matrix:
         ansible:
-          - stable-2.15
-          - stable-2.16
-          - stable-2.17
+          - "2.15"
+          - "2.16"
+          - "2.17"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,12 +65,8 @@ jobs:
 
       - name: Install Ansible (${{ matrix.ansible }})
         run: |
-          if [ "${{ matrix.ansible }}" == "devel" ]; then
-            pip install https://github.com/ansible/ansible/archive/devel.tar.gz --disable-pip-version-check
-          else
-            pip install ansible-core==${{ matrix.ansible }}* --disable-pip-version-check || \
-            pip install ansible-core --disable-pip-version-check
-          fi
+          python -m pip install --upgrade pip
+          pip install "ansible-core==${{ matrix.ansible }}.*" --disable-pip-version-check
 
       - name: Display Ansible version
         run: ansible --version
@@ -81,8 +78,7 @@ jobs:
             --skip-test shebang \
             --skip-test symlinks \
             --skip-test future-import-boilerplate \
-            --skip-test metaclass-boilerplate \
-            2>&1 || true
+            --skip-test metaclass-boilerplate
 
       - name: Sanity test summary
         if: always()

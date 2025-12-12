@@ -5,77 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2025-12-07
-
-### Added
-- **[GitHub Actions Runners]** NEW ROLE - Self-hosted runner deployment (v1.0.0)
-  - **Multi-runner support**: Deploy N runners per host with isolated directories
-  - **Three scopes**: Organization, Repository, and Enterprise runners
-  - **Label management**: Automatic label assignment and updates via REST API
-  - **Runner groups**: Create and assign runners to groups (Organization/Enterprise)
-  - **Lifecycle management**: Install, configure, update, and remove runners
-  - **Secure authentication**: Registration tokens with automatic refresh
-  - **Service verification**: Comprehensive service status checks
-  - **Input validation**: ASCII-box error messages matching Azure DevOps role pattern
-  - **Multi-platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
-  - **Systemd integration**: Automatic service management for each runner
-  - **Ephemeral runners**: Support for single-use runners (ideal for public repos)
-  - **Security**: Dedicated non-root `ghrunner` user for runner processes
-  - **Work folder cleanup**: Automatic cleanup of runner work directories on removal
-- **[GitHub Actions Runners]** Complete documentation (8-part modular guide)
-  - **Part 1**: Introduction & Concepts - Architecture and terminology
-  - **Part 2**: Prerequisites & Setup - Requirements and preparation
-  - **Part 3**: Basic Installation - Simple deployment examples
-  - **Part 4**: Runner Scopes - Organization, Repository, Enterprise
-  - **Part 5**: Labels & Runner Groups - Advanced categorization
-  - **Part 6**: Advanced Features - Ephemeral, replacement, multi-runner
-  - **Part 7**: Security Best Practices - Token handling, permissions
-  - **Part 8**: Troubleshooting - Common issues and solutions
-  - **Location**: `docs/user-guides/github-actions-runners/`
-- **[GitHub Actions Runners]** Production playbooks
-  - **install-production.yml**: Full production deployment with vault and verification
-  - **install-single-runner.yml**: Basic single runner installation
-  - **install-multi-runner.yml**: Multiple runners per host
-  - **Location**: `playbooks/github_actions_runners/`
-- **[GitHub Actions Runners]** Molecule tests
-  - **Multi-distro testing**: Ubuntu 22.04, Debian 12, Rocky Linux 9
-  - **Pytest/testinfra**: Comprehensive test suite for structure validation
-  - **Service verification**: Validates user, group, directories, and prerequisites
-  - **Removal testing**: Validates runner removal with `state: absent`
-- **[CI/CD]** GitHub Actions workflow for github_actions_runners role
-  - **molecule-github-actions-runners** job in CI pipeline
-  - **Multi-platform matrix**: Ubuntu 22.04, Debian 12, Rocky Linux 9
-
-## [1.1.0] - 2025-12-05
-
-### Added
-- **[Azure DevOps Agents]** NEW ROLE - Enterprise-grade agent deployment (v1.0.0)
-  - **Multi-agent support**: Deploy N agents per host with isolated directories
-  - **Three agent types**: Self-hosted (pools), Deployment Group, and Environment agents
-  - **Auto-create resources**: Automatically create Deployment Groups and Environments via REST API
-  - **Open access**: Configure pipeline permissions for environments (YAML pipelines)
-  - **Service verification**: Ensures all agent services are enabled and running at end of deployment
-  - **Agent removal**: Clean unregistration with `state: absent` support
-  - **Tag updates**: Update agent tags via REST API without reconfiguration
-  - **Input validation**: Comprehensive validation with clear ASCII-box error messages
-  - **Proxy support**: Full proxy configuration for enterprise environments
-  - **Multi-platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
-  - **Systemd integration**: Automatic service management for each agent
-  - **Security**: Dedicated non-root `azagent` user for agent processes
-  - **PAT authentication**: Unattended registration using Personal Access Tokens
-- **[Azure DevOps Agents]** Complete documentation
-  - **Role README**: Quick reference with all features and examples
-  - **Complete Guide**: Comprehensive 800+ line guide in `docs/user-guides/`
-  - **Production playbook**: Ready-to-use `install-production.yml` with vault and verification
-  - **Multiple example playbooks**: Single agent, multi-agent, deployment group
-- **[Azure DevOps Agents]** Advanced features
-  - **Rocky Linux support**: Handles `curl-minimal` package conflict with `allowerasing: true`
-  - **Download URL fix**: Uses new `download.agent.dev.azure.com` endpoint (old URLs deprecated)
-  - **Hostname sanitization**: Automatically replaces dots with dashes for valid agent names
-  - **svc.sh idempotency**: Checks for `.service` marker file before install
-  - **Service name escaping**: Reads actual service name from `.service` file
-
 ## [Unreleased]
+
+## [1.3.1] - 2025-12-12
+
+### Fixed
+- CI workflow lint now uses project dependencies (`requirements.txt`) and installs collection requirements (`requirements.yml`).
+- Sanity workflow no longer masks failures (removed `|| true`) and installs pinned `ansible-core` versions.
+- Fixed environment variable name to `ANSIBLE_COLLECTIONS_PATHS` in workflows.
+- Fixed Docker role README formatting for the non-blocking logging example.
+
+### Changed
+- Makefile lint targets are now strict (no suppressed failures) and include a `doctor` target for environment diagnostics.
+- Improved `activate.sh` so it can be sourced reliably from zsh and bash.
 
 ## [1.3.0] - 2025-01-27
 
@@ -258,23 +200,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixes compatibility with Debian 12+ where `apt-key` command was removed
   - Fully backward compatible with Debian 10, 11, Ubuntu 20.04+
 - **[Podman]** Fixed Debian 13 prerequisite package issue
-  - Removed `software-properties-common` (not available on Debian)
-- **[Podman]** Resolved Ubuntu 24.04 podman_login permission issue
-  - Implemented automatic fallback to shell command
-  - 100% success rate across all distributions
-- **[Podman]** Fixed XDG_RUNTIME_DIR warnings on registry authentication
-  - Automatic directory creation for root and rootless users
-  - Proper environment variable export in all login commands
-  - Resolves "Authenticating with existing credentials" errors
-- **[Testing]** Fixed Podman pytest configuration
-  - Added missing testinfra_hosts configuration
-  - Proper imports for testinfra runner
 
-### Changed
-- Restructured repository to follow Ansible Collection best practices
-- Moved roles to `roles/` directory
-- Updated README for collection usage
-- Added collection dependencies in role metadata (meta/main.yml)
+## [1.2.0] - 2025-12-07
+
+### Added
+- **[GitHub Actions Runners]** NEW ROLE - Self-hosted runner deployment (v1.0.0)
+  - **Multi-runner support**: Deploy N runners per host with isolated directories
+  - **Three scopes**: Organization, Repository, and Enterprise runners
+  - **Label management**: Automatic label assignment and updates via REST API
+  - **Runner groups**: Create and assign runners to groups (Organization/Enterprise)
+  - **Lifecycle management**: Install, configure, update, and remove runners
+  - **Secure authentication**: Registration tokens with automatic refresh
+  - **Service verification**: Comprehensive service status checks
+  - **Input validation**: ASCII-box error messages matching Azure DevOps role pattern
+  - **Multi-platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
+  - **Systemd integration**: Automatic service management for each runner
+  - **Ephemeral runners**: Support for single-use runners (ideal for public repos)
+  - **Security**: Dedicated non-root `ghrunner` user for runner processes
+  - **Work folder cleanup**: Automatic cleanup of runner work directories on removal
+- **[GitHub Actions Runners]** Complete documentation (8-part modular guide)
+  - **Part 1**: Introduction & Concepts - Architecture and terminology
+  - **Part 2**: Prerequisites & Setup - Requirements and preparation
+  - **Part 3**: Basic Installation - Simple deployment examples
+  - **Part 4**: Runner Scopes - Organization, Repository, Enterprise
+  - **Part 5**: Labels & Runner Groups - Advanced categorization
+  - **Part 6**: Advanced Features - Ephemeral, replacement, multi-runner
+  - **Part 7**: Security Best Practices - Token handling, permissions
+  - **Part 8**: Troubleshooting - Common issues and solutions
+  - **Location**: `docs/user-guides/github-actions-runners/`
+- **[GitHub Actions Runners]** Production playbooks
+  - **install-production.yml**: Full production deployment with vault and verification
+  - **install-single-runner.yml**: Basic single runner installation
+  - **install-multi-runner.yml**: Multiple runners per host
+  - **Location**: `playbooks/github_actions_runners/`
+- **[GitHub Actions Runners]** Molecule tests
+  - **Multi-distro testing**: Ubuntu 22.04, Debian 12, Rocky Linux 9
+  - **Pytest/testinfra**: Comprehensive test suite for structure validation
+  - **Service verification**: Validates user, group, directories, and prerequisites
+  - **Removal testing**: Validates runner removal with `state: absent`
+- **[CI/CD]** GitHub Actions workflow for github_actions_runners role
+  - **molecule-github-actions-runners** job in CI pipeline
+  - **Multi-platform matrix**: Ubuntu 22.04, Debian 12, Rocky Linux 9
+
+## [1.1.0] - 2025-12-05
+
+### Added
+- **[Azure DevOps Agents]** NEW ROLE - Enterprise-grade agent deployment (v1.0.0)
+  - **Multi-agent support**: Deploy N agents per host with isolated directories
+  - **Three agent types**: Self-hosted (pools), Deployment Group, and Environment agents
+  - **Auto-create resources**: Automatically create Deployment Groups and Environments via REST API
+  - **Open access**: Configure pipeline permissions for environments (YAML pipelines)
+  - **Service verification**: Ensures all agent services are enabled and running at end of deployment
+  - **Agent removal**: Clean unregistration with `state: absent` support
+  - **Tag updates**: Update agent tags via REST API without reconfiguration
+  - **Input validation**: Comprehensive validation with clear ASCII-box error messages
+  - **Proxy support**: Full proxy configuration for enterprise environments
+  - **Multi-platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
+  - **Systemd integration**: Automatic service management for each agent
+  - **Security**: Dedicated non-root `azagent` user for agent processes
+  - **PAT authentication**: Unattended registration using Personal Access Tokens
+- **[Azure DevOps Agents]** Complete documentation
+  - **Role README**: Quick reference with all features and examples
+  - **Complete Guide**: Comprehensive 800+ line guide in `docs/user-guides/`
+  - **Production playbook**: Ready-to-use `install-production.yml` with vault and verification
+  - **Multiple example playbooks**: Single agent, multi-agent, deployment group
+- **[Azure DevOps Agents]** Advanced features
+  - **Rocky Linux support**: Handles `curl-minimal` package conflict with `allowerasing: true`
+  - **Download URL fix**: Uses new `download.agent.dev.azure.com` endpoint (old URLs deprecated)
+  - **Hostname sanitization**: Automatically replaces dots with dashes for valid agent names
+  - **svc.sh idempotency**: Checks for `.service` marker file before install
+  - **Service name escaping**: Reads actual service name from `.service` file
 
 ## [1.0.0] - 2025-11-05
 
@@ -301,7 +296,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Testing guidelines
 - Contributing guidelines
 
-[Unreleased]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/kode3tech/ansible-col-devtools/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/kode3tech/ansible-col-devtools/releases/tag/v1.0.0

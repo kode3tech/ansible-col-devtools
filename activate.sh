@@ -1,7 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Script to activate the virtual environment
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ -n "${BASH_SOURCE[0]-}" ]; then
+    SCRIPT_PATH="${BASH_SOURCE[0]}"
+elif [ -n "${ZSH_VERSION-}" ]; then
+    SCRIPT_PATH="${(%):-%N}"
+else
+    SCRIPT_PATH="$0"
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 
 if [ ! -d "$SCRIPT_DIR/.venv" ]; then
     echo "Virtual environment not found. Creating..."
