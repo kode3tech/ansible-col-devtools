@@ -4,6 +4,7 @@
 if [ -n "${BASH_SOURCE[0]-}" ]; then
     SCRIPT_PATH="${BASH_SOURCE[0]}"
 elif [ -n "${ZSH_VERSION-}" ]; then
+    # shellcheck disable=SC2296
     SCRIPT_PATH="${(%):-%N}"
 else
     SCRIPT_PATH="$0"
