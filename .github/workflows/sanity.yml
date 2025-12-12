@@ -12,18 +12,22 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/sanity.yml'
       - 'plugins/**'
       - 'roles/**'
       - 'galaxy.yml'
       - 'meta/**'
+      - 'tests/sanity/**'
   pull_request:
     branches:
       - main
     paths:
+      - '.github/workflows/sanity.yml'
       - 'plugins/**'
       - 'roles/**'
       - 'galaxy.yml'
       - 'meta/**'
+      - 'tests/sanity/**'
   schedule:
     # Run weekly on Sunday at 00:00 UTC
     - cron: '0 0 * * 0'
