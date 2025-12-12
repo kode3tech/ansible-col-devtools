@@ -31,7 +31,7 @@
 - name: Docker Production Installation - Performance Optimized
   hosts: all
   become: true
-  
+
   vars:
     # ==========================================================================
     # BASIC CONFIGURATION
@@ -42,7 +42,7 @@
       - "{{ ansible_user }}"
       # - "deploy"
       # - "jenkins"
-    
+
     # ==========================================================================
     # DOCKER DAEMON CONFIGURATION - PERFORMANCE FOCUSED
     # ==========================================================================
@@ -58,7 +58,7 @@
       storage-driver: "overlay2"
       # storage-opts:
       #   - "overlay2.size=100G"            # 100GB limit per container
-      
+
       # ========================================================================
       # NETWORK PERFORMANCE
       # ========================================================================
@@ -68,7 +68,7 @@
       userland-proxy: false                 # CRITICAL: Removes userland proxy
       ip-masq: true                         # IP masquerading
       icc: true                             # Inter-container communication
-      
+
       # ========================================================================
       # CONCURRENCY & DOWNLOADS
       # ========================================================================
@@ -76,7 +76,7 @@
       max-concurrent-downloads: 25          # High parallelism
       max-concurrent-uploads: 15            # Optimized upload
       max-download-attempts: 5              # Retry on failures
-      
+
       # ========================================================================
       # LOGGING PERFORMANCE
       # ========================================================================
@@ -88,34 +88,34 @@
         mode: "non-blocking"                # Don't block application
         max-buffer-size: "16m"              # Large buffer for high throughput
         labels: "production,service"        # Labels for identification
-        
+
       # ========================================================================
       # RESOURCE LIMITS PRODUCTION
       # ========================================================================
       default-runtime: "runc"
-      
+
       # Shared memory for heavy builds
       default-shm-size: "512M"              # 512MB shared memory
-      
+
       # ========================================================================
       # PRODUCTION RELIABILITY
       # ========================================================================
       # Live restore - containers survive daemon restart
       live-restore: true
-      
+
       # Init process in containers for better cleanup
       init: true
-      
+
       # Production timeouts
       shutdown-timeout: 60                  # 60s for graceful shutdown
-      
+
       # ========================================================================
       # MONITORING & METRICS
       # ========================================================================
       # Prometheus metrics endpoint
       metrics-addr: "127.0.0.1:9323"
       experimental: false                   # Stability > features
-      
+
       # ========================================================================
       # DNS PERFORMANCE
       # ========================================================================
@@ -124,12 +124,12 @@
         - "1.0.0.1"                         # Cloudflare secondary
         - "8.8.8.8"                         # Google primary
         - "8.8.4.4"                         # Google secondary
-        
+
       dns-search:
         - "local"
         # - "prod.internal"
         # - "company.com"
-        
+
       # ========================================================================
       # REGISTRY OPTIMIZATION
       # ========================================================================
@@ -137,33 +137,33 @@
       registry-mirrors:
         - "https://mirror.gcr.io"
         - "https://docker.mirror.hashicorp.services"
-        
+
       # ========================================================================
       # ADVANCED PRODUCTION FEATURES
       # ========================================================================
       # Cgroup driver (systemd for better integration)
       exec-opts:
         - "native.cgroupdriver=systemd"
-        
+
       # Runtime with cgroup v2 support
       default-address-pools:
         - base: "10.10.0.0/16"              # Custom IP pool
           size: 24                          # /24 subnets
-          
+
       # Advanced features for production
       features:
         buildkit: true
-        
+
     # ==========================================================================
     # ADDITIONAL PERFORMANCE TUNING
     # ==========================================================================
     # BuildKit via environment variable (better control)
     docker_buildkit_enabled: true
-    
+
     # Optimized service configuration
     docker_service_enabled: true
     docker_service_state: started
-    
+
     # ==========================================================================
     # REGISTRIES CONFIGURATION (Examples - uncomment as needed)
     # ==========================================================================
@@ -171,7 +171,7 @@
     # docker_insecure_registries:
     #   - "localhost:5000"
     #   - "registry.internal:5000"
-      
+
     # Registry authentication (use Ansible Vault for passwords!)
     # docker_registries_auth:
     #   - registry: "https://index.docker.io/v1/"
@@ -268,14 +268,14 @@
         mode: '0711'
         owner: root
         group: root
-        
+
     # Check if custom directory is a separate mount point
     - name: Check if custom directory is mounted
       ansible.builtin.command: mountpoint -q /opt/docker-data
       register: mountpoint_check
       failed_when: false
       changed_when: false
-      
+
     - name: Display mount status
       ansible.builtin.debug:
         msg: "📁 Docker data directory {{ 'is mounted as separate filesystem ✅' if mountpoint_check.rc == 0 else 'is not a separate mount point (consider using SSD)' }}"
@@ -295,21 +295,21 @@
       ansible.builtin.command: docker info
       register: docker_info_result
       changed_when: false
-      
+
     - name: Display Docker system info
       ansible.builtin.debug:
         msg: "🐳 Docker is running: {{ docker_info_result.stdout_lines[0] }}"
-            
+
     # Basic performance test
     - name: Quick performance test with Alpine
       ansible.builtin.command: docker run --rm alpine:latest echo "Performance test completed"
       register: perf_test
       changed_when: false
-      
+
     - name: Performance test result
       ansible.builtin.debug:
         msg: "🧪 Container startup test: {{ '✅ PASSED' if perf_test.rc == 0 else '❌ FAILED' }}"
-        
+
     # Check metrics (if enabled)
     - name: Check if metrics endpoint is responding
       ansible.builtin.uri:
@@ -317,20 +317,20 @@
         method: GET
       register: metrics_check
       failed_when: false
-      
+
     - name: Metrics status
       ansible.builtin.debug:
         msg: "📊 Docker Prometheus metrics: {{ '✅ Available at http://127.0.0.1:9323/metrics' if metrics_check.status == 200 else '⚠️ Not available (check daemon config)' }}"
-        
+
     # Final summary
     - name: Installation summary
       ansible.builtin.debug:
         msg: |
-          
+
           ════════════════════════════════════════════════════════════════
           🐳 DOCKER PRODUCTION INSTALLATION COMPLETE
           ════════════════════════════════════════════════════════════════
-          
+
           ✅ Docker Engine installed and running
           ✅ overlay2 storage driver configured
           ✅ BuildKit enabled for faster builds
@@ -341,9 +341,9 @@
              • live-restore enabled
              • userland-proxy disabled
           ✅ Prometheus metrics at http://127.0.0.1:9323/metrics
-          
+
           📖 Documentation: docs/user-guides/docker/
-          
+
           ════════════════════════════════════════════════════════════════
 
 # ==============================================================================

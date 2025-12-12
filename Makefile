@@ -50,18 +50,20 @@ version: ## Show installed tools versions
 	@echo ""
 	@echo "Collection: $(COLLECTION_NAMESPACE).$(COLLECTION_NAME) v$(COLLECTION_VERSION)"
 
+ANSIBLE_LINT_PATHS = roles plugins/shared_tasks
+
 lint: ## Run linters (yamllint and ansible-lint)
 	@echo "🔍 Running yamllint..."
 	@$(YAMLLINT) .
 	@echo ""
 	@echo "🔍 Running ansible-lint..."
-	@$(ANSIBLE_LINT) --profile production .
+	@$(ANSIBLE_LINT) --profile production $(ANSIBLE_LINT_PATHS)
 
 lint-yaml: ## Run yamllint only
 	@$(YAMLLINT) .
 
 lint-ansible: ## Run ansible-lint only
-	@$(ANSIBLE_LINT) --profile production .
+	@$(ANSIBLE_LINT) --profile production $(ANSIBLE_LINT_PATHS)
 
 doctor: ## Diagnose common local environment issues (collections paths, duplicates)
 	@echo "🩺 Environment diagnostics"
@@ -91,7 +93,7 @@ test: ## Test all roles with Molecule
 		role_name=$$(basename "$$role_dir"); \
 		if [ -d "$$role_dir/molecule" ]; then \
 			echo "Testing $$role_name..."; \
-			(cd "$$role_dir" && $(MOLECULE_ABS) test) || exit 1; \
+			(cd "$$role_dir" && PATH="$(PROJECT_DIR)/$(VENV_DIR)/bin:$$PATH" $(MOLECULE_ABS) test) || exit 1; \
 		fi \
 	done
 	@echo "✅ All tests passed!"

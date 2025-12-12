@@ -35,7 +35,7 @@ concurrency:
 
 env:
   ANSIBLE_FORCE_COLOR: "1"
-  ANSIBLE_COLLECTIONS_PATHS: ~/.ansible/collections
+  ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/collections
 
 jobs:
   # ===========================================================================

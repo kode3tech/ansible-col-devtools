@@ -152,7 +152,7 @@
           - github_actions_runners_list | length > 0
         fail_msg: |
           Missing required variables!
-          
+
           Ensure the following are defined:
             - vault_github_token in vars/github_secrets.yml
             - github_actions_runners_list in vars/github_runners.yml
@@ -175,7 +175,7 @@
           - github_api_check.status == 200
         fail_msg: |
           Cannot reach GitHub API!
-          
+
           Verify:
             - Internet connectivity
             - DNS resolution

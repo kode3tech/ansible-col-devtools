@@ -32,6 +32,4 @@ ignore: |
   node_modules/
   *.tar.gz
   .github/
-  playbooks/
-  plugins/
   docs/
