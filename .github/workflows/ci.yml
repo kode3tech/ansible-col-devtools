@@ -80,12 +80,12 @@ jobs:
           cache: 'pip'
 
       - name: Install Ansible
-        run: pip install ansible-core
+        run: pip install "ansible-core==2.17.*"
 
       - name: Run sanity tests
         working-directory: ansible_collections/code3tech/devtools
         run: |
-          ansible-test sanity --docker -v --color yes --skip-test shebang
+          ansible-test sanity --docker -v --color yes
 
   # ===========================================================================
   # MOLECULE TESTS - Docker Role

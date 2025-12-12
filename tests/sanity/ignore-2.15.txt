@@ -1,7 +1,5 @@
-# Ignore shebang errors for non-module files
-# These are shell scripts, templates, and test files - not Ansible modules
-activate.sh shebang!skip
-roles/asdf/templates/asdf-system.sh.j2 shebang!skip
-roles/asdf/molecule/default/test_default.py shebang!skip
-roles/docker/molecule/default/test_default.py shebang!skip
-roles/podman/molecule/default/test_default.py shebang!skip
+activate.sh shebang!skip # not an Ansible module
+roles/asdf/templates/asdf-system.sh.j2 shebang!skip # template, not an Ansible module
+roles/asdf/molecule/default/test_default.py shebang!skip # test file, not an Ansible module
+roles/docker/molecule/default/test_default.py shebang!skip # test file, not an Ansible module
+roles/podman/molecule/default/test_default.py shebang!skip # test file, not an Ansible module

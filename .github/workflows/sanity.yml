@@ -75,7 +75,6 @@ jobs:
         working-directory: ansible_collections/code3tech/devtools
         run: |
           ansible-test sanity --docker -v --color yes \
-            --skip-test shebang \
             --skip-test symlinks \
             --skip-test future-import-boilerplate \
             --skip-test metaclass-boilerplate
