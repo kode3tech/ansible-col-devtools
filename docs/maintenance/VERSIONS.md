@@ -59,4 +59,3 @@ pip install --upgrade -r requirements.txt
 
 [← Back to Maintenance](README.md)
 
-*Last updated: November 4, 2025*

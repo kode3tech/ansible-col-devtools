@@ -1,0 +1,95 @@
+---
+# Setup for RedHat/Rocky/AlmaLinux systems
+
+# Handle curl-minimal vs curl conflict (common on Rocky Linux minimal images)
+- name: Clean DNF cache to avoid corrupted package issues
+  ansible.builtin.command:
+    cmd: dnf clean all
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Install curl with allowerasing (replaces curl-minimal)
+  ansible.builtin.dnf:
+    name: curl
+    state: present
+    allowerasing: true
+  tags: gitlab_ci_runners
+
+- name: Install prerequisite packages
+  ansible.builtin.dnf:
+    name: "{{ gitlab_ci_runners_prerequisites }}"
+    state: present
+  tags: gitlab_ci_runners
+
+- name: Ensure RPM GPG key directory exists
+  ansible.builtin.file:
+    path: /etc/pki/rpm-gpg
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners
+
+- name: Import GitLab Runner GPG key directly from URL
+  ansible.builtin.rpm_key:
+    key: "{{ gitlab_ci_runners_repo_gpgkey_url }}"
+    state: present
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners
+
+- name: Import GitLab packages GPG key directly from URL
+  ansible.builtin.rpm_key:
+    key: "{{ gitlab_ci_runners_repo_gpgkey_fallback_url }}"
+    state: present
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners
+
+- name: Download GitLab Runner RPM signing key (for repository config)
+  ansible.builtin.get_url:
+    url: "{{ gitlab_ci_runners_repo_gpgkey_url }}"
+    dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-gitlab-runner
+    owner: root
+    group: root
+    mode: '0644'
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners
+
+- name: Download GitLab packages RPM signing key (for repository config)
+  ansible.builtin.get_url:
+    url: "{{ gitlab_ci_runners_repo_gpgkey_fallback_url }}"
+    dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-gitlab-packages
+    owner: root
+    group: root
+    mode: '0644'
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners
+
+- name: Configure GitLab Runner yum repository (GPG enabled)
+  ansible.builtin.yum_repository:
+    name: gitlab-runner
+    description: GitLab Runner Repository
+    baseurl: "https://packages.gitlab.com/runner/gitlab-runner/el/{{ ansible_distribution_major_version }}/$basearch"
+    repo_gpgcheck: false
+    gpgcheck: true
+    gpgkey: >-
+      file:///etc/pki/rpm-gpg/RPM-GPG-KEY-gitlab-runner
+      file:///etc/pki/rpm-gpg/RPM-GPG-KEY-gitlab-packages
+    enabled: true
+  when:
+    - gitlab_ci_runners_configure_repo
+    - not gitlab_ci_runners_redhat_disable_gpg_check | bool
+  tags: gitlab_ci_runners
+
+- name: Configure GitLab Runner yum repository (GPG disabled)
+  ansible.builtin.yum_repository:
+    name: gitlab-runner
+    description: GitLab Runner Repository
+    baseurl: "https://packages.gitlab.com/runner/gitlab-runner/el/{{ ansible_distribution_major_version }}/$basearch"
+    repo_gpgcheck: false
+    gpgcheck: false
+    enabled: true
+  when:
+    - gitlab_ci_runners_configure_repo
+    - gitlab_ci_runners_redhat_disable_gpg_check | bool
+  tags: gitlab_ci_runners

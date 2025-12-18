@@ -1,0 +1,49 @@
+---
+# Update runner tags via GitLab API
+# This task should be included with vars:
+# - runner: The runner dict with name, tags, etc.
+# - runner_id: The GitLab runner ID (numeric)
+
+- name: Set runner service name and tag list
+  ansible.builtin.set_fact:
+    _runner_service_name: "gitlab-runner@{{ runner.name }}"
+    _runner_tags_list: "{{ runner.tags | default(gitlab_ci_runners_default_tags) }}"
+  tags: gitlab_ci_runners
+
+- name: Update runner tags via API
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/runners/'
+        ~ (runner_id | string)
+      }}
+    method: PUT
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      tag_list: "{{ _runner_tags_list }}"
+    return_content: true
+    status_code: 200
+  register: _runner_update_tags
+  delegate_to: localhost
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - (gitlab_ci_runners_api_token | default('') | length) > 0
+    - (runner_id | int) > 0
+    - _runner_tags_list | length > 0
+  tags: gitlab_ci_runners
+
+- name: Display tag update result
+  ansible.builtin.debug:
+    msg:
+      - "Runner: {{ runner.name }}"
+      - "Runner ID: {{ runner_id }}"
+      - "Tags updated: {{ _runner_tags_list }}"
+  when:
+    - not (gitlab_ci_runners_no_log | bool)
+    - _runner_update_tags is defined
+    - _runner_update_tags is not skipped
+  tags: gitlab_ci_runners

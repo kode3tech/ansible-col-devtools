@@ -382,7 +382,7 @@ The role installs and configures crun automatically.
 
 The role automatically fixes this! It configures systemd-tmpfiles to create `/run/user/0` for root Podman.
 
-If you still see issues, check the [Podman XDG Runtime Fix](../roles/podman/docs/PODMAN_XDG_RUNTIME_FIX.md) guide.
+If you still see issues, check the [XDG Runtime Directory Configuration](../roles/podman/README.md#xdg-runtime-directory-configuration) section in the Podman role documentation.
 
 ---
 

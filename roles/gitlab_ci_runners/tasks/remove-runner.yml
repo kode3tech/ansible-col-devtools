@@ -1,0 +1,72 @@
+---
+# Unregister and remove a runner by name (multi-runner architecture)
+
+- name: Set runner paths and service name
+  ansible.builtin.set_fact:
+    _runner_service_name: "gitlab-runner@{{ runner.name }}"
+    _runner_dir: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}"
+    _runner_config_file: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}/config.toml"
+  tags: gitlab_ci_runners
+
+# =============================================================================
+# Stop and disable service
+# =============================================================================
+- name: Stop runner service
+  ansible.builtin.systemd:
+    name: "{{ _runner_service_name }}"
+    state: stopped
+  failed_when: false
+  tags: gitlab_ci_runners
+
+- name: Disable runner service
+  ansible.builtin.systemd:
+    name: "{{ _runner_service_name }}"
+    enabled: false
+  failed_when: false
+  tags: gitlab_ci_runners
+
+# =============================================================================
+# Delete runner via API
+# =============================================================================
+- name: Delete runner via GitLab API
+  ansible.builtin.include_tasks: api-delete-runner.yml
+  vars:
+    runner_id: "{{ runner.id | default(0) }}"
+  when: (gitlab_ci_runners_api_token | default('') | length) > 0
+  tags: gitlab_ci_runners
+
+# =============================================================================
+# Local unregistration (fallback)
+# =============================================================================
+- name: Unregister runner locally by config file
+  ansible.builtin.command:
+    argv:
+      - gitlab-runner
+      - unregister
+      - --config
+      - "{{ _runner_config_file }}"
+      - --all-runners
+  register: _gitlab_ci_runners_unregister
+  failed_when: false
+  changed_when: _gitlab_ci_runners_unregister.rc == 0
+  when: runner.name is defined
+  tags: gitlab_ci_runners
+
+# =============================================================================
+# Remove files and directories
+# =============================================================================
+- name: Remove runner directory
+  ansible.builtin.file:
+    path: "{{ _runner_dir }}"
+    state: absent
+  tags: gitlab_ci_runners
+
+- name: Display removal summary
+  ansible.builtin.debug:
+    msg:
+      - "✅ Runner removed: {{ runner.name }}"
+      - "  Service stopped: {{ _runner_service_name }}"
+      - "  Directory removed: {{ _runner_dir }}"
+      - "  API deletion: {{ 'Yes' if (gitlab_ci_runners_api_token | default('') | length) > 0 else 'Skipped' }}"
+  when: not (gitlab_ci_runners_no_log | bool)
+  tags: gitlab_ci_runners

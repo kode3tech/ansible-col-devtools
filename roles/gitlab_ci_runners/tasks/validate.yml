@@ -1,0 +1,233 @@
+---
+# Validate gitlab_ci_runners inputs
+
+- name: Validate gitlab_ci_runners_gitlab_url is provided
+  ansible.builtin.assert:
+    that:
+      - gitlab_ci_runners_gitlab_url is defined
+      - gitlab_ci_runners_gitlab_url | length > 0
+    fail_msg: "gitlab_ci_runners_gitlab_url is required"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Validate global state value
+  ansible.builtin.assert:
+    that:
+      - gitlab_ci_runners_state in ['present', 'absent']
+    fail_msg: "gitlab_ci_runners_state must be 'present' or 'absent'"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Validate runners list type
+  ansible.builtin.assert:
+    that:
+      - gitlab_ci_runners_runners_list is defined
+      - gitlab_ci_runners_runners_list is iterable
+    fail_msg: "gitlab_ci_runners_runners_list must be a list"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Validate token mode value
+  ansible.builtin.assert:
+    that:
+      - gitlab_ci_runners_token_mode in ['auto', 'runner', 'registration', 'api']
+    fail_msg: "gitlab_ci_runners_token_mode must be one of: auto, runner, registration, api"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Validate API inputs when token_mode=api
+  ansible.builtin.assert:
+    that:
+      - gitlab_ci_runners_api_token is defined
+      - gitlab_ci_runners_api_token | length > 0
+      - (runner_api_runner_type | length > 0)
+      - runner_api_runner_type in ['instance_type', 'group_type', 'project_type']
+      - >-
+        (runner_api_runner_type != 'group_type')
+        or ((runner_api_group_id | int) > 0)
+        or ((runner_api_group_full_path | length) > 0)
+      - >-
+        (runner_api_runner_type != 'project_type')
+        or ((runner_api_project_id | int) > 0)
+        or ((runner_api_project_full_path | length) > 0)
+    fail_msg: >-
+      token_mode=api requires GitLab API settings:
+      - gitlab_ci_runners_api_token (PAT with create_runner scope)
+      - gitlab_ci_runners_api_runner_type (instance_type|group_type|project_type) or per-runner api_runner_type
+      - gitlab_ci_runners_api_group_id OR gitlab_ci_runners_api_group_full_path when group_type
+      - gitlab_ci_runners_api_project_id OR gitlab_ci_runners_api_project_full_path when project_type
+    quiet: true
+  vars:
+    runner_api_runner_type: "{{ gitlab_ci_runners_api_runner_type | default('') }}"
+    runner_api_group_id: "{{ gitlab_ci_runners_api_group_id | default(0) }}"
+    runner_api_group_full_path: "{{ gitlab_ci_runners_api_group_full_path | default('') }}"
+    runner_api_project_id: "{{ gitlab_ci_runners_api_project_id | default(0) }}"
+    runner_api_project_full_path: "{{ gitlab_ci_runners_api_project_full_path | default('') }}"
+  when:
+    - not gitlab_ci_runners_skip_registration
+    - gitlab_ci_runners_state == 'present'
+    - gitlab_ci_runners_runners_list | length > 0
+    - gitlab_ci_runners_token_mode == 'api'
+  tags: gitlab_ci_runners
+
+- name: Validate API inputs when token_mode=auto and API fallback is used
+  ansible.builtin.assert:
+    that:
+      - (runner_api_runner_type | length > 0)
+      - runner_api_runner_type in ['instance_type', 'group_type', 'project_type']
+      - >-
+        (runner_api_runner_type != 'group_type')
+        or ((runner_api_group_id | int) > 0)
+        or ((runner_api_group_full_path | length) > 0)
+      - >-
+        (runner_api_runner_type != 'project_type')
+        or ((runner_api_project_id | int) > 0)
+        or ((runner_api_project_full_path | length) > 0)
+    fail_msg: >-
+      token_mode=auto is falling back to API runner creation because no runner/registration token was provided.
+      Set gitlab_ci_runners_api_runner_type (instance_type|group_type|project_type) and the matching ID or path:
+      - gitlab_ci_runners_api_group_id OR gitlab_ci_runners_api_group_full_path when group_type
+      - gitlab_ci_runners_api_project_id OR gitlab_ci_runners_api_project_full_path when project_type
+    quiet: true
+  vars:
+    runner_api_runner_type: "{{ gitlab_ci_runners_api_runner_type | default('') }}"
+    runner_api_group_id: "{{ gitlab_ci_runners_api_group_id | default(0) }}"
+    runner_api_group_full_path: "{{ gitlab_ci_runners_api_group_full_path | default('') }}"
+    runner_api_project_id: "{{ gitlab_ci_runners_api_project_id | default(0) }}"
+    runner_api_project_full_path: "{{ gitlab_ci_runners_api_project_full_path | default('') }}"
+  when:
+    - not gitlab_ci_runners_skip_registration
+    - gitlab_ci_runners_state == 'present'
+    - gitlab_ci_runners_runners_list | length > 0
+    - gitlab_ci_runners_token_mode == 'auto'
+    - ((gitlab_ci_runners_runner_token | default('')) | length == 0)
+    - ((gitlab_ci_runners_registration_token | default('')) | length == 0)
+    - ((gitlab_ci_runners_api_token | default('')) | length > 0)
+  tags: gitlab_ci_runners
+
+- name: Validate tokens are mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - not (
+          (gitlab_ci_runners_runner_token is defined)
+          and (gitlab_ci_runners_runner_token | length > 0)
+          and (gitlab_ci_runners_registration_token is defined)
+          and (gitlab_ci_runners_registration_token | length > 0)
+        )
+    fail_msg: >-
+      Provide only one token type: gitlab_ci_runners_runner_token (new workflow) OR
+      gitlab_ci_runners_registration_token (legacy). Do not set both.
+    quiet: true
+  when:
+    - not gitlab_ci_runners_skip_registration
+    - gitlab_ci_runners_state == 'present'
+    - gitlab_ci_runners_runners_list | length > 0
+  tags: gitlab_ci_runners
+
+- name: Validate token values are not Personal Access Tokens
+  ansible.builtin.assert:
+    that:
+      - >-
+        not (
+          (gitlab_ci_runners_runner_token is defined)
+          and (gitlab_ci_runners_runner_token | length > 0)
+          and (gitlab_ci_runners_runner_token | regex_search('^glpat-'))
+        )
+      - >-
+        not (
+          (gitlab_ci_runners_registration_token is defined)
+          and (gitlab_ci_runners_registration_token | length > 0)
+          and (gitlab_ci_runners_registration_token | regex_search('^glpat-'))
+        )
+    fail_msg: >-
+      Invalid token: a GitLab Personal Access Token (glpat-...) cannot be used to register a runner.
+      Provide either:
+      - gitlab_ci_runners_runner_token (new workflow; usually glrt-...), or
+      - gitlab_ci_runners_registration_token (legacy registration token; not glpat-...)
+    quiet: true
+  when:
+    - not gitlab_ci_runners_skip_registration
+    - gitlab_ci_runners_state == 'present'
+    - gitlab_ci_runners_runners_list | length > 0
+  tags: gitlab_ci_runners
+
+- name: Validate required token when registration is enabled
+  ansible.builtin.assert:
+    that:
+      - >-
+        (
+          (gitlab_ci_runners_token_mode == 'registration')
+          and (gitlab_ci_runners_registration_token is defined)
+          and (gitlab_ci_runners_registration_token | length > 0)
+        )
+        or
+        (
+          (gitlab_ci_runners_token_mode == 'runner')
+          and (gitlab_ci_runners_runner_token is defined)
+          and (gitlab_ci_runners_runner_token | length > 0)
+        )
+        or
+        (
+          (gitlab_ci_runners_token_mode == 'api')
+          and (gitlab_ci_runners_api_token is defined)
+          and (gitlab_ci_runners_api_token | length > 0)
+        )
+        or
+        (
+          (gitlab_ci_runners_token_mode == 'auto')
+          and (
+            (
+              (gitlab_ci_runners_runner_token is defined)
+              and (gitlab_ci_runners_runner_token | length > 0)
+            )
+            or
+            (
+              (gitlab_ci_runners_registration_token is defined)
+              and (gitlab_ci_runners_registration_token | length > 0)
+            )
+            or
+            (
+              (gitlab_ci_runners_api_token is defined)
+              and (gitlab_ci_runners_api_token | length > 0)
+            )
+          )
+        )
+    fail_msg: >-
+      A runner token is required unless gitlab_ci_runners_skip_registration=true.
+      Provide either:
+      - gitlab_ci_runners_runner_token (new workflow; token_mode=runner or auto), or
+      - gitlab_ci_runners_registration_token (legacy; token_mode=registration or auto)
+      - gitlab_ci_runners_api_token (PAT with create_runner scope; token_mode=api, or auto fallback)
+    quiet: true
+  when:
+    - not gitlab_ci_runners_skip_registration
+    - gitlab_ci_runners_state == 'present'
+    - gitlab_ci_runners_runners_list | length > 0
+  tags: gitlab_ci_runners
+
+- name: Validate runners list non-empty when registering
+  ansible.builtin.assert:
+    that:
+      - gitlab_ci_runners_runners_list | length > 0
+    fail_msg: "gitlab_ci_runners_runners_list must be non-empty when registering runners"
+    quiet: true
+  when:
+    - not gitlab_ci_runners_skip_registration
+    - gitlab_ci_runners_state == 'present'
+  tags: gitlab_ci_runners
+
+- name: Validate each runner configuration
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name is string
+      - item.name | length > 0
+      - item.name | length <= 64
+      - (item.executor | default(gitlab_ci_runners_default_executor)) in ['shell', 'docker']
+    fail_msg: "Invalid runner entry: each runner must have name and supported executor (shell/docker)"
+    quiet: true
+  loop: "{{ gitlab_ci_runners_runners_list }}"
+  loop_control:
+    label: "{{ item.name | default('UNDEFINED') }}"
+  when: gitlab_ci_runners_runners_list | length > 0
+  tags: gitlab_ci_runners

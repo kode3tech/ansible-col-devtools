@@ -1,0 +1,59 @@
+---
+# Auto-create GitLab groups and projects if needed
+# Runs before runner registration when auto-create flags are enabled
+
+- name: Auto-create group if needed (group_type runners)
+  when:
+    - gitlab_ci_runners_auto_create_group
+    - gitlab_ci_runners_api_runner_type == 'group_type'
+    - (gitlab_ci_runners_api_group_id | int) <= 0
+    - (gitlab_ci_runners_api_group_full_path | default('') | length) > 0
+    - (gitlab_ci_runners_api_token | default('') | length) > 0
+  tags: gitlab_ci_runners
+  block:
+    - name: Ensure group exists via API
+      ansible.builtin.include_tasks: api-ensure-group.yml
+      vars:
+        group_full_path: "{{ gitlab_ci_runners_api_group_full_path }}"
+        group_visibility: "{{ gitlab_ci_runners_group_visibility }}"
+
+    - name: Cache group ID for runner registration
+      ansible.builtin.set_fact:
+        _gitlab_ci_runners_resolved_group_id: "{{ _created_group_id }}"
+      delegate_to: localhost
+      delegate_facts: true
+
+- name: Auto-create project if needed (project_type runners)
+  when:
+    - gitlab_ci_runners_auto_create_project
+    - gitlab_ci_runners_api_runner_type == 'project_type'
+    - (gitlab_ci_runners_api_project_id | int) <= 0
+    - (gitlab_ci_runners_api_project_path | default('') | length) > 0
+    - (gitlab_ci_runners_api_token | default('') | length) > 0
+  tags: gitlab_ci_runners
+  block:
+    # First ensure the parent group/namespace exists
+    - name: Extract namespace from project path
+      ansible.builtin.set_fact:
+        _project_namespace_path: "{{ gitlab_ci_runners_api_project_path.split('/')[:-1] | join('/') }}"
+      delegate_to: localhost
+
+    - name: Ensure parent namespace exists
+      ansible.builtin.include_tasks: api-ensure-group.yml
+      vars:
+        group_full_path: "{{ _project_namespace_path }}"
+        group_visibility: "{{ gitlab_ci_runners_group_visibility }}"
+      when: _project_namespace_path | length > 0
+
+    - name: Ensure project exists via API
+      ansible.builtin.include_tasks: api-ensure-project.yml
+      vars:
+        project_path_with_namespace: "{{ gitlab_ci_runners_api_project_path }}"
+        project_namespace_id: "{{ _created_group_id }}"
+        project_visibility: "{{ gitlab_ci_runners_project_visibility }}"
+
+    - name: Cache project ID for runner registration
+      ansible.builtin.set_fact:
+        _gitlab_ci_runners_resolved_project_id: "{{ _created_project_id }}"
+      delegate_to: localhost
+      delegate_facts: true

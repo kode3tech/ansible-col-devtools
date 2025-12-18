@@ -237,7 +237,55 @@ ansible-playbook playbook.yml --tags cleanup
 
 ## Runner List Configuration
 
-The `github_actions_runners_list` variable accepts a list of runner configurations:
+The `github_actions_runners_list` variable accepts a list of runner configurations.
+
+### Runner Attributes Reference
+
+Each runner in `github_actions_runners_list` is a dictionary with the following attributes:
+
+#### Required Attributes
+
+| Attribute | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | **Yes** | Unique runner name (used for directory and service identification) |
+
+#### Core Configuration
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `state` | string | `present` | Runner lifecycle state: `present` (install/register) or `absent` (unregister/remove) |
+| `labels` | list | `[]` | Custom labels for job routing (added to default labels: self-hosted, Linux, X64) |
+| `runner_group` | string | `"Default"` | Runner group name (organization/enterprise only, ignored for repository scope) |
+| `work_dir` | string | `"_work"` | Work directory name relative to runner path |
+
+#### Advanced Configuration
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `ephemeral` | bool | `false` | Ephemeral runner: automatically removed after running one job |
+| `replace` | bool | `false` | Replace existing runner with same name during registration |
+
+### Complete Runner Example
+
+```yaml
+github_actions_runners_list:
+  - name: "prod-runner-01"                    # Required: unique identifier
+    state: present                            # Optional: present or absent
+    
+    # Labels for job routing
+    labels:                                   # Optional: custom labels
+      - production
+      - deploy
+      - kubernetes
+    
+    # Organization/Enterprise features
+    runner_group: "production"                # Optional: group name (org/enterprise only)
+    
+    # Advanced features
+    work_dir: "_work"                         # Optional: work directory name
+    ephemeral: false                          # Optional: one-time runner
+    replace: false                            # Optional: replace existing runner
+```
 
 ### Basic Runner
 

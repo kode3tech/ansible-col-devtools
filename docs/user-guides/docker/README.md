@@ -123,9 +123,8 @@ docker_registries_auth:
 
 ## 📚 Additional Resources
 
-- **[Role README](../../../roles/docker/README.md)** - Quick reference
+- **[Role README](../../../roles/docker/README.md)** - Quick reference and complete variable list
 - **[Example Playbooks](../../../playbooks/docker/)** - Production examples
-- **[Variables Reference](../../reference/VARIABLES.md)** - All collection variables
 - **[FAQ](../../FAQ.md)** - Frequently asked questions
 
 ---

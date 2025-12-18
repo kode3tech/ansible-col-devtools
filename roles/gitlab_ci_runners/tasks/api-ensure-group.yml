@@ -1,0 +1,89 @@
+---
+# Ensure GitLab group exists, creating if needed
+# This task should be included with vars:
+# - group_full_path: Full path of the group (e.g., "myorg/myteam")
+# - group_name: Display name for the group (optional, defaults to last path segment)
+# - group_visibility: Visibility level (optional: private, internal, public)
+
+- name: Set group name default
+  ansible.builtin.set_fact:
+    _group_name: "{{ group_name | default(group_full_path.split('/')[-1]) }}"
+    _group_visibility: "{{ group_visibility | default('private') }}"
+  delegate_to: localhost
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Build encoded group path
+  ansible.builtin.set_fact:
+    _group_path_encoded: >-
+      {{
+        (group_full_path | string)
+        | replace('%', '%25')
+        | replace('/', '%2F')
+        | replace(' ', '%20')
+      }}
+  delegate_to: localhost
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Check if group exists
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/groups/'
+        ~ _group_path_encoded
+      }}
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+    return_content: true
+    status_code: [200, 404]
+  register: _group_check
+  delegate_to: localhost
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Create group if it doesn't exist
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/groups'
+      }}
+    method: POST
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ _group_name }}"
+      path: "{{ group_full_path.split('/')[-1] }}"
+      visibility: "{{ _group_visibility }}"
+      parent_id: "{{ parent_group_id | default(omit) }}"
+    return_content: true
+    status_code: 201
+  register: _group_create
+  delegate_to: localhost
+  when: _group_check.status == 404
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Set group ID fact
+  ansible.builtin.set_fact:
+    _created_group_id: >-
+      {{
+        (_group_create.json.id if _group_check.status == 404 else _group_check.json.id) | int
+      }}
+  delegate_to: localhost
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Display group creation result
+  ansible.builtin.debug:
+    msg:
+      - "Group: {{ group_full_path }}"
+      - "Status: {{ 'Created' if _group_check.status == 404 else 'Already exists' }}"
+      - "Group ID: {{ _created_group_id }}"
+  when: not (gitlab_ci_runners_no_log | bool)
+  tags: gitlab_ci_runners

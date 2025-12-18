@@ -1,0 +1,324 @@
+---
+# Register a GitLab Runner (non-interactive)
+
+- name: Set runner directory and config path
+  ansible.builtin.set_fact:
+    _runner_dir: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}"
+    _runner_config_file: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}/config.toml"
+  tags: gitlab_ci_runners
+
+- name: Check if config.toml exists
+  ansible.builtin.stat:
+    path: "{{ _runner_config_file }}"
+  register: _runner_config_exists
+  tags: gitlab_ci_runners
+
+- name: Check if config.toml has runner configuration
+  ansible.builtin.command:
+    cmd: "grep -q '\\[\\[runners\\]\\]' {{ _runner_config_file }}"
+  register: _runner_config_has_runner
+  changed_when: false
+  failed_when: false
+  when: _runner_config_exists.stat.exists
+  tags: gitlab_ci_runners
+
+- name: Determine if runner is already registered
+  ansible.builtin.set_fact:
+    _runner_already_registered: >-
+      {{
+        (
+          _runner_config_exists.stat.exists
+          and (_runner_config_has_runner.rc | default(1) == 0)
+          and not gitlab_ci_runners_force_register
+        )
+      }}
+  tags: gitlab_ci_runners
+
+- name: Display idempotency check result
+  ansible.builtin.debug:
+    msg:
+      - "========================================"
+      - "Runner: {{ runner.name }}"
+      - "========================================"
+      - "Config file exists: {{ _runner_config_exists.stat.exists }}"
+      - >-
+        Has [[runners]] section:
+        {{ (_runner_config_has_runner.rc | default(1) == 0) if _runner_config_exists.stat.exists else false }}
+      - "Force register: {{ gitlab_ci_runners_force_register }}"
+      - "Already registered: {{ _runner_already_registered }}"
+      - "Will register: {{ not _runner_already_registered }}"
+      - "========================================"
+  tags: gitlab_ci_runners
+
+- name: Build registration command argv
+  ansible.builtin.set_fact:
+    _gitlab_ci_runner_executor: "{{ runner.executor | default(gitlab_ci_runners_default_executor) }}"
+    _gitlab_ci_runner_description: "{{ runner.description | default(runner.name) }}"
+    _gitlab_ci_runner_builds_dir: "{{ runner.builds_dir | default(gitlab_ci_runners_builds_dir) }}"
+    _gitlab_ci_runner_cache_dir: "{{ runner.cache_dir | default(gitlab_ci_runners_cache_dir) }}"
+    _gitlab_ci_runner_run_untagged: >-
+      {{ (runner.run_untagged | default(gitlab_ci_runners_run_untagged)) | ternary('true', 'false') }}
+    _gitlab_ci_runner_locked: >-
+      {{ (runner.locked | default(gitlab_ci_runners_locked)) | ternary('true', 'false') }}
+    _gitlab_ci_runner_tags_list: "{{ runner.tags | default(gitlab_ci_runners_default_tags) }}"
+    _gitlab_ci_runner_tags_csv: >-
+      {{ (runner.tags | default(gitlab_ci_runners_default_tags)) | join(',') }}
+    _gitlab_ci_runner_access_level: "{{ runner.access_level | default(gitlab_ci_runners_access_level) }}"
+    _gitlab_ci_runner_max_timeout: "{{ (runner.maximum_timeout | default(gitlab_ci_runners_maximum_timeout)) | int }}"
+  changed_when: false
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Resolve API scope IDs from paths when needed (controller-side)
+  ansible.builtin.include_tasks: api-resolve-scope-ids.yml
+  vars:
+    runner_api_runner_type: "{{ runner.api_runner_type | default(gitlab_ci_runners_api_runner_type) }}"
+    runner_api_group_id: "{{ runner.api_group_id | default(gitlab_ci_runners_api_group_id) }}"
+    runner_api_group_full_path: >-
+      {{ runner.api_group_full_path | default(gitlab_ci_runners_api_group_full_path) | default('') }}
+    runner_api_project_id: "{{ runner.api_project_id | default(gitlab_ci_runners_api_project_id) }}"
+    runner_api_project_path: >
+      {{ runner.api_project_path | default(gitlab_ci_runners_api_project_path) | default('') }}
+  when:
+    - not _runner_already_registered
+    - gitlab_ci_runners_state == 'present'
+    - not gitlab_ci_runners_skip_registration
+    - >-
+      (
+        (gitlab_ci_runners_token_mode == 'api')
+        or (
+          (gitlab_ci_runners_token_mode == 'auto')
+          and ((gitlab_ci_runners_runner_token | default('')) | length == 0)
+          and ((gitlab_ci_runners_registration_token | default('')) | length == 0)
+          and ((gitlab_ci_runners_api_token | default('')) | length > 0)
+        )
+      )
+    - ((gitlab_ci_runners_runner_token | default('')) | length == 0)
+    - >-
+      (
+        (runner.api_runner_type | default(gitlab_ci_runners_api_runner_type) | default(''))
+        in ['group_type', 'project_type']
+      )
+  tags: gitlab_ci_runners
+
+- name: Create runner via GitLab API when requested (new workflow)
+  ansible.builtin.include_tasks: api-create-runner.yml
+  vars:
+    runner_api_runner_type: "{{ runner.api_runner_type | default(gitlab_ci_runners_api_runner_type) }}"
+    runner_api_group_id: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_runner_group_ids | default({}))
+        .get((runner.name | string), (runner.api_group_id | default(gitlab_ci_runners_api_group_id) | int))
+      }}
+    runner_api_project_id: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_runner_project_ids | default({}))
+        .get((runner.name | string), (runner.api_project_id | default(gitlab_ci_runners_api_project_id) | int))
+      }}
+    runner_api_description: "{{ runner.api_description | default(_gitlab_ci_runner_description) }}"
+    runner_api_paused: "{{ runner.paused | default(false) | bool }}"
+    runner_api_locked: "{{ runner.locked | default(gitlab_ci_runners_locked) | bool }}"
+    runner_api_run_untagged: "{{ runner.run_untagged | default(gitlab_ci_runners_run_untagged) | bool }}"
+    runner_api_tag_list: "{{ _gitlab_ci_runner_tags_list }}"
+    runner_api_access_level: "{{ _gitlab_ci_runner_access_level }}"
+    runner_api_maximum_timeout: "{{ _gitlab_ci_runner_max_timeout }}"
+    runner_api_maintenance_note: "{{ runner.maintenance_note | default('') }}"
+  when:
+    - not _runner_already_registered
+    - gitlab_ci_runners_state == 'present'
+    - not gitlab_ci_runners_skip_registration
+    - >-
+      (
+        (gitlab_ci_runners_token_mode == 'api')
+        or (
+          (gitlab_ci_runners_token_mode == 'auto')
+          and ((gitlab_ci_runners_runner_token | default('')) | length == 0)
+          and ((gitlab_ci_runners_registration_token | default('')) | length == 0)
+          and ((gitlab_ci_runners_api_token | default('')) | length > 0)
+        )
+      )
+    - ((gitlab_ci_runners_runner_token | default('')) | length == 0)
+  tags: gitlab_ci_runners
+
+- name: Determine if API mode should be used
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_use_api_mode: >-
+      {{
+        (gitlab_ci_runners_token_mode == 'api')
+        or (
+          (gitlab_ci_runners_token_mode == 'auto')
+          and ((gitlab_ci_runners_runner_token | default('')) | length == 0)
+          and ((gitlab_ci_runners_registration_token | default('')) | length == 0)
+          and ((gitlab_ci_runners_api_token | default('')) | length > 0)
+        )
+      }}
+  changed_when: false
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Determine if runner token should be used
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_use_runner_token: >-
+      {{
+        (gitlab_ci_runners_token_mode == 'runner')
+        or _gitlab_ci_runners_use_api_mode
+        or (
+          (gitlab_ci_runners_token_mode == 'auto')
+          and (gitlab_ci_runners_runner_token is defined)
+          and (gitlab_ci_runners_runner_token | length > 0)
+        )
+      }}
+  changed_when: false
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Determine effective token for runner registration
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_effective_token: >-
+      {{
+        (
+          gitlab_ci_runners_runner_token
+          if (
+            _gitlab_ci_runners_use_runner_token
+            and ((gitlab_ci_runners_runner_token | default('')) | length > 0)
+          )
+          else (
+            ((hostvars['localhost']._gitlab_ci_runners_api_tokens | default({})).get((runner.name | string), ''))
+            if _gitlab_ci_runners_use_api_mode
+            else gitlab_ci_runners_registration_token
+          )
+        )
+      }}
+  changed_when: false
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Fail when runner exists in GitLab but no token is available
+  ansible.builtin.assert:
+    that:
+      - (_gitlab_ci_runners_effective_token | default('') | length) > 0
+    fail_msg: >-
+      Runner "{{ runner.name }}" needs registration on this host, but no token is available.
+
+      GitLab does not allow retrieving a runner authentication token again after creation.
+      This usually means a runner with description "{{ _gitlab_ci_runner_description }}" already exists in GitLab.
+
+      Fix options:
+      - Delete the existing runner in GitLab and re-run, OR
+      - Store the runner token (glrt-...) in Ansible Vault and set gitlab_ci_runners_runner_token,
+        then use token_mode=runner (or token_mode=auto).
+    quiet: true
+  when:
+    - not _runner_already_registered
+    - _gitlab_ci_runners_use_api_mode
+    - >-
+      (
+        (hostvars['localhost']._gitlab_ci_runners_api_existing_runners | default({}))
+        .get((runner.name | string), false)
+        | bool
+      )
+    - >-
+      (
+        (hostvars['localhost']._gitlab_ci_runners_api_tokens | default({}))
+        .get((runner.name | string), '')
+        | length
+      ) == 0
+  tags: gitlab_ci_runners
+
+- name: Build registration command argv
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_register_argv: >-
+      {{ ['gitlab-runner', 'register', '--non-interactive',
+          '--config', _runner_config_file,
+          '--url', gitlab_ci_runners_gitlab_url,
+          (
+            '--token'
+            if _gitlab_ci_runners_use_runner_token
+            else '--registration-token'
+          ),
+          _gitlab_ci_runners_effective_token,
+          '--executor', _gitlab_ci_runner_executor,
+          '--description', _gitlab_ci_runner_description,
+          '--builds-dir', _gitlab_ci_runner_builds_dir,
+          '--cache-dir', _gitlab_ci_runner_cache_dir
+         ]
+         + (
+           [
+             ('--run-untagged=' ~ _gitlab_ci_runner_run_untagged),
+             ('--locked=' ~ _gitlab_ci_runner_locked)
+           ]
+           if (not _gitlab_ci_runners_use_runner_token) else []
+         )
+         + (
+           ['--tag-list', _gitlab_ci_runner_tags_csv]
+           if (not _gitlab_ci_runners_use_runner_token) and (_gitlab_ci_runner_tags_csv | length > 0)
+           else []
+         )
+         + (
+           ['--access-level', _gitlab_ci_runner_access_level]
+           if (not _gitlab_ci_runners_use_runner_token) and (_gitlab_ci_runner_access_level | length > 0)
+           else []
+         )
+         + (
+           ['--maximum-timeout', (_gitlab_ci_runner_max_timeout | string)]
+           if (not _gitlab_ci_runners_use_runner_token) and ((_gitlab_ci_runner_max_timeout | int) > 0)
+           else []
+         )
+         + (
+           ['--tls-ca-file', gitlab_ci_runners_ssl_ca_cert]
+           if (gitlab_ci_runners_ssl_ca_cert | length > 0)
+           else []
+         )
+         + (
+           ['--tls-skip-verify']
+           if gitlab_ci_runners_ssl_skip_cert_validation
+           else []
+         )
+      }}
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Set environment variables for proxy (if configured)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_register_env: >-
+      {{
+        (
+          {'HTTP_PROXY': gitlab_ci_runners_proxy_url, 'HTTPS_PROXY': gitlab_ci_runners_proxy_url}
+          if gitlab_ci_runners_proxy_url | length > 0
+          else {}
+        ) | combine(
+          {'NO_PROXY': gitlab_ci_runners_no_proxy}
+          if gitlab_ci_runners_no_proxy | length > 0
+          else {}
+        )
+      }}
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Register runner if not already configured
+  ansible.builtin.command:
+    argv: "{{ _gitlab_ci_runners_register_argv }}"
+  environment: "{{ _gitlab_ci_runners_register_env }}"
+  register: _gitlab_ci_runners_register
+  when: not _runner_already_registered
+  changed_when: _gitlab_ci_runners_register.rc == 0
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Ensure config.toml has correct ownership
+  ansible.builtin.file:
+    path: "{{ _runner_config_file }}"
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0600'
+  tags: gitlab_ci_runners
+
+- name: Fix permissions recursively for runner directory after registration (including .runner_system_id)
+  ansible.builtin.file:
+    path: "{{ _runner_dir }}"
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0755'
+    recurse: true
+    state: directory
+  tags: gitlab_ci_runners

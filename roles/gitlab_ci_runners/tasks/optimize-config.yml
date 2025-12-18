@@ -1,0 +1,120 @@
+---
+# Optimize GitLab Runner configuration for performance
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set runner config path
+  ansible.builtin.set_fact:
+    _runner_config_file: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}/config.toml"
+    _runner_service_name: "gitlab-runner@{{ runner.name }}"
+  tags: gitlab_ci_runners
+
+- name: Update concurrent setting in runner config.toml
+  ansible.builtin.lineinfile:
+    path: "{{ _runner_config_file }}"
+    regexp: '^concurrent\s*='
+    line: "concurrent = {{ gitlab_ci_runners_concurrent }}"
+    insertbefore: BOF
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0600'
+  tags: gitlab_ci_runners
+
+- name: Configure request_concurrency for runner
+  ansible.builtin.lineinfile:
+    path: "{{ _runner_config_file }}"
+    regexp: '^\s+request_concurrency\s*='
+    line: "  request_concurrency = {{ gitlab_ci_runners_request_concurrency }}"
+    insertafter: '^\[\[runners\]\]'
+    state: "{{ 'present' if gitlab_ci_runners_request_concurrency > 0 else 'absent' }}"
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0600'
+  when: gitlab_ci_runners_request_concurrency > 0
+  tags: gitlab_ci_runners
+
+# NOTE: Metrics endpoint (listen_address) is not configured per-runner to avoid port conflicts
+# Each runner service runs independently without metrics by default
+# To enable metrics per-runner, you would need to assign unique ports per runner
+
+- name: Configure TLS CA certificate in runner config.toml
+  ansible.builtin.lineinfile:
+    path: "{{ _runner_config_file }}"
+    regexp: '^\s+tls-ca-file\s*='
+    line: '  tls-ca-file = "{{ gitlab_ci_runners_ssl_ca_cert }}"'
+    insertafter: '^\[\[runners\]\]'
+    state: present
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0600'
+  when: gitlab_ci_runners_ssl_ca_cert | length > 0
+  notify: restart gitlab-runner
+  tags: gitlab_ci_runners
+
+- name: Configure TLS skip verify in runner config.toml
+  ansible.builtin.lineinfile:
+    path: "{{ _runner_config_file }}"
+    regexp: '^\s+tls-skip-verify\s*='
+    line: '  tls-skip-verify = true'
+    insertafter: '^\[\[runners\]\]'
+    state: present
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0600'
+  when: gitlab_ci_runners_ssl_skip_cert_validation
+  notify: restart gitlab-runner
+  tags: gitlab_ci_runners
+
+- name: Configure proxy environment variables in runner config.toml
+  ansible.builtin.blockinfile:
+    path: "{{ _runner_config_file }}"
+    marker: "  # {mark} ANSIBLE MANAGED PROXY CONFIGURATION"
+    insertafter: '^\[\[runners\]\]'
+    block: |2
+        environment = [
+          "HTTP_PROXY={{ gitlab_ci_runners_proxy_url }}",
+          "HTTPS_PROXY={{ gitlab_ci_runners_proxy_url }}",
+          "NO_PROXY={{ gitlab_ci_runners_no_proxy }}"
+        ]
+    state: "{{ 'present' if gitlab_ci_runners_proxy_url | length > 0 else 'absent' }}"
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0600'
+  notify: restart gitlab-runner
+  tags: gitlab_ci_runners
+
+- name: Ensure config.toml has correct ownership after optimization
+  ansible.builtin.file:
+    path: "{{ _runner_config_file }}"
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0600'
+  tags: gitlab_ci_runners
+
+- name: Display optimization summary
+  ansible.builtin.debug:
+    msg:
+      - "═══════════════════════════════════════════════════════════════════"
+      - "GitLab Runner Performance Optimizations Applied"
+      - "═══════════════════════════════════════════════════════════════════"
+      - "✅ concurrent = {{ gitlab_ci_runners_concurrent }} (max parallel jobs)"
+      - >-
+        ✅ request_concurrency = {{ gitlab_ci_runners_request_concurrency }}
+        (job requests per cycle)
+      - >-
+        {{ '✅ metrics endpoint = ' + gitlab_ci_runners_metrics_listen_address +
+        ' (Prometheus)' if gitlab_ci_runners_enable_metrics
+        else '⏭️  metrics endpoint disabled' }}
+      - >-
+        {{ '✅ proxy = ' + gitlab_ci_runners_proxy_url
+        if gitlab_ci_runners_proxy_url | length > 0
+        else '⏭️  no proxy configured' }}
+      - >-
+        {{ '✅ SSL CA cert = ' + gitlab_ci_runners_ssl_ca_cert
+        if gitlab_ci_runners_ssl_ca_cert | length > 0
+        else '⏭️  no custom SSL CA' }}
+      - >-
+        {{ '⚠️  SSL verification DISABLED (not recommended for production)'
+        if gitlab_ci_runners_ssl_skip_cert_validation
+        else '✅ SSL verification enabled' }}
+      - "═══════════════════════════════════════════════════════════════════"
+  tags: gitlab_ci_runners

@@ -37,9 +37,8 @@ Each part is designed to be a self-contained video tutorial section with:
 
 ## 🔗 Related Resources
 
-- [Role README](../../../roles/github_actions_runners/README.md) - Quick reference
+- [Role README](../../../roles/github_actions_runners/README.md) - Complete variable reference
 - [Example Playbooks](../../../playbooks/github_actions_runners/) - Ready-to-use playbooks
-- [Variables Reference](../VARIABLES.md) - Complete variable list
 - [FAQ](../FAQ.md) - Frequently asked questions
 
 ---

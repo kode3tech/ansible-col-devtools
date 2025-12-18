@@ -1,0 +1,56 @@
+---
+# Setup for Debian/Ubuntu systems
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  tags: gitlab_ci_runners
+
+- name: Install prerequisite packages
+  ansible.builtin.apt:
+    name: "{{ gitlab_ci_runners_prerequisites }}"
+    state: present
+  tags: gitlab_ci_runners
+
+- name: Ensure apt keyring directory exists
+  ansible.builtin.file:
+    path: "{{ gitlab_ci_runners_apt_keyring_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners
+
+- name: Download GitLab Runner repository GPG key (ASCII)
+  ansible.builtin.get_url:
+    url: "{{ gitlab_ci_runners_repo_gpgkey_url }}"
+    dest: "{{ gitlab_ci_runners_apt_keyring_asc }}"
+    mode: '0644'
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners
+
+- name: Convert GPG key to keyring format (dearmor)
+  ansible.builtin.command:
+    argv:
+      - gpg
+      - --dearmor
+      - --yes
+      - --output
+      - "{{ gitlab_ci_runners_apt_keyring_gpg }}"
+      - "{{ gitlab_ci_runners_apt_keyring_asc }}"
+  args:
+    creates: "{{ gitlab_ci_runners_apt_keyring_gpg }}"
+  when: gitlab_ci_runners_configure_repo
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Configure GitLab Runner apt repository
+  ansible.builtin.apt_repository:
+    repo: "{{ gitlab_ci_runners_apt_repo }}"
+    state: present
+    filename: gitlab-runner
+    update_cache: true
+  when: gitlab_ci_runners_configure_repo
+  tags: gitlab_ci_runners

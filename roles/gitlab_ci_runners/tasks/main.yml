@@ -1,0 +1,247 @@
+---
+# Main entrypoint for gitlab_ci_runners role
+
+- name: Include input validation
+  ansible.builtin.include_tasks: validate.yml
+  tags: gitlab_ci_runners
+
+- name: Set OS family variable for consistency
+  ansible.builtin.set_fact:
+    gitlab_ci_runners_os_family: >-
+      {{ 'RedHat' if ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux'] else ansible_os_family }}
+  tags: gitlab_ci_runners
+
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ gitlab_ci_runners_os_family }}.yml"
+  tags: gitlab_ci_runners
+
+- name: Filter runners by desired state
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_to_remove: >-
+      {{ gitlab_ci_runners_runners_list |
+         selectattr('state', 'defined') |
+         selectattr('state', 'equalto', 'absent') | list }}
+    _gitlab_ci_runners_to_install: >-
+      {{ gitlab_ci_runners_runners_list |
+         rejectattr('state', 'defined') | list +
+         gitlab_ci_runners_runners_list |
+         selectattr('state', 'defined') |
+         selectattr('state', 'equalto', 'present') | list }}
+  tags: gitlab_ci_runners
+
+- name: Global state absent - remove all runners
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_to_remove: "{{ gitlab_ci_runners_runners_list }}"
+    _gitlab_ci_runners_to_install: []
+  when: gitlab_ci_runners_state == 'absent'
+  tags: gitlab_ci_runners
+
+- name: Include OS-specific setup tasks
+  ansible.builtin.include_tasks: "setup-{{ gitlab_ci_runners_os_family }}.yml"
+  tags: gitlab_ci_runners
+
+- name: Ensure runner user and group exist
+  when: gitlab_ci_runners_create_user
+  tags: gitlab_ci_runners
+  block:
+    - name: Check if runner user exists
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ gitlab_ci_runners_user }}"
+      register: _gitlab_ci_runners_user_exists
+      failed_when: false
+      changed_when: false
+
+    - name: Determine whether runner user exists
+      ansible.builtin.set_fact:
+        _gitlab_ci_runners_user_found: >-
+          {{
+            (ansible_facts.getent_passwd is defined)
+            and (ansible_facts.getent_passwd[gitlab_ci_runners_user] is defined)
+          }}
+
+    - name: Ensure runner group exists
+      ansible.builtin.group:
+        name: "{{ gitlab_ci_runners_group }}"
+        state: present
+        system: true
+      when: not _gitlab_ci_runners_user_found
+
+    - name: Ensure runner user exists
+      ansible.builtin.user:
+        name: "{{ gitlab_ci_runners_user }}"
+        group: "{{ gitlab_ci_runners_group }}"
+        shell: "{{ gitlab_ci_runners_user_shell }}"
+        system: true
+        create_home: true
+        home: "{{ gitlab_ci_runners_base_path }}"
+        state: present
+      when: not _gitlab_ci_runners_user_found
+
+- name: Create base directory
+  ansible.builtin.file:
+    path: "{{ gitlab_ci_runners_base_path }}"
+    state: directory
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0755'
+  tags: gitlab_ci_runners
+
+- name: Install GitLab Runner package
+  ansible.builtin.include_tasks: install.yml
+  tags: gitlab_ci_runners
+
+- name: Remove runners marked absent
+  ansible.builtin.include_tasks: remove-runner.yml
+  loop: "{{ _gitlab_ci_runners_to_remove }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name | default('UNDEFINED') }}"
+  when: _gitlab_ci_runners_to_remove | length > 0
+  tags: gitlab_ci_runners
+
+- name: Auto-create GitLab resources if needed
+  ansible.builtin.include_tasks: auto-create-resources.yml
+  when:
+    - gitlab_ci_runners_state == 'present'
+    - not gitlab_ci_runners_skip_registration
+    - (gitlab_ci_runners_auto_create_group or gitlab_ci_runners_auto_create_project)
+  tags: gitlab_ci_runners
+
+- name: Setup runners infrastructure (directories, config, service)
+  when:
+    - not gitlab_ci_runners_skip_registration
+    - _gitlab_ci_runners_to_install | length > 0
+    - gitlab_ci_runners_state == 'present'
+  tags: gitlab_ci_runners
+  block:
+    - name: Setup runner directory structure
+      ansible.builtin.include_tasks: setup-runner-directory.yml
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        loop_var: runner
+        label: "{{ runner.name | default('UNDEFINED') }}"
+
+    - name: Register runners with GitLab
+      ansible.builtin.include_tasks: register-runner.yml
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        loop_var: runner
+        label: "{{ runner.name | default('UNDEFINED') }}"
+
+    - name: Update runner tags via API
+      ansible.builtin.include_tasks: api-update-tags.yml
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        loop_var: runner
+        label: "{{ runner.name | default('UNDEFINED') }}"
+      vars:
+        runner_id: >-
+          {{
+            (hostvars['localhost']._gitlab_ci_runners_api_runner_ids | default({}))
+            .get((runner.name | string), 0)
+          }}
+      when:
+        - gitlab_ci_runners_update_tags_via_api
+        - (gitlab_ci_runners_api_token | default('') | length) > 0
+
+    - name: Ensure runner IDs are available for update
+      ansible.builtin.include_tasks: api-ensure-runner-id.yml
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        loop_var: runner
+        label: "{{ runner.name | default('UNDEFINED') }}"
+      when:
+        - gitlab_ci_runners_update_runner_via_api
+        - (gitlab_ci_runners_api_token | default('') | length) > 0
+        - >-
+          ((hostvars['localhost']._gitlab_ci_runners_api_runner_ids | default({}))
+           .get((runner.name | string), 0) | int) == 0
+
+    - name: Update runner configuration via API
+      ansible.builtin.include_tasks: api-update-runner.yml
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        loop_var: runner
+        label: "{{ runner.name | default('UNDEFINED') }}"
+      vars:
+        runner_id: >-
+          {{
+            (hostvars['localhost']._gitlab_ci_runners_api_runner_ids | default({}))
+            .get((runner.name | string), 0)
+          }}
+        runner_api_description: >-
+          {{ runner.api_description | default(
+            runner.description | default(
+              runner.name ~ ' - ' ~ inventory_hostname
+            )
+          ) }}
+        runner_api_paused: "{{ runner.paused | default(false) | bool }}"
+        runner_api_locked: "{{ runner.locked | default(gitlab_ci_runners_locked) | bool }}"
+        runner_api_run_untagged: "{{ runner.run_untagged | default(gitlab_ci_runners_run_untagged) | bool }}"
+        runner_api_tag_list: "{{ runner.tags | default(gitlab_ci_runners_default_tags) }}"
+        runner_api_access_level: "{{ runner.access_level | default(gitlab_ci_runners_access_level) }}"
+        runner_api_maximum_timeout: "{{ runner.maximum_timeout | default(gitlab_ci_runners_maximum_timeout) | int }}"
+        runner_api_maintenance_note: "{{ runner.maintenance_note | default('') }}"
+      when:
+        - gitlab_ci_runners_update_runner_via_api
+        - (gitlab_ci_runners_api_token | default('') | length) > 0
+
+    - name: Optimize runner configurations
+      ansible.builtin.include_tasks: optimize-config.yml
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        loop_var: runner
+        label: "{{ runner.name | default('UNDEFINED') }}"
+
+    - name: Configure per-runner systemd services
+      ansible.builtin.include_tasks: service-runner.yml
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        loop_var: runner
+        label: "{{ runner.name | default('UNDEFINED') }}"
+
+    - name: Final permission correction for all config files
+      ansible.builtin.file:
+        path: "{{ gitlab_ci_runners_base_path }}/{{ item.name }}/config.toml"
+        owner: "{{ gitlab_ci_runners_user }}"
+        group: "{{ gitlab_ci_runners_group }}"
+        mode: '0600'
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        label: "{{ item.name | default('UNDEFINED') }}"
+      tags: gitlab_ci_runners
+
+    - name: Fix permissions recursively for all runner directories (including .runner_system_id)
+      ansible.builtin.file:
+        path: "{{ gitlab_ci_runners_base_path }}/{{ item.name }}"
+        owner: "{{ gitlab_ci_runners_user }}"
+        group: "{{ gitlab_ci_runners_group }}"
+        mode: '0755'
+        recurse: true
+        state: directory
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        label: "{{ item.name | default('UNDEFINED') }}"
+      tags: gitlab_ci_runners
+
+    - name: Restart services after final permission fix
+      ansible.builtin.systemd:
+        name: "gitlab-runner@{{ item.name }}"
+        state: restarted
+      loop: "{{ _gitlab_ci_runners_to_install }}"
+      loop_control:
+        label: "{{ item.name | default('UNDEFINED') }}"
+      tags: gitlab_ci_runners
+
+    - name: Wait for services to stabilize after restart
+      ansible.builtin.pause:
+        seconds: 5
+      tags: gitlab_ci_runners
+
+- name: Verify service status
+  ansible.builtin.include_tasks: verify-services.yml
+  when:
+    - gitlab_ci_runners_state == 'present'
+    - not gitlab_ci_runners_skip_verification
+  tags: gitlab_ci_runners

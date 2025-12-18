@@ -1,0 +1,36 @@
+---
+# Setup isolated directory structure for each runner
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set runner directory path
+  ansible.builtin.set_fact:
+    _runner_dir: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}"
+    _runner_config_file: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}/config.toml"
+  tags: gitlab_ci_runners
+
+- name: Create runner directory
+  ansible.builtin.file:
+    path: "{{ _runner_dir }}"
+    state: directory
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0755'
+  tags: gitlab_ci_runners
+
+- name: Create runner builds directory
+  ansible.builtin.file:
+    path: "{{ runner.builds_dir | default(_runner_dir + '/builds') }}"
+    state: directory
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0755'
+  tags: gitlab_ci_runners
+
+- name: Create runner cache directory
+  ansible.builtin.file:
+    path: "{{ runner.cache_dir | default(_runner_dir + '/cache') }}"
+    state: directory
+    owner: "{{ gitlab_ci_runners_user }}"
+    group: "{{ gitlab_ci_runners_group }}"
+    mode: '0755'
+  tags: gitlab_ci_runners

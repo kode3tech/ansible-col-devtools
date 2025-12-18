@@ -1,0 +1,7 @@
+---
+# Internal variables for gitlab_ci_runners role
+
+gitlab_ci_runners_arch_map:
+  x86_64: "amd64"
+  aarch64: "arm64"
+  arm64: "arm64"

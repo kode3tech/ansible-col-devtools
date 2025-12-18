@@ -124,6 +124,110 @@ azure_devops_agents_proxy_bypass: "localhost,127.0.0.1"
 
 ## Agent Types
 
+This role supports three types of Azure DevOps agents, each serving different purposes in your CI/CD pipelines.
+
+### Agent Attributes Reference
+
+Each agent in `azure_devops_agents_list` is a dictionary with the following attributes:
+
+#### Required Attributes
+
+| Attribute | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | **Yes** | Unique agent name (used for directory and service identification) |
+| `type` | string | **Yes** | Agent type: `self-hosted`, `deployment-group`, or `environment` |
+
+#### Type-Specific Required Attributes
+
+| Attribute | Type | Required For | Description |
+|-----------|------|--------------|-------------|
+| `pool` | string | `self-hosted` | Agent pool name (e.g., "Default", "Linux-Pool") |
+| `project` | string | `deployment-group`, `environment` | Azure DevOps project name |
+| `deployment_group` | string | `deployment-group` | Deployment group name |
+| `environment` | string | `environment` | Environment name |
+
+#### Core Configuration
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `state` | string | `present` | Agent lifecycle state: `present` (install/register) or `absent` (unregister/remove) |
+| `tags` | list | `[]` | Tags for agent capabilities/targeting (e.g., `["docker", "nodejs", "linux"]`) |
+| `work_dir` | string | `"_work"` | Work directory name relative to agent path |
+| `replace` | bool | `false` | Replace existing agent with same name during registration |
+
+#### Advanced Features
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `auto_create` | bool | `false` | Auto-create deployment group or environment if missing (requires PAT permissions) |
+| `open_access` | bool | `false` | Configure environment to allow all pipelines (environment type only) |
+| `update_tags` | bool | `false` | Update agent tags via API without reconfiguration (deployment-group, environment only) |
+
+### Complete Agent Examples
+
+#### Self-Hosted Agent (Agent Pool)
+
+```yaml
+azure_devops_agents_list:
+  - name: "build-agent-01"
+    type: "self-hosted"
+    pool: "Linux-Pool"
+    state: present
+    replace: true
+    work_dir: "_work"
+    tags:
+      - "docker"
+      - "nodejs"
+      - "python"
+```
+
+#### Deployment Group Agent
+
+```yaml
+azure_devops_agents_list:
+  - name: "deploy-agent-01"
+    type: "deployment-group"
+    project: "MyProject"
+    deployment_group: "Production"
+    state: present
+    auto_create: true        # Create deployment group if missing
+    replace: true
+    tags:
+      - "web"
+      - "nginx"
+      - "linux"
+```
+
+#### Environment Agent
+
+```yaml
+azure_devops_agents_list:
+  - name: "env-agent-01"
+    type: "environment"
+    project: "MyProject"
+    environment: "production"
+    state: present
+    auto_create: true        # Create environment if missing
+    open_access: true        # Allow all pipelines
+    replace: true
+    tags:
+      - "api"
+      - "backend"
+      - "kubernetes"
+```
+
+### Agent Type Comparison
+
+| Feature | self-hosted | deployment-group | environment |
+|---------|-------------|------------------|-------------|
+| **Use Case** | Build/test | Classic releases | YAML pipelines |
+| **Requires Project** | ❌ No | ✅ Yes | ✅ Yes |
+| **Auto-Create** | N/A | ✅ Yes | ✅ Yes |
+| **Open Access** | N/A | ❌ No | ✅ Yes |
+| **Tag Updates** | ❌ No | ✅ Yes | ✅ Yes |
+
+---
+
 ### 1. Self-Hosted Agent (Agent Pool)
 
 Standard build/release agent registered in an Agent Pool.

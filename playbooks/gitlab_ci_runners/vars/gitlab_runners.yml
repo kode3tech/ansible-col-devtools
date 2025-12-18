@@ -1,0 +1,137 @@
+---
+# GitLab Runner configuration for playbooks in playbooks/gitlab_ci_runners/
+#
+# This file is intentionally verbose: it documents all supported role variables
+# and runner options with commented examples.
+
+# NOTE ABOUT SECRETS:
+# The role requires `gitlab_ci_runners_registration_token` when registering.
+# For production, keep tokens in Ansible Vault (see vars/gitlab_secrets.yml.example)
+# and map them like:
+#
+#   gitlab_ci_runners_registration_token: "{{ vault_gitlab_runner_token }}"
+
+# =============================================================================
+# CORE SETTINGS
+# =============================================================================
+# GitLab base URL (GitLab.com or self-managed)
+gitlab_ci_runners_gitlab_url: "https://gitlab.com"
+
+# Global state:
+# - present: install/configure and (optionally) register runners
+# - absent: unregister configured runners (and optionally remove everything)
+gitlab_ci_runners_state: present
+
+# Installation-only mode (useful for CI/Molecule):
+# - true: install and configure service, but do not register runners
+gitlab_ci_runners_skip_registration: false
+
+# Skip service verification at the end of the role
+gitlab_ci_runners_skip_verification: false
+
+# =============================================================================
+# INSTALLATION SETTINGS
+# =============================================================================
+
+# Configure the official GitLab Runner package repository
+gitlab_ci_runners_configure_repo: true
+
+# Optional: pin package version (empty = latest available)
+# Examples:
+# - Debian/Ubuntu: "17.7.0"
+# - RHEL/Rocky/Alma: "17.7.0" (role handles OS-specific spec)
+gitlab_ci_runners_version: ""
+
+# Base directories used by runners (builds and cache)
+gitlab_ci_runners_base_path: "/opt/gitlab-ci-runners"
+gitlab_ci_runners_builds_dir: "{{ gitlab_ci_runners_base_path }}/builds"
+gitlab_ci_runners_cache_dir: "{{ gitlab_ci_runners_base_path }}/cache"
+
+# Runner service user/group
+gitlab_ci_runners_user: "gitlab-runner"
+gitlab_ci_runners_group: "gitlab-runner"
+
+# Create the service user/group (recommended)
+gitlab_ci_runners_create_user: true
+
+# Shell for the service user
+gitlab_ci_runners_user_shell: "/usr/sbin/nologin"
+
+# =============================================================================
+# SERVICE SETTINGS
+# =============================================================================
+gitlab_ci_runners_service_enabled: true
+gitlab_ci_runners_service_state: started
+
+# =============================================================================
+# RUNNER REGISTRATION DEFAULTS
+# =============================================================================
+# Default executor for runners (shell or docker)
+gitlab_ci_runners_default_executor: "shell"
+
+# Default tags used when a runner entry does not define tags
+gitlab_ci_runners_default_tags: []
+
+# Default runner flags
+gitlab_ci_runners_locked: false
+gitlab_ci_runners_run_untagged: false
+
+# Access level (optional): not_protected or ref_protected
+gitlab_ci_runners_access_level: ""
+
+# Maximum timeout in seconds (0 = GitLab default)
+gitlab_ci_runners_maximum_timeout: 0
+
+# =============================================================================
+# RUNNERS LIST (PER-HOST)
+# =============================================================================
+# Notes:
+# - name: required; also used for local idempotency via `gitlab-runner list`
+# - state: present|absent (optional; default: present)
+# - executor: shell|docker (optional; defaults to gitlab_ci_runners_default_executor)
+# - tags: list of tags in GitLab (optional; defaults to gitlab_ci_runners_default_tags)
+# - description: optional; defaults to runner.name
+# - builds_dir/cache_dir: optional; defaults to role builds/cache dirs
+# - run_untagged/locked: optional booleans
+# - access_level: optional; not_protected|ref_protected
+# - maximum_timeout: optional integer
+
+# Minimal example (single runner)
+gitlab_ci_runners_runners_list:
+  - name: "gitlab-runner-01"
+    executor: "shell"
+    tags:
+      - "linux"
+      - "shell"
+
+# Example: multiple runners on the same host
+# gitlab_ci_runners_runners_list:
+#   - name: "gitlab-runner-build"
+#     executor: "shell"
+#     tags: ["linux", "build"]
+#
+#   - name: "gitlab-runner-docker"
+#     executor: "docker"
+#     tags:
+#       - "linux"
+#       - "docker"
+#
+# Example: advanced per-runner options
+# gitlab_ci_runners_runners_list:
+#   - name: "gitlab-runner-advanced"
+#     description: "Advanced runner on {{ inventory_hostname }}"
+#     executor: "shell"
+#     tags:
+#       - "linux"
+#       - "prod"
+#     builds_dir: "/opt/gitlab-ci-runners/builds"
+#     cache_dir: "/opt/gitlab-ci-runners/cache"
+#     run_untagged: true
+#     locked: false
+#     access_level: "not_protected"
+#     maximum_timeout: 3600
+#
+# Example: remove/unregister a runner by name
+# gitlab_ci_runners_runners_list:
+#   - name: "gitlab-runner-old"
+#     state: "absent"

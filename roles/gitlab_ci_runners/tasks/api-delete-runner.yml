@@ -1,0 +1,111 @@
+---
+# Delete runner via GitLab API using authentication token
+# This task should be included with vars:
+# - runner: The runner dict with name
+#
+# Uses DELETE /runners endpoint with runner's authentication token
+# This is safer and faster than searching by description
+
+- name: Set runner paths
+  ansible.builtin.set_fact:
+    _runner_service_name: "gitlab-runner@{{ runner.name }}"
+    _runner_config_file: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}/config.toml"
+  tags: gitlab_ci_runners
+
+- name: Check if runner config file exists
+  ansible.builtin.stat:
+    path: "{{ _runner_config_file }}"
+  register: _runner_config_stat
+  tags: gitlab_ci_runners
+
+- name: Extract runner authentication token from config.toml
+  when: _runner_config_stat.stat.exists
+  tags: gitlab_ci_runners
+  block:
+    - name: Read runner config file
+      ansible.builtin.slurp:
+        src: "{{ _runner_config_file }}"
+      register: _runner_config_content
+      no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+
+    - name: Extract token from config
+      ansible.builtin.set_fact:
+        _runner_auth_token: >-
+          {{
+            (
+              _runner_config_content['content'] | b64decode
+              | regex_findall('token\s*=\s*"([^"]+)"')
+              | first
+              | default('')
+            )
+          }}
+      no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+
+    - name: Debug token extraction
+      ansible.builtin.debug:
+        msg:
+          - "========================================="
+          - "Runner Token Extraction"
+          - "========================================="
+          - "Runner Name: {{ runner.name }}"
+          - "Config File: {{ _runner_config_file }}"
+          - "Config Exists: {{ _runner_config_stat.stat.exists }}"
+          - "Token Extracted: {{ (_runner_auth_token | default('') | length) > 0 }}"
+          - "Token Length: {{ (_runner_auth_token | default('') | length) }}"
+          - "========================================="
+      when: not (gitlab_ci_runners_no_log | bool)
+
+- name: Delete runner via API using authentication token
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/runners'
+      }}
+    method: DELETE
+    body_format: form-urlencoded
+    body:
+      token: "{{ _runner_auth_token }}"
+    status_code: [204, 404]
+  register: _runner_delete_api
+  delegate_to: localhost
+  when:
+    - _runner_config_stat.stat.exists
+    - (_runner_auth_token | default('') | length) > 0
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Display API deletion result
+  ansible.builtin.debug:
+    msg:
+      - "========================================="
+      - "GitLab API Deletion Result"
+      - "========================================="
+      - "Runner Name: {{ runner.name }}"
+      - "Config File Exists: {{ _runner_config_stat.stat.exists }}"
+      - "Token Extracted: {{ (_runner_auth_token | default('') | length) > 0 }}"
+      - "Deletion Attempted: {{ _runner_delete_api is defined and _runner_delete_api is not skipped }}"
+      - >-
+        HTTP Status:
+        {{ (_runner_delete_api.status | default('SKIPPED'))
+        if _runner_delete_api is defined else 'SKIPPED' }}
+      - >-
+        {{
+          'SUCCESS - Runner deleted from GitLab (204)'
+          if (_runner_delete_api is defined and (_runner_delete_api.status | default(0)) == 204)
+          else (
+            'WARNING - Runner already deleted from GitLab (404) - Performing local cleanup only'
+            if (_runner_delete_api is defined and (_runner_delete_api.status | default(0)) == 404)
+            else (
+              'SKIPPED - No config file found (runner never registered or already cleaned up)'
+              if not _runner_config_stat.stat.exists
+              else 'SKIPPED - No authentication token found in config file'
+            )
+          )
+        }}
+      - "========================================="
+      - "ℹ️  Note: Local cleanup (service stop + directory removal) will proceed regardless"
+      - "========================================="
+  when:
+    - not (gitlab_ci_runners_no_log | bool)
+  tags: gitlab_ci_runners

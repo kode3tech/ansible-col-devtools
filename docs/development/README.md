@@ -11,17 +11,22 @@ Understanding how roles are organized in this collection.
 - Naming conventions
 - Best practices
 
-### [Testing](testing/)
-Complete testing documentation.
-- [Molecule Testing](testing/MOLECULE_TESTING.md) - Molecule test framework
-- [Molecule Quick Reference](testing/MOLECULE_QUICK_REFERENCE.md) - Molecule commands
+### [Testing Guide](TESTING.md)
+Comprehensive testing guide for the collection.
+- Testing framework (Molecule)
+- Running tests (Make + Molecule)
+- Test structure and platforms
+- What gets tested (and what doesn't)
+- CI/CD integration
+- Troubleshooting
+- Docker-in-Docker (DinD) considerations
 
 ---
 
 ## 🎯 For New Contributors
 
 1. **Read** [Role Structure Guide](ROLE_STRUCTURE.md)
-2. **Review** [Molecule Testing](testing/MOLECULE_TESTING.md)
+2. **Review** [Testing Guide](TESTING.md)
 3. **Run** tests with `make test`
 
 ---
@@ -37,7 +42,7 @@ cd roles/docker
 molecule test
 ```
 
-See [Testing Documentation](testing/) for details.
+See [Testing Guide](TESTING.md) for complete documentation.
 
 ---
 

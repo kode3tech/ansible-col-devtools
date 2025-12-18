@@ -1,0 +1,95 @@
+---
+# Ensure GitLab project exists, creating if needed
+# This task should be included with vars:
+# - project_path_with_namespace: Full path (e.g., "myorg/myproject")
+# - project_name: Display name for the project (optional)
+# - project_visibility: Visibility level (optional: private, internal, public)
+# - project_namespace_id: Namespace/Group ID where project will be created
+
+- name: Set project name default
+  ansible.builtin.set_fact:
+    _project_name: "{{ project_name | default(project_path_with_namespace.split('/')[-1]) }}"
+    _project_path: "{{ project_path_with_namespace.split('/')[-1] }}"
+    _project_visibility: "{{ project_visibility | default('private') }}"
+  delegate_to: localhost
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Build encoded project path
+  ansible.builtin.set_fact:
+    _project_path_encoded: >-
+      {{
+        (project_path_with_namespace | string)
+        | replace('%', '%25')
+        | replace('/', '%2F')
+        | replace(' ', '%20')
+      }}
+  delegate_to: localhost
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Check if project exists
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/projects/'
+        ~ _project_path_encoded
+      }}
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+    return_content: true
+    status_code: [200, 404]
+  register: _project_check
+  delegate_to: localhost
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Create project if it doesn't exist
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/projects'
+      }}
+    method: POST
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ _project_name }}"
+      path: "{{ _project_path }}"
+      namespace_id: "{{ project_namespace_id }}"
+      visibility: "{{ _project_visibility }}"
+      initialize_with_readme: false
+    return_content: true
+    status_code: 201
+  register: _project_create
+  delegate_to: localhost
+  when:
+    - _project_check.status == 404
+    - project_namespace_id is defined
+    - (project_namespace_id | int) > 0
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Set project ID fact
+  ansible.builtin.set_fact:
+    _created_project_id: >-
+      {{
+        (_project_create.json.id if _project_check.status == 404 else _project_check.json.id) | int
+      }}
+  delegate_to: localhost
+  changed_when: false
+  tags: gitlab_ci_runners
+
+- name: Display project creation result
+  ansible.builtin.debug:
+    msg:
+      - "Project: {{ project_path_with_namespace }}"
+      - "Status: {{ 'Created' if _project_check.status == 404 else 'Already exists' }}"
+      - "Project ID: {{ _created_project_id }}"
+  when: not (gitlab_ci_runners_no_log | bool)
+  tags: gitlab_ci_runners

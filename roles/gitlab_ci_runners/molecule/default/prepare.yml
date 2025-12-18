@@ -1,0 +1,75 @@
+---
+# Prepare playbook for gitlab_ci_runners role testing
+# Sets up prerequisites before running the role
+# Note: Molecule docker driver runs as root by default,
+# so we don't need become for most operations
+
+- name: Prepare all hosts
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for connection
+      ansible.builtin.wait_for_connection:
+        timeout: 120
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+- name: Prepare test environment
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Update package cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == 'Debian'
+
+    # Handle curl-minimal vs curl conflict on RedHat-based systems
+    - name: Install curl with allowerasing (RedHat - replaces curl-minimal)
+      ansible.builtin.dnf:
+        name: curl
+        state: present
+        allowerasing: true
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+
+    - name: Install basic tools (Debian)
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - tar
+          - git
+          - ca-certificates
+        state: present
+      when: ansible_os_family == 'Debian'
+
+    - name: Install basic tools (RedHat - excluding curl already installed)
+      ansible.builtin.dnf:
+        name:
+          - wget
+          - tar
+          - git
+          - ca-certificates
+        state: present
+      when: ansible_os_family in ['RedHat', 'Rocky', 'AlmaLinux']
+
+    - name: Create mock GitLab environment variables
+      ansible.builtin.copy:
+        content: |
+          # Mock GitLab credentials for testing
+          # In real scenarios, use Ansible Vault
+          GITLAB_TOKEN=mock-gitlab-token-for-testing
+          GITLAB_URL=https://gitlab.com
+        dest: /etc/profile.d/gitlab-ci-test.sh
+        mode: '0644'
+
+    - name: Display preparation complete message
+      ansible.builtin.debug:
+        msg:
+          - "Test environment prepared successfully"
+          - "OS Family: {{ ansible_os_family }}"
+          - "Distribution: {{ ansible_distribution }}"
+          - "Distribution Version: {{ ansible_distribution_version }}"
+          - "Architecture: {{ ansible_architecture }}"

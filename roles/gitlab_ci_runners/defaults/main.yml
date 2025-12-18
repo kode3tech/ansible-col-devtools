@@ -1,0 +1,209 @@
+---
+# Defaults for gitlab_ci_runners role
+# All variables are prefixed with gitlab_ci_runners_ to avoid conflicts
+
+# =============================================================================
+# Core Settings
+# =============================================================================
+
+# GitLab base URL (GitLab.com or GitLab Self-Managed)
+gitlab_ci_runners_gitlab_url: "https://gitlab.com"
+
+# Runner registration token (project/group/instance token)
+# Use Ansible Vault for security.
+gitlab_ci_runners_registration_token: ""
+
+# Runner authentication token (new runner creation workflow; typically starts with "glrt-").
+# Use Ansible Vault for security.
+gitlab_ci_runners_runner_token: ""
+
+# Token mode:
+# - auto: prefer gitlab_ci_runners_runner_token when set, otherwise use gitlab_ci_runners_registration_token
+# - runner: use gitlab_ci_runners_runner_token
+# - registration: use gitlab_ci_runners_registration_token
+# - api: create a runner via GitLab API (POST /user/runners) to obtain a runner authentication token,
+#        then register with --token
+gitlab_ci_runners_token_mode: auto
+
+# =============================================================================
+# API Runner Creation (new workflow)
+# =============================================================================
+
+# Personal Access Token (PAT) used only to call the GitLab API to create runners.
+# This token MUST have the `create_runner` scope.
+#
+# NOTE: This token is NOT a runner token and cannot be used with `gitlab-runner register`.
+gitlab_ci_runners_api_token: ""
+
+# Default API runner scope (used when token_mode=api and per-runner overrides are not set).
+# Valid values: instance_type, group_type, project_type
+gitlab_ci_runners_api_runner_type: ""
+
+# Required when runner_type=group_type (GitLab numeric group ID)
+gitlab_ci_runners_api_group_id: 0
+
+# Optional alternative to gitlab_ci_runners_api_group_id: GitLab group full path.
+# Example: "platform" or "platform/ci" (for subgroups).
+gitlab_ci_runners_api_group_full_path: ""
+
+# Required when runner_type=project_type (GitLab numeric project ID)
+gitlab_ci_runners_api_project_id: 0
+
+# Optional alternative to gitlab_ci_runners_api_project_id: GitLab project path with namespace.
+# Example: "mygroup/myproject".
+gitlab_ci_runners_api_project_path: ""
+
+# Auto-create groups and projects if they don't exist
+# Requires gitlab_ci_runners_api_token with appropriate permissions
+gitlab_ci_runners_auto_create_group: false
+gitlab_ci_runners_auto_create_project: false
+
+# Update runner tags via API after registration
+# Enables dynamic tag management without re-registering
+gitlab_ci_runners_update_tags_via_api: true
+
+# Update runner configuration via API when runner already exists
+# Enables updating run_untagged, locked, access_level, etc. without re-registering
+gitlab_ci_runners_update_runner_via_api: true
+
+# Group/Project creation settings (when auto_create is enabled)
+gitlab_ci_runners_group_visibility: "private"  # private, internal, public
+gitlab_ci_runners_project_visibility: "private"  # private, internal, public
+
+# Global state: 'present' to install/configure, 'absent' to remove/unregister
+gitlab_ci_runners_state: present
+
+# Skip runner registration (installation-only mode)
+gitlab_ci_runners_skip_registration: false
+
+# Force re-registration even if runner already exists
+# Use this when you deleted the runner from GitLab UI and need to register again
+gitlab_ci_runners_force_register: false
+
+# Skip service verification
+gitlab_ci_runners_skip_verification: false
+
+# Toggle sensitive output redaction.
+#
+# WARNING: Setting this to false may expose registration tokens and other
+# sensitive data in logs. Use only for short troubleshooting sessions.
+gitlab_ci_runners_no_log: true
+
+# =============================================================================
+# Installation Settings
+# =============================================================================
+
+# Configure the official GitLab Runner package repository
+gitlab_ci_runners_configure_repo: true
+
+# RHEL-family only: disable RPM GPG verification during package install.
+#
+# WARNING: Setting this to true disables package signature verification for the
+# GitLab Runner RPM on RHEL/Rocky/Alma. Keep this false for production.
+gitlab_ci_runners_redhat_disable_gpg_check: false
+
+# Optional: pin package version (empty = latest available)
+gitlab_ci_runners_version: ""
+
+# Base directory for all runners (each runner gets its own subdirectory)
+gitlab_ci_runners_base_path: "/opt/gitlab-ci-runners"
+
+# Default builds/cache directories (fallback - each runner creates its own)
+# These are only used if runner.builds_dir or runner.cache_dir are not specified
+# In multi-runner setups, each runner uses: {base_path}/{runner.name}/builds
+gitlab_ci_runners_builds_dir: "{{ gitlab_ci_runners_base_path }}/builds"
+gitlab_ci_runners_cache_dir: "{{ gitlab_ci_runners_base_path }}/cache"
+
+# Runner user/group
+gitlab_ci_runners_user: "gitlab-runner"
+gitlab_ci_runners_group: "gitlab-runner"
+gitlab_ci_runners_create_user: true
+gitlab_ci_runners_user_shell: "/usr/sbin/nologin"
+
+# =============================================================================
+# Runner Registration Defaults
+# =============================================================================
+# Default executor for runners (shell or docker)
+gitlab_ci_runners_default_executor: "shell"
+
+# Default tags applied to runners when runner.tags is not provided
+gitlab_ci_runners_default_tags: []
+
+# Default runner flags
+gitlab_ci_runners_locked: false
+gitlab_ci_runners_run_untagged: false
+
+# Access level: not_protected or ref_protected (optional)
+gitlab_ci_runners_access_level: ""
+
+# Maximum timeout in seconds (0 = GitLab default)
+gitlab_ci_runners_maximum_timeout: 0
+
+# Runners list to manage on this host
+gitlab_ci_runners_runners_list: []
+
+# =============================================================================
+# Service Settings
+# =============================================================================
+
+gitlab_ci_runners_service_enabled: true
+gitlab_ci_runners_service_state: started
+
+# =============================================================================
+# Performance Optimization Settings
+# =============================================================================
+
+# Global concurrent setting: maximum number of jobs that can run simultaneously
+# across all runners on this host.
+# Recommended: 2-4 for single runner, increase based on available CPU/memory
+gitlab_ci_runners_concurrent: 4
+
+# Request concurrency: number of new jobs to request in a single update cycle
+# Helps prevent job delays during GitLab's long polling timeout.
+# Recommended: 2-4 (or enable adaptive mode with FF_USE_ADAPTIVE_REQUEST_CONCURRENCY)
+# Set to 0 to use GitLab Runner default (currently 1)
+gitlab_ci_runners_request_concurrency: 2
+
+# Metrics endpoint address for Prometheus monitoring
+# Format: "host:port" or ":port" (e.g., ":9252")
+# Set to empty string to disable metrics endpoint
+gitlab_ci_runners_metrics_listen_address: ":9252"
+
+# Enable metrics server
+gitlab_ci_runners_enable_metrics: true
+
+# =============================================================================
+# Proxy Settings (optional)
+# =============================================================================
+
+# HTTP/HTTPS proxy URL (e.g., http://proxy.company.com:8080)
+# Used for GitLab API calls and runner communication
+gitlab_ci_runners_proxy_url: ""
+
+# Proxy username (if authentication required)
+gitlab_ci_runners_proxy_user: ""
+
+# Proxy password (if authentication required)
+# Use Ansible Vault: "{{ vault_proxy_password }}"
+gitlab_ci_runners_proxy_password: ""
+
+# No proxy hosts (comma-separated)
+# Example: "localhost,127.0.0.1,.internal.company.com"
+# Hosts that should bypass the proxy
+gitlab_ci_runners_no_proxy: ""
+
+# =============================================================================
+# SSL/TLS Settings (optional) - For GitLab Self-Managed
+# =============================================================================
+
+# Path to custom CA certificate bundle
+# Use for self-signed certificates or internal Certificate Authority
+# Example: "/etc/ssl/certs/company-ca.crt"
+# The file must exist on the target host before running this role
+gitlab_ci_runners_ssl_ca_cert: ""
+
+# Skip SSL certificate validation (NOT recommended for production)
+# Only use for testing/development environments
+# WARNING: This disables certificate verification and reduces security
+# Setting this to true allows man-in-the-middle attacks
+gitlab_ci_runners_ssl_skip_cert_validation: false

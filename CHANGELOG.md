@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+
+## [1.4.0] - 2025-12-18
+
+### Added
+- **[Role]** GitLab CI Runners - Complete role for managing GitLab CI runners
+  - Multi-runner support with isolated directories per runner
+  - Three runner types: Instance, Group, Project runners
+  - API-based management: Create, update, delete via GitLab REST API
+  - Tag management: Dynamic tag updates without re-registration
+  - Advanced configuration: run_untagged, locked, access_level settings
+  - Token-based deletion for accurate runner removal
+  - Service verification with skip option for testing
+  - Molecule tests for Ubuntu, Debian, Rocky Linux
+  - Comprehensive documentation with 40+ quality improvements
+  - Production example playbook with all features and scenarios
+  - Complete user guide (9 documents covering all aspects)
+- **[CI/CD]** Added GitLab CI Runners to GitHub Actions CI workflow
+  - Parallel testing across 3 distributions (Ubuntu 22.04, Debian 12, Rocky Linux 9)
+  - Integration with build and deployment pipeline
+- **[Documentation]** Runner Attributes Reference sections for CI/CD roles
+  - GitHub Actions Runners: Added comprehensive attributes reference table (7 attributes)
+  - Azure DevOps Agents: Added comprehensive attributes reference table (12 attributes)
+  - GitLab CI Runners: Comprehensive documentation with runner attributes reference
+  - Consistent documentation pattern across all CI/CD runner roles
+
+### Fixed
+- **[Role]** GitLab CI Runners - curl-minimal conflict resolution on RHEL/Rocky systems
+- **[Role]** GitLab CI Runners - Removed unnecessary root-level builds/cache directories
+- **[Tests]** GitLab CI Runners - Skip service verification in Molecule Docker environment
+
 ## [1.3.1] - 2025-12-12
 
 ### Fixed

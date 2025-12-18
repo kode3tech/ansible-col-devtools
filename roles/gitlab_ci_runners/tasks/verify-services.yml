@@ -1,0 +1,11 @@
+---
+# Verify gitlab-runner per-runner service state
+
+- name: Verify each runner service is active and enabled
+  ansible.builtin.include_tasks: verify-runner-service.yml
+  loop: "{{ _gitlab_ci_runners_to_install }}"
+  loop_control:
+    loop_var: runner
+    label: "{{ runner.name | default('UNDEFINED') }}"
+  when: _gitlab_ci_runners_to_install | length > 0
+  tags: gitlab_ci_runners

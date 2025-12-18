@@ -1,0 +1,19 @@
+---
+# RedHat/Rocky/Alma variables for gitlab_ci_runners
+
+gitlab_ci_runners_prerequisites:
+  - ca-certificates
+  - gnupg2
+# Note: curl is installed separately with allowerasing to handle curl-minimal conflict
+
+gitlab_ci_runners_packages:
+  - gitlab-runner
+
+# Official GitLab Runner GPG key (current - expires 2026-04-28)
+# Documentation:
+#   https://docs.gitlab.com/runner/install/linux-repository.html
+gitlab_ci_runners_repo_gpgkey_url: >-
+  https://packages.gitlab.com/runner/gitlab-runner/gpgkey/runner-gitlab-runner-49F16C5CC3A0F81F.pub.gpg
+
+# Fallback key used by packages.gitlab.com (repository metadata signing)
+gitlab_ci_runners_repo_gpgkey_fallback_url: "https://packages.gitlab.com/gpg.key"

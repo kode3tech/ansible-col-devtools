@@ -16,6 +16,7 @@ Complete documentation for the Podman role with rootless container support.
 | 6 | [Production Deployment](06-production-deployment.md) | Complete playbooks, pre/post tasks |
 | 7 | [Performance & Security](07-performance-security.md) | crun runtime, storage optimization, security |
 | 8 | [Troubleshooting](08-troubleshooting.md) | Common errors, diagnostics, FAQ |
+| ⚠️ | [Upgrade Guide v1.0→v1.1](upgrade-v1.0-to-v1.1.md) | **Breaking changes** - Configuration separation and storage reset |
 
 ---
 
@@ -121,9 +122,8 @@ Complete documentation for the Podman role with rootless container support.
 
 ## 🔗 Quick Links
 
-- [Role README](../../../roles/podman/README.md)
+- [Role README](../../../roles/podman/README.md) - Complete variable reference
 - [Example Playbooks](../../../playbooks/podman/)
-- [Variables Reference](../../reference/VARIABLES.md)
 - [FAQ](../../FAQ.md)
 
 ---

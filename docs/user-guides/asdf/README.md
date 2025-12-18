@@ -48,9 +48,8 @@ Each part is designed to be a self-contained video tutorial section with:
 
 ## 🔗 Related Resources
 
-- [Role README](../../../roles/asdf/README.md) - Quick reference
+- [Role README](../../../roles/asdf/README.md) - Complete variable reference
 - [Example Playbooks](../../../playbooks/asdf/) - Ready-to-use playbooks
-- [Variables Reference](../reference/VARIABLES.md) - Complete variable list
 - [FAQ](../FAQ.md) - Frequently asked questions
 
 ---

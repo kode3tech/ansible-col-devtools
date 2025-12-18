@@ -934,7 +934,7 @@ Documentation in `docs/` is organized into **4 categories**:
 #### 3. `development/` - Contributing & Development
 - Contributing guidelines
 - Role structure documentation
-- Testing guides (in `development/testing/`)
+- Testing guide (in `development/TESTING.md`)
 - Architecture documentation
 - **For:** Contributors and developers
 
@@ -982,7 +982,7 @@ Each role maintains its own documentation:
 ✅ Feature applies to **multiple roles** (e.g., registry authentication for Docker + Podman)  
 ✅ General collection usage  
 ✅ Cross-role integration  
-✅ Development/testing/contributing  
+✅ Development/contributing  
 
 #### When to Document in `roles/{role}/` (Role-level)
 ✅ Feature is **exclusive to one role** (e.g., Podman XDG_RUNTIME_DIR fix)  
@@ -1206,30 +1206,23 @@ docker_registries_auth:
 2. Testing anchor links match heading structure
 3. Verifying relative path depth matches directory nesting
 
-### 📚 Standard 6: Centralized References
+### 📚 Standard 6: Centralized FAQ
 
-**Rule**: Common questions and reference material should be centralized, not scattered.
+**Rule**: Common questions should be centralized in FAQ, not scattered across role documentation.
 
-**Centralized documents**:
+**Centralized document**:
 - **`docs/FAQ.md`** - All frequently asked questions
-- **`docs/reference/VARIABLES.md`** - All role variables reference
-- **`docs/reference/README.md`** - Index of all reference material
+
+**Note**: Variables are documented in each role's README.md (not centralized) to keep documentation close to the code.
 
 **When to add to FAQ**:
 - Question appears in 2+ role READMEs
 - Common user question from issues/discussions
 - Conceptual questions (not role-specific)
 
-**When to add to VARIABLES.md**:
-- New role variables added
-- Variable behavior changes
-- Security-sensitive variables
-- Performance-tuning variables
-
-**Update requirement**: When adding content to FAQ or VARIABLES, MUST also update:
+**Update requirement**: When adding content to FAQ, MUST also update:
 1. Parent `docs/README.md` - link in appropriate category
-2. Parent `docs/reference/README.md` - link with description
-3. Related role READMEs - link to centralized content instead of duplicating
+2. Related role READMEs - link to FAQ instead of duplicating
 
 ### 🏷️ Standard 7: Semantic Emoji Usage
 
@@ -1355,19 +1348,10 @@ docker_packages:
 docker_users: []
 ```
 
-**In role README.md** (variables section):
+**In role README.md** (variables section - complete documentation):
 ```markdown
 ## Role Variables
 
-| Variable | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| `docker_edition` | string | No | `"ce"` | Docker edition: "ce" or "ee" |
-| `docker_packages` | list | No | `[...]` | Packages to install |
-| `docker_users` | list | No | `[]` | Users for docker group |
-```
-
-**In `docs/reference/VARIABLES.md`** (complete reference):
-```markdown
 ### `docker_edition`
 
 - **Type**: String

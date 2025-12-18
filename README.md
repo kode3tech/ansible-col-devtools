@@ -41,6 +41,15 @@ Deploy and manage GitHub Actions self-hosted runners on Linux servers.
 - Ephemeral runners: Support for single-use runners
 - Service verification: Ensures all services are enabled and running
 
+### 🦊 GitLab CI Runners ⭐ NEW
+Deploy and manage GitLab CI self-hosted runners on Linux servers.
+- Multi-runner support: N runners per host with isolated directories
+- Three runner types: Instance, Group, Project runners
+- API-based management: Create, update, and delete runners via GitLab API
+- Tag management: Dynamic tag updates without re-registration
+- Advanced features: run_untagged, locked, access_level configuration
+- Service verification: Ensures all services are enabled and running
+
 ### 🐳 Docker
 Complete Docker Engine installation and configuration with Docker Compose support.
 - Multi-platform: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
@@ -166,6 +175,12 @@ The collection includes ready-to-use example playbooks in the `playbooks/` direc
 | [install-single-runner.yml](playbooks/github_actions_runners/install-single-runner.yml) | Basic single runner installation |
 | [install-multi-runner.yml](playbooks/github_actions_runners/install-multi-runner.yml) | Multiple runners per host |
 
+### GitLab CI Runners
+
+| Playbook | Description |
+|----------|-------------|
+| [install-production.yml](playbooks/gitlab_ci_runners/install-production.yml) | ⭐ Production deployment with all features and comprehensive validation |
+
 ### Docker
 
 | Playbook | Description |
@@ -206,6 +221,7 @@ See [playbooks/README.md](playbooks/README.md) for complete documentation.
 |------|--------|----------------|
 | **Azure DevOps Agents** | [roles/azure_devops_agents/README.md](roles/azure_devops_agents/README.md) | [Azure DevOps Agents Guide](docs/user-guides/azure-devops-agents/) |
 | **GitHub Actions Runners** | [roles/github_actions_runners/README.md](roles/github_actions_runners/README.md) | [GitHub Actions Runners Guide](docs/user-guides/github-actions-runners/) |
+| **GitLab CI Runners** | [roles/gitlab_ci_runners/README.md](roles/gitlab_ci_runners/README.md) | [GitLab CI Runners Guide](docs/user-guides/gitlab-ci-runners/) |
 | **Docker** | [roles/docker/README.md](roles/docker/README.md) | [Docker Complete Guide](docs/user-guides/docker/) |
 | **Podman** | [roles/podman/README.md](roles/podman/README.md) | [Podman Complete Guide](docs/user-guides/podman/) |
 | **asdf** | [roles/asdf/README.md](roles/asdf/README.md) | [asdf Complete Guide](docs/user-guides/asdf/) |

@@ -112,7 +112,7 @@ podman_storage_conf:
 
 ### XDG_RUNTIME_DIR Warnings
 If you see warnings about XDG_RUNTIME_DIR:
-- See [Podman XDG Runtime Fix](../../roles/podman/docs/PODMAN_XDG_RUNTIME_FIX.md)
+- See [XDG Runtime Directory Configuration](../../roles/podman/README.md#xdg-runtime-directory-configuration)
 - The role automatically creates required directories
 
 ### Authentication Failures
@@ -130,7 +130,7 @@ If you see "database graph driver mismatch" errors:
 
 - [Podman Complete Guide](../../docs/user-guides/podman/) - **Comprehensive 8-part documentation**
 - [Podman Role README](../../roles/podman/README.md)
-- [Podman XDG Runtime Fix](../../roles/podman/docs/PODMAN_XDG_RUNTIME_FIX.md)
+- [XDG Runtime Directory Configuration](../../roles/podman/README.md#xdg-runtime-directory-configuration)
 
 ---
 

@@ -1,0 +1,8 @@
+---
+# NOTE: Service restart is now handled per-runner in service-runner.yml
+# This handler is kept for backward compatibility but should not be called
+# in multi-runner mode.
+- name: Restart gitlab-runner
+  ansible.builtin.service:
+    name: gitlab-runner
+    state: restarted

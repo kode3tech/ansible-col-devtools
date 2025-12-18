@@ -1,0 +1,102 @@
+---
+# Update runner configuration via GitLab API
+#
+# This task updates runner settings when the runner already exists.
+# It uses the PUT /api/v4/runners/:id endpoint to update:
+#   - run_untagged
+#   - locked
+#   - access_level
+#   - maximum_timeout
+#   - paused
+#   - tag_list
+#   - description
+#   - maintenance_note
+#
+# Required variables:
+#   - runner_id: The GitLab runner ID (numeric)
+#   - runner_api_*: Configuration values to update
+
+- name: Build API update-runner request body
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_update_body: >-
+      {{
+        {
+          'description': runner_api_description,
+          'paused': (runner_api_paused | bool),
+          'locked': (runner_api_locked | bool),
+          'run_untagged': (runner_api_run_untagged | bool),
+          'tag_list': runner_api_tag_list,
+          'access_level': runner_api_access_level,
+          'maximum_timeout': (runner_api_maximum_timeout | int)
+        }
+        | combine(
+            ({'maintenance_note': runner_api_maintenance_note}
+             if (runner_api_maintenance_note | default('') | length > 0)
+             else {})
+          )
+      }}
+  delegate_to: localhost
+  changed_when: false
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Update runner configuration via GitLab API
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/runners/'
+        ~ (runner_id | string)
+      }}
+    method: PUT
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body: "{{ _gitlab_ci_runners_api_update_body }}"
+    return_content: true
+    status_code: 200
+  register: _runner_update_result
+  delegate_to: localhost
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - (gitlab_ci_runners_api_token | default('') | length) > 0
+    - (runner_id | int) > 0
+  tags: gitlab_ci_runners
+
+- name: Display runner update result
+  ansible.builtin.debug:
+    msg:
+      - "✅ Runner configuration updated successfully"
+      - "Runner ID: {{ runner_id }}"
+      - "Description: {{ runner_api_description }}"
+      - "Run untagged: {{ runner_api_run_untagged }}"
+      - "Locked: {{ runner_api_locked }}"
+      - "Access level: {{ runner_api_access_level }}"
+      - "Maximum timeout: {{ runner_api_maximum_timeout }}s"
+      - "Tags: {{ runner_api_tag_list | join(', ') }}"
+  when:
+    - not (gitlab_ci_runners_no_log | bool)
+    - _runner_update_result is defined
+    - _runner_update_result is not skipped
+    - _runner_update_result.status == 200
+  tags: gitlab_ci_runners
+
+- name: Cache updated runner info
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_existing_runners: >-
+      {{
+        (_gitlab_ci_runners_api_existing_runners | default({}))
+        | combine({
+            runner.name: _runner_update_result.json
+          })
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  when:
+    - _runner_update_result is defined
+    - _runner_update_result is not skipped
+    - _runner_update_result.status == 200
+  changed_when: false
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners

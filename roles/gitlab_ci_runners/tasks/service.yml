@@ -1,0 +1,14 @@
+---
+# Manage gitlab-runner systemd service
+
+- name: Enable gitlab-runner service
+  ansible.builtin.systemd:
+    name: gitlab-runner
+    enabled: "{{ gitlab_ci_runners_service_enabled }}"
+  tags: gitlab_ci_runners
+
+- name: Start gitlab-runner service
+  ansible.builtin.systemd:
+    name: gitlab-runner
+    state: "{{ gitlab_ci_runners_service_state }}"
+  tags: gitlab_ci_runners

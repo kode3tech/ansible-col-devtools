@@ -1,0 +1,33 @@
+[Unit]
+Description=GitLab Runner (%i)
+After=network.target
+Documentation=https://docs.gitlab.com/runner/
+
+[Service]
+Type=simple
+User={{ gitlab_ci_runners_user }}
+WorkingDirectory={{ gitlab_ci_runners_base_path }}/%i
+ExecStart=/usr/bin/gitlab-runner run \
+    --working-directory {{ gitlab_ci_runners_base_path }}/%i \
+    --config {{ gitlab_ci_runners_base_path }}/%i/config.toml \
+    --service %i
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+
+# Resource limits (optional, can be configured per runner)
+{% if gitlab_ci_runners_service_cpu_limit is defined %}
+CPUQuota={{ gitlab_ci_runners_service_cpu_limit }}
+{% endif %}
+{% if gitlab_ci_runners_service_memory_limit is defined %}
+MemoryLimit={{ gitlab_ci_runners_service_memory_limit }}
+{% endif %}
+
+# Security settings (minimal to ensure compatibility)
+NoNewPrivileges=true
+
+# Environment
+Environment="HOME={{ gitlab_ci_runners_base_path }}/%i"
+
+[Install]
+WantedBy=multi-user.target

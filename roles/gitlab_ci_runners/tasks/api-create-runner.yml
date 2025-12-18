@@ -1,0 +1,219 @@
+---
+# Create a runner via GitLab API (new runner creation workflow)
+#
+# This task file is meant to be included from register-runner.yml.
+
+- name: Ensure API token cache exists (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_tokens: "{{ _gitlab_ci_runners_api_tokens | default({}) }}"
+    _gitlab_ci_runners_api_runner_ids: "{{ _gitlab_ci_runners_api_runner_ids | default({}) }}"
+    _gitlab_ci_runners_api_existing_runners: "{{ _gitlab_ci_runners_api_existing_runners | default({}) }}"
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Build API create-runner request body
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_body: >-
+      {{
+        {
+          'runner_type': runner_api_runner_type,
+          'description': runner_api_description,
+          'paused': (runner_api_paused | bool),
+          'locked': (runner_api_locked | bool),
+          'run_untagged': (runner_api_run_untagged | bool)
+        }
+        | combine(
+            ({'group_id': (runner_api_group_id | int)}
+             if runner_api_runner_type == 'group_type'
+             else {})
+          )
+        | combine(
+            ({'project_id': (runner_api_project_id | int)}
+             if runner_api_runner_type == 'project_type'
+             else {})
+          )
+        | combine(
+            ({'tag_list': runner_api_tag_list}
+             if (runner_api_tag_list is defined)
+             and (runner_api_tag_list is not string)
+             and (runner_api_tag_list | length > 0)
+             else {})
+          )
+        | combine(
+            ({'access_level': runner_api_access_level}
+             if runner_api_access_level | length > 0
+             else {})
+          )
+        | combine(
+            ({'maximum_timeout': (runner_api_maximum_timeout | int)}
+             if (runner_api_maximum_timeout | int) > 0
+             else {})
+          )
+        | combine(
+            ({'maintenance_note': runner_api_maintenance_note}
+             if runner_api_maintenance_note | length > 0
+             else {})
+          )
+      }}
+  changed_when: false
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: List existing runners via API (controller-side)
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ (
+          '/api/v4/groups/' ~ (runner_api_group_id | string) ~ '/runners?per_page=100'
+          if runner_api_runner_type == 'group_type'
+          else '/api/v4/projects/' ~ (runner_api_project_id | string) ~ '/runners?per_page=100'
+        )
+      }}
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+    return_content: true
+    status_code: 200
+  register: _gitlab_ci_runners_api_list
+  delegate_to: localhost
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type != 'instance_type'
+    - >-
+      ((hostvars['localhost']._gitlab_ci_runners_api_tokens | default({})).get((runner.name | string))
+       | default('', true) | length) == 0
+  tags: gitlab_ci_runners
+
+- name: Mark runner as existing when found by description (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_existing_runners: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_existing_runners | default({}))
+        | combine({(runner.name | string): _gitlab_ci_runners_api_exists})
+      }}
+  vars:
+    _gitlab_ci_runners_api_exists: >-
+      {{
+        ((_gitlab_ci_runners_api_list.json | default([]))
+          | selectattr('description', 'equalto', (runner_api_description | string))
+          | list
+          | length) > 0
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type != 'instance_type'
+    - _gitlab_ci_runners_api_list is defined
+  tags: gitlab_ci_runners
+
+- name: Create runner via API (controller-side)
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/user/runners'
+      }}
+    method: POST
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+    body_format: json
+    body: "{{ _gitlab_ci_runners_api_body }}"
+    return_content: true
+    status_code: 201
+  register: _gitlab_ci_runners_api_create
+  delegate_to: localhost
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - >-
+      (
+        (hostvars['localhost']._gitlab_ci_runners_api_tokens | default({})).get((runner.name | string))
+        | default('', true) | length
+      ) == 0
+    - >-
+      not (
+        (hostvars['localhost']._gitlab_ci_runners_api_existing_runners | default({}))
+        .get((runner.name | string), false)
+        | bool
+      )
+  tags: gitlab_ci_runners
+
+- name: Cache runner authentication token (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_tokens: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_tokens | default({}))
+        | combine({(runner.name | string): (_gitlab_ci_runners_api_create.json.token | string)})
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - _gitlab_ci_runners_api_create is defined
+    - _gitlab_ci_runners_api_create.json is defined
+    - _gitlab_ci_runners_api_create.json.token is defined
+    - (_gitlab_ci_runners_api_create.json.token | string) | length > 0
+  tags: gitlab_ci_runners
+
+- name: Cache runner ID from created runner (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_runner_ids: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_runner_ids | default({}))
+        | combine({(runner.name | string): (_gitlab_ci_runners_api_create.json.id | int)})
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - _gitlab_ci_runners_api_create is defined
+    - _gitlab_ci_runners_api_create.json is defined
+    - _gitlab_ci_runners_api_create.json.id is defined
+    - (_gitlab_ci_runners_api_create.json.id | int) > 0
+  tags: gitlab_ci_runners
+
+- name: Cache runner ID from existing runner (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_runner_ids: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_runner_ids | default({}))
+        | combine({(runner.name | string): (_gitlab_ci_runners_api_existing_runner_data.id | int)})
+      }}
+  vars:
+    _gitlab_ci_runners_api_existing_runner_data: >-
+      {{
+        (_gitlab_ci_runners_api_list.json | default([]))
+        | selectattr('description', 'equalto', (runner_api_description | string))
+        | list
+        | first
+        | default({})
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - >-
+      (
+        (hostvars['localhost']._gitlab_ci_runners_api_existing_runners | default({}))
+        .get((runner.name | string), false)
+        | bool
+      )
+    - _gitlab_ci_runners_api_list is defined
+    - _gitlab_ci_runners_api_list.json is defined
+    - (_gitlab_ci_runners_api_list.json | length) > 0
+  tags: gitlab_ci_runners

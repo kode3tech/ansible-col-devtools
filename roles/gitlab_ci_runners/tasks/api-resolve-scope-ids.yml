@@ -1,0 +1,212 @@
+---
+# Resolve GitLab group/project numeric IDs using API from full path.
+#
+# Intended for API runner creation workflow.
+# Must be included with vars:
+# - runner_api_runner_type
+# - runner_api_group_id
+# - runner_api_group_full_path
+# - runner_api_project_id
+# - runner_api_project_path
+# - runner (the runner dict; runner.name used as cache key)
+
+- name: Ensure API scope ID caches exist (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_group_ids_by_path: >-
+      {{ _gitlab_ci_runners_api_group_ids_by_path | default({}) }}
+    _gitlab_ci_runners_api_project_ids_by_path: >-
+      {{ _gitlab_ci_runners_api_project_ids_by_path | default({}) }}
+    _gitlab_ci_runners_api_runner_group_ids: >-
+      {{ _gitlab_ci_runners_api_runner_group_ids | default({}) }}
+    _gitlab_ci_runners_api_runner_project_ids: >-
+      {{ _gitlab_ci_runners_api_runner_project_ids | default({}) }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  tags: gitlab_ci_runners
+
+- name: Build encoded group path (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_group_path_encoded: >-
+      {{
+        (runner_api_group_full_path | default('') | string)
+        | replace('%', '%25')
+        | replace('/', '%2F')
+        | replace(' ', '%20')
+      }}
+  delegate_to: localhost
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type == 'group_type'
+    - (runner_api_group_id | int) <= 0
+    - (runner_api_group_full_path | default('') | length) > 0
+  tags: gitlab_ci_runners
+
+- name: Build encoded project path (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_project_path_encoded: >-
+      {{
+        (runner_api_project_path | default('') | string)
+        | replace('%', '%25')
+        | replace('/', '%2F')
+        | replace(' ', '%20')
+      }}
+  delegate_to: localhost
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type == 'project_type'
+    - (runner_api_project_id | int) <= 0
+    - (runner_api_project_path | default('') | length) > 0
+  tags: gitlab_ci_runners
+
+- name: Resolve group id from group_full_path (controller-side)
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/groups/'
+        ~ _gitlab_ci_runners_api_group_path_encoded
+      }}
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+    return_content: true
+    status_code: 200
+  register: _gitlab_ci_runners_api_group_get
+  delegate_to: localhost
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type == 'group_type'
+    - (runner_api_group_id | int) <= 0
+    - (_gitlab_ci_runners_api_group_path_encoded | default('') | length) > 0
+    - >-
+      (
+        (hostvars['localhost']._gitlab_ci_runners_api_group_ids_by_path | default({}))
+        .get((runner_api_group_full_path | string), 0)
+        | int
+      ) <= 0
+  tags: gitlab_ci_runners
+
+- name: Cache resolved group id (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_group_ids_by_path: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_group_ids_by_path | default({}))
+        | combine({(runner_api_group_full_path | string): (_gitlab_ci_runners_api_group_get.json.id | int)})
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - _gitlab_ci_runners_api_group_get is defined
+    - _gitlab_ci_runners_api_group_get.json is defined
+    - _gitlab_ci_runners_api_group_get.json.id is defined
+  tags: gitlab_ci_runners
+
+- name: Resolve project id from project_path (controller-side)
+  ansible.builtin.uri:
+    url: >-
+      {{
+        (gitlab_ci_runners_gitlab_url | regex_replace('/+$', ''))
+        ~ '/api/v4/projects/'
+        ~ _gitlab_ci_runners_api_project_path_encoded
+      }}
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ gitlab_ci_runners_api_token }}"
+    return_content: true
+    status_code: 200
+  register: _gitlab_ci_runners_api_project_get
+  delegate_to: localhost
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type == 'project_type'
+    - (runner_api_project_id | int) <= 0
+    - (_gitlab_ci_runners_api_project_path_encoded | default('') | length) > 0
+    - >-
+      (
+        (hostvars['localhost']._gitlab_ci_runners_api_project_ids_by_path | default({}))
+        .get((runner_api_project_path | string), 0)
+        | int
+      ) <= 0
+  tags: gitlab_ci_runners
+
+- name: Cache resolved project id (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_project_ids_by_path: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_project_ids_by_path | default({}))
+        | combine({(runner_api_project_path | string): (_gitlab_ci_runners_api_project_get.json.id | int)})
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - _gitlab_ci_runners_api_project_get is defined
+    - _gitlab_ci_runners_api_project_get.json is defined
+    - _gitlab_ci_runners_api_project_get.json.id is defined
+  tags: gitlab_ci_runners
+
+- name: Cache effective group id for this runner (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_runner_group_ids: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_runner_group_ids | default({}))
+        | combine({
+            (runner.name | string): (
+              (runner_api_group_id | int)
+              if (runner_api_group_id | int) > 0
+              else (
+                (hostvars['localhost']._gitlab_ci_runners_api_group_ids_by_path | default({}))
+                .get((runner_api_group_full_path | string), 0)
+                | int
+              )
+            )
+          })
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type == 'group_type'
+  tags: gitlab_ci_runners
+
+- name: Cache effective project id for this runner (controller-side)
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_api_runner_project_ids: >-
+      {{
+        (hostvars['localhost']._gitlab_ci_runners_api_runner_project_ids | default({}))
+        | combine({
+            (runner.name | string): (
+              (runner_api_project_id | int)
+              if (runner_api_project_id | int) > 0
+              else (
+                (hostvars['localhost']._gitlab_ci_runners_api_project_ids_by_path | default({}))
+                .get((runner_api_project_path | string), 0)
+                | int
+              )
+            )
+          })
+      }}
+  delegate_to: localhost
+  delegate_facts: true
+  changed_when: false
+  throttle: 1
+  no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+  when:
+    - runner_api_runner_type == 'project_type'
+  tags: gitlab_ci_runners

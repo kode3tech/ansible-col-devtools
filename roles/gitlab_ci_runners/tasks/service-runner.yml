@@ -1,0 +1,84 @@
+---
+# Configure GitLab Runner as systemd template service
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set runner directory and service name
+  ansible.builtin.set_fact:
+    _runner_dir: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}"
+    _runner_service_name: "gitlab-runner@{{ runner.name }}"
+  tags: gitlab_ci_runners
+
+# =============================================================================
+# Install systemd template unit
+# =============================================================================
+- name: Create systemd template unit directory
+  ansible.builtin.file:
+    path: /etc/systemd/system
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: gitlab_ci_runners
+
+- name: Install gitlab-runner systemd template unit
+  ansible.builtin.template:
+    src: gitlab-runner@.service.j2
+    dest: /etc/systemd/system/gitlab-runner@.service
+    owner: root
+    group: root
+    mode: '0644'
+  register: _systemd_template
+  tags: gitlab_ci_runners
+
+# =============================================================================
+# Reload systemd and manage service
+# =============================================================================
+- name: Reload systemd daemon  # noqa: no-handler
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: _systemd_template is changed
+  tags: gitlab_ci_runners
+
+- name: Verify runner config file exists before starting service
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}/config.toml"
+  register: _runner_config_check
+  tags: gitlab_ci_runners
+
+- name: Fail if config file does not exist
+  ansible.builtin.fail:
+    msg: |
+      Runner config file {{ _runner_dir }}/config.toml does not exist!
+      This means registration failed. Check previous tasks.
+  when: not _runner_config_check.stat.exists
+  tags: gitlab_ci_runners
+
+- name: Verify config file with gitlab-runner verify
+  ansible.builtin.command:
+    cmd: "gitlab-runner verify --config {{ _runner_dir }}/config.toml"
+  register: _verify_before_start
+  changed_when: false
+  failed_when: _verify_before_start.rc != 0
+  tags: gitlab_ci_runners
+
+- name: Enable runner service
+  ansible.builtin.systemd:
+    name: "{{ _runner_service_name }}"
+    enabled: "{{ gitlab_ci_runners_service_enabled }}"
+  tags: gitlab_ci_runners
+
+- name: Start runner service
+  ansible.builtin.systemd:
+    name: "{{ _runner_service_name }}"
+    state: started
+  register: _runner_service_started
+  tags: gitlab_ci_runners
+
+# Note: Wait task uses noqa to avoid no-handler warning
+# This is intentional as we want immediate wait after service start
+- name: Wait for service to stabilize  # noqa no-handler
+  ansible.builtin.pause:
+    seconds: 3
+  when: _runner_service_started is changed
+  changed_when: false
+  tags: gitlab_ci_runners

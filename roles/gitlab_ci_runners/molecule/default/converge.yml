@@ -1,0 +1,144 @@
+---
+# Converge playbook for gitlab_ci_runners role testing
+# Tests the role installation without actual GitLab registration
+
+- name: Converge - Test gitlab_ci_runners role (Installation)
+  hosts: all
+  gather_facts: true
+
+  vars:
+    # Test configuration - uses mock values
+    # Real registration would require valid GitLab credentials
+    gitlab_ci_runners_gitlab_url: "https://gitlab.com"
+    gitlab_ci_runners_skip_registration: true
+    gitlab_ci_runners_skip_verification: true  # Skip service checks in Docker
+    gitlab_ci_runners_base_path: "/opt/gitlab-ci-runners"
+    gitlab_ci_runners_user: "gitlab-runner"
+    gitlab_ci_runners_group: "gitlab-runner"
+    gitlab_ci_runners_redhat_disable_gpg_check: true
+
+    # Test with multiple runners (mock registration)
+    gitlab_ci_runners_runners_list:
+      - name: "test-runner-01"
+        tags:
+          - "docker"
+          - "linux"
+
+      - name: "test-runner-02"
+        tags:
+          - "shell"
+          - "nodejs"
+
+      - name: "test-runner-03"
+        tags:
+          - "python"
+
+  roles:
+    - role: gitlab_ci_runners
+
+  post_tasks:
+    # Since skip_registration=true, directories are not created by the role
+    # We need to create them manually for testing
+    - name: Create runner directories for testing (simulating registration)
+      ansible.builtin.file:
+        path: "/opt/gitlab-ci-runners/{{ item.name }}"
+        state: directory
+        owner: "gitlab-runner"
+        group: "gitlab-runner"
+        mode: '0755'
+      loop: "{{ gitlab_ci_runners_runners_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Create runner builds directories
+      ansible.builtin.file:
+        path: "/opt/gitlab-ci-runners/{{ item.name }}/builds"
+        state: directory
+        owner: "gitlab-runner"
+        group: "gitlab-runner"
+        mode: '0755'
+      loop: "{{ gitlab_ci_runners_runners_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Create runner cache directories
+      ansible.builtin.file:
+        path: "/opt/gitlab-ci-runners/{{ item.name }}/cache"
+        state: directory
+        owner: "gitlab-runner"
+        group: "gitlab-runner"
+        mode: '0755'
+      loop: "{{ gitlab_ci_runners_runners_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+- name: Converge - Test runner removal
+  hosts: all
+  gather_facts: true
+
+  vars:
+    gitlab_ci_runners_gitlab_url: "https://gitlab.com"
+    gitlab_ci_runners_base_path: "/opt/gitlab-ci-runners"
+    gitlab_ci_runners_user: "gitlab-runner"
+    gitlab_ci_runners_group: "gitlab-runner"
+    gitlab_ci_runners_redhat_disable_gpg_check: true
+
+    # Remove one runner to test state: absent
+    gitlab_ci_runners_runners_list:
+      - name: "test-runner-01"
+        tags:
+          - "docker"
+          - "linux"
+
+      - name: "test-runner-02"
+        tags:
+          - "shell"
+          - "nodejs"
+
+      # Runner 03 removed - should be deleted
+      - name: "test-runner-03"
+        state: absent
+
+  tasks:
+    - name: Create test-runner-03 directory for removal testing
+      ansible.builtin.file:
+        path: "/opt/gitlab-ci-runners/test-runner-03"
+        state: directory
+        owner: "gitlab-runner"
+        group: "gitlab-runner"
+        mode: '0755'
+
+    - name: Create mock config.toml for runner removal testing
+      ansible.builtin.copy:
+        content: |
+          concurrent = 1
+          check_interval = 0
+
+          [session_server]
+            session_timeout = 1800
+
+          [[runners]]
+            name = "test-runner-03"
+            url = "https://gitlab.com"
+            id = 12345
+            token = "mock-runner-token-for-testing"
+            executor = "shell"
+        dest: "/opt/gitlab-ci-runners/test-runner-03/config.toml"
+        owner: "gitlab-runner"
+        group: "gitlab-runner"
+        mode: '0600'
+
+    - name: Include runner removal task
+      ansible.builtin.include_role:
+        name: gitlab_ci_runners
+        tasks_from: remove-runner.yml
+      vars:
+        runner:
+          name: "test-runner-03"
+          state: absent
+
+    - name: Display removal test summary
+      ansible.builtin.debug:
+        msg:
+          - "Phase 2: Runner removal test completed"
+          - "Runner 'test-runner-03' marked for removal"

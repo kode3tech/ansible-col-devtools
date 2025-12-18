@@ -1,0 +1,126 @@
+---
+# Verify individual runner service state
+# This file is included in a loop with 'runner' as the loop variable
+
+- name: Set runner service name and paths
+  ansible.builtin.set_fact:
+    _runner_service_name: "gitlab-runner@{{ runner.name }}"
+    _runner_dir: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}"
+    _runner_config_file: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}/config.toml"
+  tags: gitlab_ci_runners
+
+- name: Get runner service status
+  ansible.builtin.systemd:
+    name: "{{ _runner_service_name }}"
+  register: _runner_service_status
+  until: >-
+    _runner_service_status.status.ActiveState == 'active'
+    or (_runner_service_status.status.ActiveState == 'activating'
+        and _runner_service_status.status.SubState != 'auto-restart')
+  retries: 10
+  delay: 3
+  failed_when: false
+  tags: gitlab_ci_runners
+
+- name: Verify runner directory exists
+  ansible.builtin.stat:
+    path: "{{ _runner_dir }}"
+  register: _runner_dir_stat
+  tags: gitlab_ci_runners
+
+- name: Verify runner config file exists
+  ansible.builtin.stat:
+    path: "{{ _runner_config_file }}"
+  register: _runner_config_stat
+  tags: gitlab_ci_runners
+
+- name: Verify service is enabled
+  ansible.builtin.assert:
+    that:
+      - _runner_service_status.status.UnitFileState == 'enabled'
+    fail_msg: "Runner service {{ _runner_service_name }} is not enabled"
+    success_msg: "Runner service {{ _runner_service_name }} is enabled"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Verify service is active or activating healthily
+  ansible.builtin.assert:
+    that:
+      - >-
+        _runner_service_status.status.ActiveState == 'active'
+        or (_runner_service_status.status.ActiveState == 'activating'
+            and _runner_service_status.status.SubState != 'auto-restart')
+      - _runner_service_status.status.SubState != 'auto-restart'
+      - _runner_service_status.status.SubState != 'failed'
+    fail_msg: |
+      Runner service {{ _runner_service_name }} is not healthy
+      Current state: {{ _runner_service_status.status.ActiveState | default('UNKNOWN') }}
+      Sub-state: {{ _runner_service_status.status.SubState | default('UNKNOWN') }}
+      Load state: {{ _runner_service_status.status.LoadState | default('UNKNOWN') }}
+
+      ⚠️  Service is in auto-restart loop or failed!
+
+      Debug commands:
+        journalctl -xeu {{ _runner_service_name }} --no-pager -n 50
+        systemctl status {{ _runner_service_name }}
+        cat {{ _runner_config_file }}
+    success_msg: >-
+      Runner service {{ _runner_service_name }} is running
+      (state: {{ _runner_service_status.status.ActiveState }})
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Verify runner directory exists
+  ansible.builtin.assert:
+    that:
+      - _runner_dir_stat.stat.exists
+      - _runner_dir_stat.stat.isdir
+    fail_msg: "Runner directory {{ _runner_dir }} does not exist or is not a directory"
+    success_msg: "Runner directory {{ _runner_dir }} exists"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Verify runner config file exists
+  ansible.builtin.assert:
+    that:
+      - _runner_config_stat.stat.exists
+      - _runner_config_stat.stat.isreg
+    fail_msg: "Runner config file {{ _runner_config_file }} does not exist or is not a regular file"
+    success_msg: "Runner config file {{ _runner_config_file }} exists"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Verify runner is registered
+  ansible.builtin.command:
+    cmd: "gitlab-runner verify --config {{ _runner_config_file }}"
+  register: _runner_verify
+  changed_when: false
+  failed_when: false
+  tags: gitlab_ci_runners
+
+- name: Assert runner verification passed
+  ansible.builtin.assert:
+    that:
+      - _runner_verify.rc == 0
+      - "'is valid' in (_runner_verify.stdout | default('')) or 'is valid' in (_runner_verify.stderr | default(''))"
+    fail_msg: |
+      Runner {{ runner.name }} verification failed
+      Return code: {{ _runner_verify.rc }}
+      Output: {{ _runner_verify.stdout | default('') }}{{ _runner_verify.stderr | default('') }}
+    success_msg: "Runner {{ runner.name }} verification passed - runner is valid"
+    quiet: true
+  tags: gitlab_ci_runners
+
+- name: Display verification summary
+  ansible.builtin.debug:
+    msg:
+      - "✅ Runner: {{ runner.name }}"
+      - >-
+        Service: {{ _runner_service_name }}
+        ({{ _runner_service_status.status.ActiveState }} /
+        {{ _runner_service_status.status.UnitFileState }})
+      - "  Directory: {{ _runner_dir }}"
+      - "  Config: {{ _runner_config_file }}"
+      - "  Status: All checks passed"
+  when: not (gitlab_ci_runners_no_log | bool)
+  tags: gitlab_ci_runners

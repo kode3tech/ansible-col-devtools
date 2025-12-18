@@ -1,14 +1,35 @@
 # Ansible Role: Podman
 
-Ansible role for installing and configuring Podman on Linux servers.
+**Daemonless container engine with rootless support** - Complete Podman installation and configuration for production environments.
 
-> 📖 **Complete Guide**: For a comprehensive understanding of Podman with this role, including Root vs Rootless mode, detailed variable explanations, production playbooks, and troubleshooting, see the **[Podman Complete Guide](../../docs/user-guides/podman/)**.
+## ✨ Key Features
+
+- 🏗️ **Multi-Platform**: Ubuntu 22+, Debian 11+, RHEL/CentOS/Rocky 9+
+- 🔐 **Rootless Mode**: Complete rootless Podman configuration with subuid/subgid
+- 🔑 **Registry Authentication**: Built-in support for private registries with automatic permission handling
+- ⚡ **XDG Runtime Fix**: Automatic XDG_RUNTIME_DIR configuration (eliminates authentication warnings)
+- 🛠️ **Complete Toolchain**: Podman, Buildah, Skopeo, and crun included
+- ✅ **Production Ready**: Battle-tested with comprehensive error handling
 
 ## 📋 Table of Contents
 
 - [Requirements](#requirements)
+  - [Supported Distributions](#supported-distributions)
+  - [RHEL-Specific Features](#rhel-specific-features)
 - [Role Variables](#role-variables)
+  - [Registry Authentication](#registry-authentication)
+  - [Podman Permission Handling](#podman-permission-handling)
+- [XDG Runtime Directory Configuration](#xdg-runtime-directory-configuration)
+  - [The Problem](#the-problem)
+  - [The Solution](#the-solution)
+  - [Technical Details](#technical-details)
+  - [Troubleshooting XDG Issues](#troubleshooting-xdg-issues)
 - [Performance Tuning](#performance-tuning)
+  - [Default Optimizations](#default-optimizations)
+  - [crun vs runc](#crun-vs-runc)
+- [Configuration Examples](#configuration-examples)
+  - [LXC Container Support](#lxc-container-support)
+  - [Custom Configuration](#custom-configuration)
 - [Dependencies](#dependencies)
 - [Example Playbook](#example-playbook)
 - [Testing](#testing)
@@ -94,7 +115,7 @@ podman_registries_auth: []
 podman_clean_credentials: false
 ```
 
-For complete documentation on variables, see [Variables Reference](../../docs/reference/VARIABLES.md).
+For complete documentation on variables, see [Podman Complete Guide](../../docs/user-guides/podman/).
 
 ### Registry Authentication
 
@@ -143,6 +164,216 @@ podman_registries_auth:
 **Applies to:** All supported distributions (Ubuntu, Debian, RHEL, CentOS, Rocky Linux, AlmaLinux)
 
 📖 **Complete guide:** [Podman Registry Authentication](../../docs/user-guides/podman/04-registry-auth.md)
+
+## XDG Runtime Directory Configuration
+
+### The Problem
+
+When running Podman as **root**, you may encounter this warning:
+
+```
+WARN[0000] "/run/user/0" directory set by $XDG_RUNTIME_DIR does not exist. 
+Either create the directory or unset $XDG_RUNTIME_DIR.: 
+stat /run/user/0: no such file or directory
+```
+
+**Root Cause**: Podman uses the XDG (X Desktop Group) standard for managing runtime and configuration directories:
+
+- **XDG_RUNTIME_DIR**: Temporary directory for runtime files
+  - Regular users: `/run/user/<UID>`
+  - Root: `/run/user/0`
+- **XDG_CONFIG_HOME**: Directory for persistent configurations
+  - Regular users: `$HOME/.config`
+  - Root: `/root/.config`
+
+In modern distributions, `systemd-logind` creates `/run/user/<UID>` only for **login sessions** of regular users. For root, this directory is **not created automatically** in many scenarios (containers, SSH executions without active logind session).
+
+### The Solution
+
+This role **automatically configures** the XDG runtime directories using `systemd-tmpfiles`:
+
+```yaml
+# Persistent configuration with systemd-tmpfiles (survives reboots)
+- name: Configure systemd-tmpfiles for Podman XDG_RUNTIME_DIR
+  ansible.builtin.copy:
+    content: |
+      # Podman XDG_RUNTIME_DIR for root
+      d /run/user/0 0700 root root -
+    dest: /etc/tmpfiles.d/podman-xdg.conf
+    mode: '0644'
+
+- name: Create XDG_RUNTIME_DIR for root immediately
+  ansible.builtin.command: systemd-tmpfiles --create /etc/tmpfiles.d/podman-xdg.conf
+```
+
+**What this does:**
+- ✅ Creates `/run/user/0` with correct permissions (0700)
+- ✅ **Persists between reboots** - systemd recreates automatically
+- ✅ Applies configuration immediately
+- ✅ Managed by systemd (system standard)
+- ✅ Compatible with tmpfs (/run is cleaned on boot)
+
+**For rootless users**, the role also creates:
+- `/run/user/<UID>` for each user
+- `~/.config/containers` for persistent configuration
+- Proper ownership and permissions
+
+### Technical Details
+
+**Directory Structure:**
+
+#### For Root
+```
+/run/user/0/                         # XDG_RUNTIME_DIR (temporary runtime)
+├── containers/                      # Sockets and runtime
+├── libpod/                          # Podman state
+└── ...
+
+/root/.config/containers/            # XDG_CONFIG_HOME (persistent)
+├── auth.json                        # Registry credentials
+├── storage.conf                     # Storage configuration
+└── registries.conf                  # Registry configuration
+```
+
+#### For Regular Users (e.g., UID 1000)
+```
+/run/user/1000/                      # XDG_RUNTIME_DIR
+├── containers/
+├── libpod/
+└── ...
+
+/home/user/.config/containers/       # XDG_CONFIG_HOME
+├── auth.json
+├── storage.conf
+└── registries.conf
+```
+
+**Correct Permissions:**
+
+| Directory | Owner | Group | Mode | Description |
+|-----------|-------|-------|------|-------------|
+| `/run/user/0` | root | root | 0700 | Root runtime |
+| `/root/.config/containers` | root | root | 0700 | Root config |
+| `/run/user/<UID>` | user | user | 0700 | User runtime |
+| `~/.config/containers` | user | user | 0700 | User config |
+
+**Expected Behavior:**
+
+```bash
+# Before fix
+root@host:~# podman login
+WARN[0000] "/run/user/0" directory set by $XDG_RUNTIME_DIR does not exist...
+Authenticating with existing credentials for docker.io
+Existing credentials are invalid...
+
+# After fix (role applied)
+root@host:~# podman login docker.io
+Username: myuser
+Password: ********
+Login Succeeded!
+
+# Verify credentials
+root@host:~# cat /root/.config/containers/auth.json
+{
+  "auths": {
+    "docker.io": {
+      "auth": "base64encodedcredentials=="
+    }
+  }
+}
+```
+
+### Troubleshooting XDG Issues
+
+#### Problem: Directory Disappears After Reboot
+
+**Symptom:**
+```bash
+stat /run/user/0: no such file or directory
+```
+
+**Solution** - Already implemented by this role:
+- systemd-tmpfiles recreates the directory automatically on boot
+- Configuration persists in `/etc/tmpfiles.d/podman-xdg.conf`
+
+To verify:
+```bash
+# Check systemd-tmpfiles configuration
+cat /etc/tmpfiles.d/podman-xdg.conf
+
+# Manually recreate if needed
+sudo systemd-tmpfiles --create /etc/tmpfiles.d/podman-xdg.conf
+```
+
+#### Problem: Credentials Not Persisting
+
+**Symptom:**
+```bash
+Authenticating with existing credentials
+Existing credentials are invalid
+```
+
+**Verify:**
+```bash
+# Check if auth.json exists
+ls -la /root/.config/containers/auth.json
+
+# Check content
+cat /root/.config/containers/auth.json
+
+# Check permissions
+stat /root/.config/containers/auth.json
+```
+
+**Solution:**
+```bash
+# Recreate directory (role does this automatically)
+sudo mkdir -p /root/.config/containers
+sudo chmod 0700 /root/.config/containers
+
+# Login again
+sudo podman login registry.example.com
+```
+
+#### Problem: Permission Denied in Rootless
+
+**Symptom:**
+```bash
+Error: creating runtime static files directory: mkdir /run/user/1000: permission denied
+```
+
+**Verify:**
+```bash
+# Check if user has logind session
+loginctl show-user <username>
+
+# Check UID
+id <username>
+
+# Check if directory exists
+ls -la /run/user/$(id -u <username>)
+```
+
+**Solution** - Role handles this automatically, but manual fix:
+```bash
+# Create manually
+sudo mkdir -p /run/user/$(id -u <username>)
+sudo chown <username>:<username> /run/user/$(id -u <username>)
+sudo chmod 0700 /run/user/$(id -u <username>)
+
+# Or enable lingering (persistent session)
+sudo loginctl enable-linger <username>
+```
+
+### Podman vs Docker XDG Comparison
+
+| Aspect | Docker | Podman |
+|--------|--------|--------|
+| **Auth Storage (root)** | `/root/.docker/config.json` | `/root/.config/containers/auth.json` |
+| **Runtime Dir** | Does not use XDG | Uses `/run/user/0` |
+| **Daemon** | Yes (dockerd) | No (daemonless) |
+| **Socket** | `/var/run/docker.sock` | `/run/user/0/podman/podman.sock` |
+| **Config Standard** | Proprietary | XDG Base Directory |
 
 ## Time Synchronization (Compatibility Fixes)
 
@@ -363,34 +594,6 @@ molecule test
 - ✅ Private registry authentication (root and rootless modes)
 - ✅ Idempotent operations
 - ✅ Comprehensive Molecule tests
-
-## Important Notes
-
-### XDG_RUNTIME_DIR Configuration
-
-This role automatically configures the `XDG_RUNTIME_DIR` directory structure required by Podman:
-
-- **For root**: Creates `/run/user/0` and `/root/.config/containers`
-- **For rootless users**: Creates `/run/user/<UID>` and `~/.config/containers`
-
-This prevents the following warning when using `podman login`:
-```
-WARN[0000] "/run/user/0" directory set by $XDG_RUNTIME_DIR does not exist.
-```
-
-**Why this is needed**:
-- Podman uses the XDG Base Directory Specification
-- The `systemd-logind` service doesn't always create runtime directories for root or service accounts
-- Without these directories, Podman cannot store authentication credentials properly
-
-For more details, see: [PODMAN_XDG_RUNTIME_FIX.md](docs/PODMAN_XDG_RUNTIME_FIX.md)
-
-### Registry Authentication
-
-When authenticating with registries:
-- Root mode: Credentials stored in `/root/.config/containers/auth.json`
-- Rootless mode: Credentials stored in `~/.config/containers/auth.json`
-- Automatic fallback to shell command if module fails (Ubuntu 24.04 AppArmor compatibility)
 
 ## Podman vs Docker
 

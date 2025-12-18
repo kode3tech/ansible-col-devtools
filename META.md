@@ -43,6 +43,23 @@ Deploy and manage GitHub Actions self-hosted runners on Linux servers.
 - Ephemeral runners for security
 - Service verification and management
 
+### gitlab_ci_runners
+Deploy and manage GitLab CI self-hosted runners on Linux servers.
+
+**Supported Platforms:**
+- Ubuntu 22.04, 24.04, 25.04
+- Debian 11, 12, 13
+- RHEL/CentOS/Rocky Linux 9, 10
+
+**Main Features:**
+- Multi-runner support with isolated directories
+- Three runner types: Instance, Group, Project runners
+- API-based management via GitLab REST API
+- Tag management without re-registration
+- Advanced configuration: run_untagged, locked, access_level
+- Service verification and management
+- Token-based deletion and updates
+
 ### docker
 Docker Engine installation and configuration with Docker Compose support.
 

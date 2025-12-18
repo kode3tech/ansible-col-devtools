@@ -1,0 +1,37 @@
+---
+galaxy_info:
+  role_name: gitlab_ci_runners
+  namespace: code3tech
+  author: Code3Tech DevOps Team
+  description: Install and manage GitLab Runner (GitLab CI) on Linux hosts
+  company: Code3Tech
+
+  issue_tracker_url: https://github.com/kode3tech/ansible-col-devtools/issues
+
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+        - plucky
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+        - trixie
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+  galaxy_tags:
+    - gitlab
+    - runner
+    - cicd
+    - pipelines
+    - automation
+    - selfhosted
+
+dependencies: []

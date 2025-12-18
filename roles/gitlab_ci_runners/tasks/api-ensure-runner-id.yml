@@ -1,0 +1,63 @@
+---
+# Ensure runner ID is available for API updates
+# Extracts runner ID from config.toml (same approach as delete)
+
+- name: Set runner config path
+  ansible.builtin.set_fact:
+    _runner_config_file: "{{ gitlab_ci_runners_base_path }}/{{ runner.name }}/config.toml"
+  tags: gitlab_ci_runners
+
+- name: Check if runner config file exists
+  ansible.builtin.stat:
+    path: "{{ _runner_config_file }}"
+  register: _runner_config_stat
+  tags: gitlab_ci_runners
+
+- name: Extract runner ID from config.toml
+  when: _runner_config_stat.stat.exists
+  tags: gitlab_ci_runners
+  block:
+    - name: Read runner config file
+      ansible.builtin.slurp:
+        src: "{{ _runner_config_file }}"
+      register: _runner_config_content
+      no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+
+    - name: Extract runner ID from config
+      ansible.builtin.set_fact:
+        _runner_id_from_config: >-
+          {{
+            (
+              _runner_config_content['content'] | b64decode
+              | regex_findall('id\s*=\s*(\d+)')
+              | first
+              | default('0')
+              | int
+            )
+          }}
+      no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+
+    - name: Cache runner ID
+      ansible.builtin.set_fact:
+        _gitlab_ci_runners_api_runner_ids: >-
+          {{
+            (hostvars['localhost']._gitlab_ci_runners_api_runner_ids | default({}))
+            | combine({(runner.name | string): (_runner_id_from_config | int)})
+          }}
+      delegate_to: localhost
+      delegate_facts: true
+      changed_when: false
+      no_log: "{{ gitlab_ci_runners_no_log | bool }}"
+      when:
+        - (_runner_id_from_config | int) > 0
+
+    - name: Display extracted runner ID
+      ansible.builtin.debug:
+        msg:
+          - "Extracted runner ID from config.toml"
+          - "Runner: {{ runner.name }}"
+          - "Config: {{ _runner_config_file }}"
+          - "ID: {{ _runner_id_from_config }}"
+      when:
+        - not (gitlab_ci_runners_no_log | bool)
+        - (_runner_id_from_config | int) > 0

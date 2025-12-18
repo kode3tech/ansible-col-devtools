@@ -29,6 +29,7 @@ ignore: |
   .ansible/
   collections/
   _temp/
+  playbooks/
   node_modules/
   *.tar.gz
   .github/

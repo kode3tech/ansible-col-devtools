@@ -1,0 +1,22 @@
+---
+# Debian/Ubuntu variables for gitlab_ci_runners
+
+gitlab_ci_runners_os_repo: "{{ 'ubuntu' if ansible_distribution == 'Ubuntu' else 'debian' }}"
+gitlab_ci_runners_prerequisites:
+  - ca-certificates
+  - curl
+  - gpg
+
+gitlab_ci_runners_packages:
+  - gitlab-runner
+
+gitlab_ci_runners_apt_keyring_dir: "/etc/apt/keyrings"
+gitlab_ci_runners_apt_keyring_asc: "{{ gitlab_ci_runners_apt_keyring_dir }}/gitlab-runner.asc"
+gitlab_ci_runners_apt_keyring_gpg: "{{ gitlab_ci_runners_apt_keyring_dir }}/gitlab-runner.gpg"
+gitlab_ci_runners_apt_repo_url: "https://packages.gitlab.com/runner/gitlab-runner"
+gitlab_ci_runners_apt_repo: >-
+  deb [signed-by={{ gitlab_ci_runners_apt_keyring_gpg }}]
+  {{ gitlab_ci_runners_apt_repo_url }}/{{ gitlab_ci_runners_os_repo }}/
+  {{ ansible_distribution_release }} main
+
+gitlab_ci_runners_repo_gpgkey_url: "https://packages.gitlab.com/runner/gitlab-runner/gpgkey"

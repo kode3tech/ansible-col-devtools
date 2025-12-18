@@ -4,6 +4,17 @@ Guides for using the code3tech.devtools collection effectively.
 
 ## 📋 Available Guides
 
+### [GitLab CI Runners Complete Guide](gitlab-ci-runners/) ⭐ NEW
+The **comprehensive guide** to GitLab CI self-hosted runners with the code3tech.devtools collection.
+- **Multi-Runner Architecture** - Deploy N runners per host with isolated configs
+- **Three Runner Types** - Instance, Group, and Project runners
+- **API-First Management** - Create, update, and delete runners via GitLab API
+- **Dynamic Tag Management** - Update tags without re-registration
+- **Advanced Features** - run_untagged, locked, access_level configuration
+- Production deployment with performance tuning
+- Security best practices with token protection
+- Troubleshooting common issues
+
 ### [GitHub Actions Runners Complete Guide](github-actions-runners/) ⭐ NEW
 The **comprehensive guide** to GitHub Actions self-hosted runners with the code3tech.devtools collection.
 - **Multi-Runner Architecture** - Deploy N runners per host with isolation
@@ -14,7 +25,6 @@ The **comprehensive guide** to GitHub Actions self-hosted runners with the code3
 - Production deployment with complete examples
 - Security best practices with token protection
 - Troubleshooting common issues
-- 📂 8-part modular documentation for video tutorials
 
 ### [Azure DevOps Agents Complete Guide](azure-devops-agents/) ⭐ NEW
 The **comprehensive guide** to Azure DevOps self-hosted agents with the code3tech.devtools collection.
@@ -26,7 +36,6 @@ The **comprehensive guide** to Azure DevOps self-hosted agents with the code3tec
 - Security best practices with PAT management
 - Troubleshooting common issues
 - Complete variable reference
-- 📂 8-part modular documentation for video tutorials
 
 ### [Docker Complete Guide](docker/) ⭐ NEW
 The **comprehensive guide** to Docker with the code3tech.devtools collection.
@@ -37,7 +46,6 @@ The **comprehensive guide** to Docker with the code3tech.devtools collection.
 - Monitoring with Prometheus metrics
 - Troubleshooting common issues
 - Real-world examples for development, CI/CD, and production
-- 📂 8-part modular documentation for video tutorials
 
 ### [Podman Complete Guide](podman/) ⭐ NEW
 The **comprehensive guide** to Podman with the code3tech.devtools collection.
@@ -47,7 +55,6 @@ The **comprehensive guide** to Podman with the code3tech.devtools collection.
 - Performance optimization (crun, metacopy, parallel downloads)
 - Troubleshooting common issues
 - Real-world examples for development, CI/CD, and production
-- 📂 8-part modular documentation for video tutorials
 
 ### [asdf Complete Guide](asdf/) ⭐ NEW
 The **comprehensive guide** to asdf version manager with the code3tech.devtools collection.

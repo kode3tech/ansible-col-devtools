@@ -1,0 +1,37 @@
+---
+# Install GitLab Runner package
+
+- name: Build package spec
+  ansible.builtin.set_fact:
+    _gitlab_ci_runners_package_spec: >-
+      {{
+        (
+          [
+            (
+              ('gitlab-runner=' ~ gitlab_ci_runners_version)
+              if gitlab_ci_runners_os_family == 'Debian'
+              else ('gitlab-runner-' ~ gitlab_ci_runners_version)
+            )
+          ]
+          if (gitlab_ci_runners_version | length > 0)
+          else gitlab_ci_runners_packages
+        )
+      }}
+  tags: gitlab_ci_runners
+
+- name: Install GitLab Runner
+  ansible.builtin.apt:
+    name: "{{ _gitlab_ci_runners_package_spec }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: gitlab_ci_runners_os_family == 'Debian'
+  tags: gitlab_ci_runners
+
+- name: Install GitLab Runner
+  ansible.builtin.dnf:
+    name: "{{ _gitlab_ci_runners_package_spec }}"
+    state: present
+    disable_gpg_check: "{{ gitlab_ci_runners_redhat_disable_gpg_check | bool }}"
+  when: gitlab_ci_runners_os_family == 'RedHat'
+  tags: gitlab_ci_runners

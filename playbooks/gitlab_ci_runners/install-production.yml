@@ -1,0 +1,238 @@
+---
+# ============================================================================
+# GitLab CI Runner - Production Installation (COMPLETE FEATURES)
+# ============================================================================
+#
+# Description:
+#   Production-ready playbook for deploying GitLab Runner with ALL features
+#
+# Features:
+#   ✅ Multi-runner architecture with isolated directories
+#   ✅ Auto-create GitLab groups if they don't exist
+#   ✅ Dynamic tag management via API (no re-registration needed)
+#   ✅ Per-runner systemd services (gitlab-runner@{name})
+#   ✅ Comprehensive verification (service, directory, config)
+#   ✅ Performance optimizations (concurrent, request_concurrency)
+#   ✅ Proxy support (HTTP/HTTPS with authentication)
+#   ✅ SSL/TLS support (custom CA certificates)
+#
+# Usage:
+#   ansible-playbook playbooks/gitlab_ci_runners/install-production.yml -i inventory
+#
+# Requirements:
+#   - GitLab API Personal Access Token (PAT) with create_runner scope
+#   - Ansible Vault for secrets (recommended)
+#   - GitLab.com or self-managed GitLab instance
+#
+# ============================================================================
+
+- name: GitLab CI Runners - Production Deployment
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    # =========================================================================
+    # GITLAB AUTHENTICATION
+    # =========================================================================
+    gitlab_ci_scenario: api_per_host
+    gitlab_ci_runners_token_mode: auto
+
+    # GitLab API token (PAT) - CRITICAL: USE ANSIBLE VAULT IN PRODUCTION!
+    # Example: ansible-vault create vars/secrets.yml
+    gitlab_ci_runners_api_token: "{{ vault_gitlab_api_token }}"
+
+    # =========================================================================
+    # RUNNER SCOPE CONFIGURATION
+    # =========================================================================
+    # Choose: instance_type, group_type, or project_type
+    gitlab_ci_runners_api_runner_type: group_type
+    gitlab_ci_runners_api_group_full_path: "your-group-name"  # ⚠️ CUSTOMIZE
+
+    # =========================================================================
+    # AUTO-CREATE RESOURCES
+    # =========================================================================
+    gitlab_ci_runners_auto_create_group: true
+    gitlab_ci_runners_group_visibility: "private"
+    gitlab_ci_runners_update_tags_via_api: true
+
+    # =========================================================================
+    # CORE SETTINGS
+    # =========================================================================
+    gitlab_ci_runners_gitlab_url: "https://gitlab.com"
+    gitlab_ci_runners_state: present
+    gitlab_ci_runners_skip_registration: false
+    gitlab_ci_runners_no_log: true
+    gitlab_ci_runners_skip_verification: false
+
+    # =========================================================================
+    # INSTALLATION SETTINGS
+    # =========================================================================
+    gitlab_ci_runners_configure_repo: true
+    gitlab_ci_runners_version: ""
+    gitlab_ci_runners_base_path: "/opt/gitlab-ci-runners"
+    gitlab_ci_runners_user: "gitlab-runner"
+    gitlab_ci_runners_group: "gitlab-runner"
+    gitlab_ci_runners_create_user: true
+
+    # =========================================================================
+    # PERFORMANCE OPTIMIZATION
+    # =========================================================================
+    gitlab_ci_runners_concurrent: 4
+    gitlab_ci_runners_request_concurrency: 2
+    gitlab_ci_runners_enable_metrics: false
+
+    # =========================================================================
+    # PROXY SETTINGS (Optional - uncomment if needed)
+    # =========================================================================
+    # gitlab_ci_runners_proxy_url: "http://proxy.company.com:8080"
+    # gitlab_ci_runners_proxy_user: "{{ vault_proxy_user }}"
+    # gitlab_ci_runners_proxy_password: "{{ vault_proxy_password }}"
+    # gitlab_ci_runners_no_proxy: "localhost,127.0.0.1"
+
+    # =========================================================================
+    # SSL/TLS SETTINGS (Optional)
+    # =========================================================================
+    # gitlab_ci_runners_ssl_ca_cert: "/etc/ssl/certs/company-ca.crt"
+    # gitlab_ci_runners_ssl_skip_cert_validation: false
+
+    # =========================================================================
+    # RUNNER REGISTRATION DEFAULTS
+    # =========================================================================
+    gitlab_ci_runners_default_executor: "shell"
+    gitlab_ci_runners_locked: false
+    gitlab_ci_runners_run_untagged: false
+
+    # =========================================================================
+    # RUNNERS CONFIGURATION - ACCESS CONTROL SCENARIOS
+    # =========================================================================
+    # Scenario 1: OPEN ACCESS (Development/Testing)
+    #   - locked: false → Multiple projects can use
+    #   - access_level: not_protected → Any branch
+    #   - run_untagged: true → Can pick jobs without tags
+    #
+    # Scenario 2: PROTECTED BRANCHES (Staging)
+    #   - locked: false → Multiple projects
+    #   - access_level: ref_protected → Only main/release branches
+    #   - run_untagged: false → Requires tags
+    #
+    # Scenario 3: PRODUCTION (Maximum Safety)
+    #   - locked: false → Group runner
+    #   - access_level: ref_protected → Protected branches only
+    #   - run_untagged: false → Must specify tags
+    # =========================================================================
+
+    gitlab_ci_runners_runners_list:
+      # ---------------------------------------------------------------------
+      # Runner 1: OPEN ACCESS (Development)
+      # ---------------------------------------------------------------------
+      - name: "dev-runner-01"
+        description: "Development Runner - {{ inventory_hostname }}"
+        executor: "shell"
+        state: present
+        locked: false
+        access_level: "not_protected"
+        tags:
+          - development
+          - ci
+          - build
+          - test
+          - shell
+          - linux
+        run_untagged: true
+        maximum_timeout: 3600
+
+      # ---------------------------------------------------------------------
+      # Runner 2: PROTECTED BRANCHES (Staging)
+      # ---------------------------------------------------------------------
+      - name: "staging-runner-01"
+        description: "Staging Runner - {{ inventory_hostname }}"
+        executor: "shell"
+        state: present
+        locked: false
+        access_level: "ref_protected"
+        tags:
+          - staging
+          - deploy
+          - integration
+          - shell
+          - linux
+        run_untagged: false
+        maximum_timeout: 7200
+
+      # ---------------------------------------------------------------------
+      # Runner 3: PRODUCTION (Maximum Safety)
+      # ---------------------------------------------------------------------
+      - name: "prod-runner-01"
+        description: "Production Runner - {{ inventory_hostname }}"
+        executor: "shell"
+        state: present
+        locked: false
+        access_level: "ref_protected"
+        tags:
+          - production
+          - deploy
+          - release
+          - shell
+          - linux
+        run_untagged: false
+        maximum_timeout: 10800
+
+  pre_tasks:
+    - name: Display deployment information
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "GitLab CI Runners - Production Deployment"
+          - "=========================================="
+          - "GitLab URL: {{ gitlab_ci_runners_gitlab_url }}"
+          - "Runner Type: {{ gitlab_ci_runners_api_runner_type }}"
+          - "Group: {{ gitlab_ci_runners_api_group_full_path }}"
+          - "Runners: {{ gitlab_ci_runners_runners_list | selectattr('state', 'equalto', 'present') | list | length }}"
+          - "=========================================="
+
+    - name: Verify required variables
+      ansible.builtin.assert:
+        that:
+          - gitlab_ci_runners_gitlab_url is defined
+          - gitlab_ci_runners_api_token is defined
+          - gitlab_ci_runners_api_token | length > 0
+          - gitlab_ci_runners_api_runner_type in ['instance_type', 'group_type', 'project_type']
+          - gitlab_ci_runners_runners_list | length > 0
+        fail_msg: "❌ Missing required variables! See roles/gitlab_ci_runners/README.md"
+        success_msg: "✅ Required variables verified"
+      when: not gitlab_ci_runners_skip_registration
+
+  roles:
+    - role: code3tech.devtools.gitlab_ci_runners
+
+  post_tasks:
+    - name: Wait for services to stabilize
+      ansible.builtin.pause:
+        seconds: 3
+
+    - name: Get all gitlab-runner services
+      ansible.builtin.shell: |
+        systemctl list-units --type=service --all 'gitlab-runner@*' --no-pager --no-legend | awk '{print $1}'
+      register: _all_runner_services
+      changed_when: false
+
+    - name: Display deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "╔══════════════════════════════════════════╗"
+          - "║   ✅ DEPLOYMENT COMPLETED"
+          - "╠══════════════════════════════════════════╣"
+          - "║ Runners: {{ gitlab_ci_runners_runners_list | selectattr('state', 'equalto', 'present') | list | length }}"
+          - "║ Services: {{ _all_runner_services.stdout_lines | length }}"
+          - "║ Base: {{ gitlab_ci_runners_base_path }}"
+          - "╚══════════════════════════════════════════╝"
+
+    - name: Next steps
+      ansible.builtin.debug:
+        msg:
+          - "📖 NEXT STEPS:"
+          - "1️⃣  Verify in GitLab UI"
+          - "2️⃣  Test with .gitlab-ci.yml"
+          - "3️⃣  Monitor: journalctl -u gitlab-runner@runner-name -f"
+      run_once: true

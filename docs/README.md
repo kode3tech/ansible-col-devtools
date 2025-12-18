@@ -8,17 +8,21 @@ Our documentation is organized into the following categories:
 
 ### 🚀 [Getting Started](getting-started/)
 Start here if you're new to this collection.
-- [Quick Start Guide](getting-started/QUICKSTART.md) - Get up and running in 5 minutes
-- [Setup Summary](getting-started/SETUP_SUMMARY.md) - Complete setup instructions
+- [Installation](getting-started/01-installation.md) - Install collection and verify dependencies
+- [First Playbook](getting-started/02-first-playbook.md) - Deploy your first role (Docker, Podman, or CI runner)
+- [Inventory Basics](getting-started/03-inventory-basics.md) - Organize infrastructure and manage hosts
+- [Using Roles](getting-started/04-using-roles.md) - Explore all 6 collection roles
+- [Common Patterns](getting-started/05-common-patterns.md) - Production-ready patterns (multi-env, vault, tags)
+- [Troubleshooting](getting-started/06-troubleshooting.md) - Fix common execution issues
 
 ### 📘 [User Guides](user-guides/)
 Learn how to use the collection effectively.
-- [Docker Complete Guide](user-guides/docker/) ⭐ **NEW** - 8-part modular guide to production deployment, performance, and troubleshooting
-- [Podman Complete Guide](user-guides/podman/) ⭐ **NEW** - 8-part modular guide to Root vs Rootless mode, variables, and performance
-
-### 📖 [Reference](reference/)
-Technical reference documentation.
-- [Variables Reference](reference/VARIABLES.md) - Complete list of all role variables
+- [Docker Complete Guide](user-guides/docker/) ⭐ - 8-part modular guide to production deployment, performance, and troubleshooting
+- [Podman Complete Guide](user-guides/podman/) ⭐ - 8-part modular guide to Root vs Rootless mode, variables, and performance
+- [Azure DevOps Agents Guide](user-guides/azure-devops-agents/) - Multi-agent deployment and management
+- [GitHub Actions Runners Guide](user-guides/github-actions-runners/) - Self-hosted runner deployment
+- [GitLab CI Runners Guide](user-guides/gitlab-ci-runners/) ⭐ - API-based runner management
+- [asdf Version Manager Guide](user-guides/asdf/) - Multi-language version management
 
 ### ❓ [FAQ](FAQ.md)
 Frequently asked questions about installation, usage, and performance.
@@ -26,7 +30,8 @@ Frequently asked questions about installation, usage, and performance.
 ### 👨‍💻 [Development](development/)
 Contributing to the project.
 - [Role Structure](development/ROLE_STRUCTURE.md) - How roles are organized
-- [Testing Documentation](development/testing/) - Complete testing guides
+- [Testing Guide](development/testing/) - Comprehensive testing documentation
+- [Setup Documentation](development/SETUP.md) - Development environment setup (venv, asdf, molecule)
 
 ### 🔄 [Maintenance](maintenance/)
 Keeping your installation up to date.
@@ -39,9 +44,12 @@ Keeping your installation up to date.
 
 Each role maintains its own documentation:
 
-- **[Docker Role](../roles/docker/README.md)** - Complete Docker role documentation
-- **[Podman Role](../roles/podman/README.md)** - Complete Podman role documentation
-  - [Podman XDG Runtime Fix](../roles/podman/docs/PODMAN_XDG_RUNTIME_FIX.md) - Podman-specific troubleshooting
+- **[Docker Role](../roles/docker/README.md)** - Docker Engine installation and configuration
+- **[Podman Role](../roles/podman/README.md)** - Podman with rootless container support
+- **[Azure DevOps Agents Role](../roles/azure_devops_agents/README.md)** - Azure Pipelines self-hosted agents
+- **[GitHub Actions Runners Role](../roles/github_actions_runners/README.md)** - GitHub Actions self-hosted runners
+- **[GitLab CI Runners Role](../roles/gitlab_ci_runners/README.md)** - GitLab CI self-hosted runners with API management
+- **[asdf Role](../roles/asdf/README.md)** - asdf version manager for multi-language development
 
 ---
 
@@ -58,22 +66,23 @@ Each role maintains its own documentation:
 ## 📚 Quick Links
 
 ### For New Users
-1. [Quick Start](getting-started/QUICKSTART.md)
-2. [Setup Summary](getting-started/SETUP_SUMMARY.md)
-3. [FAQ](FAQ.md)
-4. [Docker Role README](../roles/docker/README.md)
-5. [Podman Role README](../roles/podman/README.md)
-6. [asdf Role README](../roles/asdf/README.md)
+1. [Installation](getting-started/01-installation.md)
+2. [First Playbook](getting-started/02-first-playbook.md)
+3. [Inventory Basics](getting-started/03-inventory-basics.md)
+4. [Using Roles](getting-started/04-using-roles.md)
+5. [FAQ](FAQ.md)
 
 ### For Developers
 1. [Contributing Guide](../CONTRIBUTING.md)
 2. [Role Structure](development/ROLE_STRUCTURE.md)
-3. [Molecule Testing](development/testing/MOLECULE_TESTING.md)
+3. [Testing Guide](development/testing/)
+4. [Setup Documentation](development/SETUP.md)
 
 ### For Reference
-1. [Variables Reference](reference/VARIABLES.md)
-2. [Version Information](maintenance/VERSIONS.md)
+1. [Version Information](maintenance/VERSIONS.md)
+2. [Upgrade Guide](maintenance/UPGRADE_GUIDE.md)
+3. [Variables Reference](reference/VARIABLES.md)
 
 ---
 
-**Last updated:** November 11, 2025
+**Last updated:** December 18, 2025
