@@ -460,7 +460,6 @@ Code3Tech DevOps Team <suporte@kode3.tech>
 - ❌ **DO NOT** update documentation during feature implementation
 - ❌ **DO NOT** update CHANGELOG.md during feature implementation
 - ❌ **DO NOT** update README.md during feature implementation
-- ❌ **DO NOT** update META.md during feature implementation
 - ✅ **ONLY** update documentation when **explicitly requested** by the user
 - ✅ **ONLY** update documentation when user says "update docs" or similar
 
@@ -468,7 +467,6 @@ Code3Tech DevOps Team <suporte@kode3.tech>
 - ✅ When user explicitly says **"feature finished"**, **"finalize feature"**, **"complete implementation"**, or similar:
   - Update all relevant documentation (README.md, role README.md, etc.)
   - Update CHANGELOG.md with feature description
-  - Update META.md if needed
   - Update playbooks/README.md if new examples were added
   - Update collection-level docs if applicable
   - Verify all bidirectional links are correct
@@ -529,9 +527,6 @@ ansible-lint roles/<role_name>/
 yamllint roles/<role_name>/
 
 # 8. Documentation (ONLY when user says "feature finished")
-# Update README.md, CHANGELOG.md, META.md, etc.
-```
-
 ### Makefile Commands
 ```bash
 make help               # Show available commands
@@ -832,9 +827,8 @@ chore(deps): update ansible to 2.16
 
 #### Update Collection Files
 - [ ] **7.1** Update `README.md` - Add new role to "Included Roles" section
-- [ ] **7.2** Update `META.md` - Add role description and supported platforms
-- [ ] **7.3** Update `galaxy.yml` if needed
-- [ ] **7.4** Update `CHANGELOG.md` - Add entry for new role
+- [ ] **7.2** Update `galaxy.yml` if needed
+- [ ] **7.3** Update `CHANGELOG.md` - Add entry for new role
 
 #### Update Documentation
 - [ ] **7.5** Update `docs/development/ROLE_STRUCTURE.md` if pattern changed
@@ -888,7 +882,7 @@ Use this abbreviated checklist for quick verification:
 - [ ] Default values in defaults/main.yml
 - [ ] Example playbooks in `playbooks/{role}/` (minimum 2)
 - [ ] `playbooks/{role}/README.md` with playbook index
-- [ ] Collection docs updated (README.md, META.md, CHANGELOG.md)
+- [ ] Collection docs updated (README.md, CHANGELOG.md)
 - [ ] All documentation follows organization pattern
 - [ ] Bidirectional navigation links in place
 
@@ -1429,10 +1423,9 @@ additional access controls with sudo policies.
 **Files to check**:
 ```markdown
 1. `CHANGELOG.md` - Add entry in [Unreleased] section
-2. `META.md` - Update if capabilities/features changed
-3. Parent `README.md` files - Update indexes/links
-4. `docs/README.md` - Update if new category/major doc added
-5. `playbooks/README.md` - Update if new examples added
+2. Parent `README.md` files - Update indexes/links
+3. `docs/README.md` - Update if new category/major doc added
+4. `playbooks/README.md` - Update if new examples added
 ```
 
 **CHANGELOG.md format**:

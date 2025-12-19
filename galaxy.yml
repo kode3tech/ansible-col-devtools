@@ -1,40 +1,43 @@
 ---
 namespace: code3tech
 name: devtools
-version: 1.4.0
+version: 1.5.0
 readme: README.md
 
 authors:
   - Code3Tech DevOps Team <suporte@kode3.tech>
 
 description: >-
-  Ansible Collection for DevOps tools installation and configuration.
-  Includes roles for Azure DevOps Agents, GitHub Actions Runners, GitLab CI Runners, Docker, Podman, and asdf version manager.
-  Supports Ubuntu, Debian, and RHEL-based systems with production-ready configurations.
+  Production-ready Ansible Collection for automating CI/CD infrastructure deployment.
+  Deploy and manage self-hosted runners and agents across multiple CI/CD providers
+  (Azure DevOps, GitHub Actions, GitLab CI), container platforms (Docker, Podman),
+  and development tools (asdf version manager). Unified configuration, API-driven
+  lifecycle management, and multi-platform support (Ubuntu, Debian, RHEL).
+  Battle-tested for enterprise production environments.
 
-license:
-  - MIT
+license_file: LICENSE
 
 tags:
-  - devops
-  - tools
-  - docker
-  - podman
-  - containers
-  - development
+  - cicd
   - infrastructure
   - automation
-  - ci
-  - cd
-  - azure
-  - azuredevops
-  - agents
-  - asdf
-  - versionmanager
-  - github
-  - actions
-  - runners
+  - containers
+  - docker
+  - podman
   - selfhosted
+  - runners
+  - agents
+  - azure
+  - github
+  - gitlab
+  - devops
+  - deployment
+  - orchestration
+  - linux
+  - production
+  - api
+  - lifecycle
+  - versionmanager
 
 dependencies:
   'community.docker': '>=3.4.0'
@@ -46,39 +49,46 @@ homepage: https://github.com/kode3tech/ansible-col-devtools
 issues: https://github.com/kode3tech/ansible-col-devtools/issues
 
 build_ignore:
+  # Version control
   - .git
   - .github
   - .gitignore
+
+  # Python environments
   - .venv
-  - .ansible
-  - '**/.ansible'
-  - '**/.ansible/**'
-  - .python-version
-  - .tool-versions
-  - collections
-  - '**/collections'
-  - '**/collections/**'
-  - _temp
-  - '_temp/**'
+  - __pycache__
+  - '**/__pycache__/**'
   - '*.pyc'
   - '*.pyo'
-  - '*.swp'
-  - '*.bak'
-  - '*.tmp'
-  - '*~'
-  - __pycache__
-  - '**/__pycache__'
-  - '**/__pycache__/**'
+
+  # Testing & Development
   - .pytest_cache
-  - '**/.pytest_cache'
   - '**/.pytest_cache/**'
   - .molecule
-  - '**/.molecule'
   - '**/.molecule/**'
-  - .cache
-  - '**/.cache'
-  - '**/.cache/**'
+  - collections
+  - '**/collections/**'
+
+  # Temporary files
+  - _temp
+  - '_temp/**'
+  - .tmp
+  - '*.tmp'
+  - '*.swp'
+  - '*.bak'
+  - '*~'
+
+  # Logs and caches
   - '*.log'
-  - '**/*.log'
+  - .cache
+  - '**/.cache/**'
+  - .ansible
+  - '**/.ansible/**'
+
+  # OS files
   - .DS_Store
   - '**/Thumbs.db'
+
+  # Tool configs
+  - .python-version
+  - .tool-versions

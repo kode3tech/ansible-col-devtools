@@ -13,6 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.5.0] - 2025-12-19
+
+### Changed
+- **[Documentation]** Enhanced README.md for professional presentation
+  - Removed all emojis for clean, professional appearance
+  - Converted all relative links to absolute GitHub URLs for Ansible Galaxy compatibility
+  - Removed confusing Multi-Provider Strategies section (focus on single provider per deployment)
+  - Removed broken documentation links (Variables Reference, Quick Start Guide, Setup Summary)
+  - Added Downloads badge from Ansible Galaxy
+- **[Galaxy]** Optimized galaxy.yml for better discoverability
+  - Rewritten description with SEO focus on problem-solving and key capabilities
+  - Optimized tags (20 strategic tags) for Galaxy search: added gitlab, deployment, orchestration, linux, production, api, lifecycle
+  - Changed license format from `license: [MIT]` to `license_file: LICENSE` (Galaxy recommended format)
+  - Reorganized build_ignore with categories and comments for maintainability
+- **[Project]** Removed META.md file (redundant with README.md and galaxy.yml)
+  - Cleaned up all references to META.md from project documentation
+  - Simplified project structure following Ansible Collection standards
+
+### Fixed
+- **[Documentation]** All documentation links now work correctly when viewed on Ansible Galaxy
+
 ## [1.4.0] - 2025-12-18
 
 ### Added
