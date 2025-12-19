@@ -15,6 +15,9 @@ description: >-
   lifecycle management, and multi-platform support (Ubuntu, Debian, RHEL).
   Battle-tested for enterprise production environments.
 
+license:
+  - MIT
+
 license_file: LICENSE
 
 tags:
